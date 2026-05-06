@@ -2,7 +2,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Mail, ChevronUp } from 'lucide-react';
-import { FaFacebookF, FaLinkedinIn, FaTwitter } from "react-icons/fa";
 
 const Footer = () => {
   const scrollToTop = () => {
@@ -41,23 +40,7 @@ const Footer = () => {
             </ul>
           </div>
           
-          <div>
-            <h3 className="font-bold mb-4">Follow Us</h3>
-            <div className="flex space-x-4">
-              <motion.a whileHover={{ y: -3 }} href="#" className="text-gray-400 hover:text-red-500 transition">
-                <FaTwitter size={20} />
-              </motion.a>
-              <motion.a whileHover={{ y: -3 }} href="#" className="text-gray-400 hover:text-red-500 transition">
-                <FaLinkedinIn size={20} />
-              </motion.a>
-              <motion.a whileHover={{ y: -3 }} href="#" className="text-gray-400 hover:text-red-500 transition">
-                <FaFacebookF size={20} />
-              </motion.a>
-              <motion.a whileHover={{ y: -3 }} href="mailto:wowwin96@gmail.com" className="text-gray-400 hover:text-red-500 transition">
-                <Mail size={20} />
-              </motion.a>
-            </div>
-          </div>
+          
         </div>
         
         <div className="border-t border-red-500/20 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">

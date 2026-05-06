@@ -7,10 +7,10 @@ import Services from '../components/Services';
 import ThreeSection from '../components/ThreeSection';
 import WhyUs from '../components/WhyUs';
 import Testimonials from '../components/Testimonials';
-import Pricing from '../components/Pricing';
 import Contact from '../components/Contact';
 import Footer from '../components/Footer';
 import { motion } from 'framer-motion';
+import FloatingWhatsApp from '../components/FloatingWhatsApp';
 
 function App() {
   // Add smooth scroll behavior for anchor links
@@ -57,9 +57,9 @@ function App() {
       <ThreeSection />
       <WhyUs />
       <Testimonials />
-      <Pricing />
       <section id="contact"><Contact /></section>
       <Footer />
+      <FloatingWhatsApp />
     </div>
   );
 }

@@ -47,16 +47,16 @@ const About = () => {
               Our platform enables users to receive SMS online for various services including Google Voice, 
               WhatsApp, Telegram, and hundreds of other platforms.
             </p>
-            <ul className="space-y-3">
+            <ul className="space-y-3 fineFont">
               {['✓ Virtual Numbers for Any Service', '✓ Google Voice Registration Assistance', '✓ Fast OTP Delivery System', '✓ Social Media Account Activation'].map((item, i) => (
                 <motion.li
                   key={i}
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  className="text-gray-300 flex items-center gap-2"
+                  className="text-gray-300  flex items-center gap-2"
                 >
-                  <span className="text-red-500 text-xl">✓</span> {item}
+                  <span className="text-red-light fineFont  text-xl">✓</span> {item}
                 </motion.li>
               ))}
             </ul>
