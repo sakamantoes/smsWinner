@@ -1,12 +1,13 @@
 // src/components/Contact.jsx
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Send, Phone, MessageCircle, Clock, CheckCircle, XCircle, Copy, Check } from 'lucide-react';
+import { Mail, Send, Phone, MessageCircle, Clock, CheckCircle, XCircle, Copy, Check, AtSign, User, Eye, EyeOff } from 'lucide-react';
 
 const Contact = () => {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
   const [copiedNumber, setCopiedNumber] = useState(null);
+  const [showEmails, setShowEmails] = useState({});
   
   // Available WhatsApp Numbers
   const whatsappNumbers = [
@@ -20,29 +21,106 @@ const Contact = () => {
     { number: "+91 98765 43210", country: "India", flag: "🇮🇳", available: true, operator: "Jio" },
   ];
 
-  // SMS Logs (Recent OTP and SMS activities)
-  const [smsLogs, setSmsLogs] = useState([
-    { id: 1, number: "+1 (212) 555-1234", message: "Your OTP code is: 482901", status: "delivered", timestamp: "Just now", type: "OTP" },
-    { id: 2, number: "+44 20 7946 0123", message: "Verification code: 735294", status: "delivered", timestamp: "2 min ago", type: "OTP" },
-    { id: 3, number: "+61 2 3456 7890", message: "Welcome to Smswinners! Your account is ready.", status: "sent", timestamp: "5 min ago", type: "Welcome" },
-    { id: 4, number: "+81 3 1234 5678", message: "Your Google Voice code: 961847", status: "delivered", timestamp: "12 min ago", type: "OTP" },
-    { id: 5, number: "+49 30 1234567", message: "Instagram verification: 284673", status: "pending", timestamp: "15 min ago", type: "OTP" },
-    { id: 6, number: "+91 98765 43210", message: "WhatsApp code: 539182", status: "delivered", timestamp: "20 min ago", type: "OTP" },
+  // Email Logs with masked emails
+  const [emailLogs, setEmailLogs] = useState([
+    { 
+      id: 1, 
+      email: "john.doe@gmail.com", 
+      maskedEmail: "jo*****oe@gmail.com",
+      message: "Your OTP code is: 482901 - Email verification successful", 
+      status: "delivered", 
+      timestamp: "Just now", 
+      type: "OTP Verification" 
+    },
+    { 
+      id: 2, 
+      email: "sarah.smith@yahoo.com", 
+      maskedEmail: "sa*****th@yahoo.com",
+      message: "Verification code: 735294 - Google Voice setup complete", 
+      status: "delivered", 
+      timestamp: "2 min ago", 
+      type: "Account Setup" 
+    },
+    { 
+      id: 3, 
+      email: "michael.brown@hotmail.com", 
+      maskedEmail: "mi*****wn@hotmail.com",
+      message: "Welcome to Smswinners! Your account is ready. Click to verify", 
+      status: "sent", 
+      timestamp: "5 min ago", 
+      type: "Welcome Email" 
+    },
+    { 
+      id: 4, 
+      email: "emily.wilson@gmail.com", 
+      maskedEmail: "em*****on@gmail.com",
+      message: "Your Google Voice code: 961847 - Number +1 (555) 123-4567 activated", 
+      status: "delivered", 
+      timestamp: "12 min ago", 
+      type: "Google Voice" 
+    },
+    { 
+      id: 5, 
+      email: "david.miller@outlook.com", 
+      maskedEmail: "da*****er@outlook.com",
+      message: "Instagram verification: 284673 - Link your number to continue", 
+      status: "pending", 
+      timestamp: "15 min ago", 
+      type: "Social Media" 
+    },
+    { 
+      id: 6, 
+      email: "lisa.anderson@gmail.com", 
+      maskedEmail: "li*****on@gmail.com",
+      message: "WhatsApp code: 539182 - Your virtual number is ready", 
+      status: "delivered", 
+      timestamp: "20 min ago", 
+      type: "WhatsApp Setup" 
+    },
+    { 
+      id: 7, 
+      email: "robert.taylor@icloud.com", 
+      maskedEmail: "ro*****or@icloud.com",
+      message: "Telegram verification: 728493 - Secure your account", 
+      status: "delivered", 
+      timestamp: "25 min ago", 
+      type: "Telegram" 
+    },
+    { 
+      id: 8, 
+      email: "amanda.martinez@gmail.com", 
+      maskedEmail: "am*****ez@gmail.com",
+      message: "Signal code: 847261 - End-to-end encryption enabled", 
+      status: "sent", 
+      timestamp: "30 min ago", 
+      type: "Signal Setup" 
+    },
   ]);
 
-  // Simulate real-time SMS updates
+  // Simulate real-time email updates
   useEffect(() => {
     const interval = setInterval(() => {
+      const domains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'];
+      const names = ['james', 'maria', 'alex', 'sophia', 'daniel', 'olivia', 'william', 'emma'];
+      const randomName = names[Math.floor(Math.random() * names.length)];
+      const randomDomain = domains[Math.floor(Math.random() * domains.length)];
+      const randomNumber = Math.floor(100000 + Math.random() * 900000);
+      const fullEmail = `${randomName}.${Math.floor(Math.random() * 1000)}@${randomDomain}`;
+      const maskedEmail = fullEmail.replace(/(.{2})(.*)(@.*)/, (match, p1, p2, p3) => {
+        return p1 + '*'.repeat(Math.min(p2.length, 4)) + p3;
+      });
+      
       const newLog = {
         id: Date.now(),
-        number: whatsappNumbers[Math.floor(Math.random() * whatsappNumbers.length)].number,
-        message: `OTP verification code: ${Math.floor(100000 + Math.random() * 900000)}`,
+        email: fullEmail,
+        maskedEmail: maskedEmail,
+        message: `OTP verification code: ${randomNumber} - Email verification for ${randomDomain.split('.')[0]} service`,
         status: "delivered",
         timestamp: "Just now",
-        type: "OTP"
+        type: "Email Verification"
       };
-      setSmsLogs(prev => [newLog, ...prev.slice(0, 9)]);
-    }, 15000); // Add new SMS every 15 seconds
+      setEmailLogs(prev => [newLog, ...prev.slice(0, 14)]);
+    }, 20000); // Add new email every 20 seconds
 
     return () => clearInterval(interval);
   }, []);
@@ -59,6 +137,13 @@ const Contact = () => {
     navigator.clipboard.writeText(number);
     setCopiedNumber(number);
     setTimeout(() => setCopiedNumber(null), 2000);
+  };
+
+  const toggleShowEmail = (id) => {
+    setShowEmails(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
   };
 
   const getStatusIcon = (status) => {
@@ -133,7 +218,7 @@ const Contact = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="w-full py-3 bg-gradient-to-r from-red-light to-red-dark rounded-lg font-semibold flex items-center justify-center gap-2"
+                className="w-full py-3 bg-gradient-to-r from-red-500 to-red-700 rounded-lg font-semibold flex items-center justify-center gap-2"
               >
                 Send Message <Send size={18} />
               </motion.button>
@@ -160,13 +245,14 @@ const Contact = () => {
               wowwin96@gmail.com
             </a>
             <div className="mt-8 p-4 bg-red-500/5 rounded-lg border border-red-500/20">
-              <p className="text-sm text-gray-400">📞 Enterprise Inquiries Available</p>
-              <p className="text-sm text-gray-400">⏱️ 24/7 Technical Support</p>
+              <p className="text-sm text-gray-400">📧 Enterprise Email Support Available</p>
+              <p className="text-sm text-gray-400">⏱️ 24/7 Email Response Team</p>
+              <p className="text-sm text-gray-400">🔒 End-to-end Email Encryption</p>
             </div>
           </motion.div>
         </div>
 
-        {/* WhatsApp Numbers & SMS Logs Section */}
+        {/* WhatsApp Numbers & Email Logs Section */}
         <div className="grid lg:grid-cols-2 gap-8 mt-12">
           {/* Available WhatsApp Numbers */}
           <motion.div
@@ -174,7 +260,7 @@ const Contact = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
-            className="glass-card rounded-2xl p-3"
+            className="glass-card rounded-2xl p-2"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center">
@@ -231,22 +317,22 @@ const Contact = () => {
             </div>
           </motion.div>
 
-          {/* Recent SMS Logs */}
+          {/* Email Logs Section */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             viewport={{ once: true }}
-            className="glass-card rounded-2xl p-3"
+            className="glass-card rounded-2xl p-2"
           >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-blue-500" />
+                <div className="w-12 h-12 bg-purple-500/10 rounded-full flex items-center justify-center">
+                  <AtSign className="w-6 h-6 text-purple-500" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold">Recent SMS Logs</h3>
-                  <p className="text-gray-400 text-sm">Live OTP & Message delivery status</p>
+                  <h3 className="text-2xl font-bold">Recent Email Logs</h3>
+                  <p className="text-gray-400 text-sm">Live email verification & OTP delivery status</p>
                 </div>
               </div>
               <span className="text-xs text-green-500 animate-pulse">● Live</span>
@@ -254,30 +340,46 @@ const Contact = () => {
             
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               <AnimatePresence>
-                {smsLogs.map((log, index) => (
+                {emailLogs.map((log, index) => (
                   <motion.div
                     key={log.id}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ delay: index * 0.03 }}
-                    className="p-3 rounded-xl bg-white/5 border border-white/10 hover:border-red-500/30 transition-all"
+                    className="p-3 rounded-xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-all group"
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm font-medium text-white">{log.number}</span>
+                      <div className="flex items-center gap-2 flex-1">
+                        <User className="w-4 h-4 text-gray-400" />
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-white">
+                            {showEmails[log.id] ? log.email : log.maskedEmail}
+                          </span>
+                          <button
+                            onClick={() => toggleShowEmail(log.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            {showEmails[log.id] ? (
+                              <EyeOff className="w-3 h-3 text-gray-400 hover:text-white" />
+                            ) : (
+                              <Eye className="w-3 h-3 text-gray-400 hover:text-white" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {getStatusIcon(log.status)}
                         <span className="text-xs text-gray-400">{log.timestamp}</span>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-300 mb-2">{log.message}</p>
-                    <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-300 mb-2 pl-6">{log.message}</p>
+                    <div className="flex items-center justify-between pl-6">
                       <span className={`text-xs px-2 py-1 rounded-full ${
-                        log.type === 'OTP' 
+                        log.type.includes('OTP') || log.type.includes('Verification')
                           ? 'bg-purple-500/20 text-purple-400' 
+                          : log.type.includes('Welcome')
+                          ? 'bg-green-500/20 text-green-400'
                           : 'bg-blue-500/20 text-blue-400'
                       }`}>
                         {log.type}
@@ -295,8 +397,9 @@ const Contact = () => {
               </AnimatePresence>
             </div>
             
-            <div className="mt-6 p-3 bg-blue-500/5 rounded-lg border border-blue-500/20 text-center">
-              <p className="text-xs text-gray-400">🔄 Real-time updates - New SMS appear automatically every 15 seconds</p>
+            <div className="mt-6 p-3 bg-purple-500/5 rounded-lg border border-purple-500/20 text-center">
+              <p className="text-xs text-gray-400">📧 Real-time email updates - New emails appear automatically every 20 seconds</p>
+              <p className="text-xs text-gray-500 mt-1">🔒 Emails are masked for privacy - Click 👁️ to view full email</p>
             </div>
           </motion.div>
         </div>
