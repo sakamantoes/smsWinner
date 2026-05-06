@@ -364,7 +364,7 @@ const Navbar = () => {
                   onClick={() => {
                     setIsOpen(false);
                   }}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 border border-red-500/30 rounded-xl text-white font-semibold hover:bg-red-500/10 transition-all"
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 border border-red-light/30 mb-2 rounded-xl text-white font-semibold hover:bg-red-500/10 transition-all"
                 >
                   <LogIn size={20} />
                   Login
@@ -376,7 +376,7 @@ const Navbar = () => {
                       handleSignupClick();
                       setIsOpen(false);
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-700 rounded-xl text-white font-semibold shadow-lg shadow-red-500/30"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-red-light to-red-dark rounded-xl text-white font-semibold shadow-lg shadow-red-500/30"
                   >
                     <UserPlus size={20} />
                     Sign Up Free
