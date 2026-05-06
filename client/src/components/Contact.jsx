@@ -174,7 +174,7 @@ const Contact = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
-            className="glass-card rounded-2xl p-8"
+            className="glass-card rounded-2xl p-3"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center">
@@ -237,7 +237,7 @@ const Contact = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             viewport={{ once: true }}
-            className="glass-card rounded-2xl p-8"
+            className="glass-card rounded-2xl p-3"
           >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
