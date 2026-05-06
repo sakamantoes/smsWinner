@@ -65,7 +65,7 @@ const Hero = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 bg-gradient-to-r from-red-500 to-red-700 rounded-lg font-semibold text-white shadow-lg shadow-red-500/30 flex items-center gap-2"
+                className="px-8 py-4 bg-gradient-to-r from-red-500 to-red-700 rounded-lg font-semibold text-white border-white border shadow-lg shadow-red-500/30 flex items-center gap-2"
               >
                 Get Started <ArrowRight size={20} />
               </motion.button>
