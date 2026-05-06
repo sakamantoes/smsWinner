@@ -133,7 +133,7 @@ const Contact = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="w-full py-3 bg-gradient-to-r from-red-500 to-red-700 rounded-lg font-semibold flex items-center justify-center gap-2"
+                className="w-full py-3 bg-gradient-to-r from-red-light to-red-dark rounded-lg font-semibold flex items-center justify-center gap-2"
               >
                 Send Message <Send size={18} />
               </motion.button>
