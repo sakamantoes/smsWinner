@@ -1,7 +1,7 @@
 // src/components/Contact.jsx
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Send, Phone, MessageCircle, Clock, CheckCircle, XCircle, Copy, Check, AtSign, User, Eye, EyeOff } from 'lucide-react';
+import { Mail, Send, Phone, MessageCircle, Clock, CheckCircle, XCircle, Copy, Check, AtSign, User, Eye, EyeOff, ClipboardCheck, MailCheck, Lock } from 'lucide-react';
 
 const Contact = () => {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
@@ -313,7 +313,7 @@ const Contact = () => {
             </div>
             
             <div className="mt-6 p-3 bg-green-500/5 rounded-lg border border-green-500/20 text-center">
-              <p className="text-xs text-gray-400">💡 Click any number to copy to clipboard and start chatting on WhatsApp</p>
+              <p className="text-xs flex item-center justify-center gap-1 text-gray-400"><ClipboardCheck size={16} classname='bg-white'/> <span>Click any number to copy to clipboard and start chatting on WhatsApp</span></p>
             </div>
           </motion.div>
 
@@ -398,8 +398,8 @@ const Contact = () => {
             </div>
             
             <div className="mt-6 p-3 bg-purple-500/5 rounded-lg border border-purple-500/20 text-center">
-              <p className="text-xs text-gray-400">📧 Real-time email updates - New emails appear automatically every 20 seconds</p>
-              <p className="text-xs text-gray-500 mt-1">🔒 Emails are masked for privacy - Click 👁️ to view full email</p>
+              <p className="text-xs text-gray-400 flex item-center justify-center gap-1"><MailCheck size={16}/> <span>Real-time email updates - New emails appear automatically every 20 seconds</span> </p>
+              <p className="text-xs text-gray-500 mt-1 flex item-center justify-center gap-1"><Lock size={16} /> <span>Emails are masked for privacy</span> Click to view full email</p>
             </div>
           </motion.div>
         </div>
