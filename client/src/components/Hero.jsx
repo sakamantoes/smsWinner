@@ -28,7 +28,7 @@ const Hero = () => {
               transition={{ delay: 0.2 }}
               className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight"
             >
-              <span>Premium Virtual Numbers</span>
+              <span> Own Premium Virtual Numbers</span>
               <br />
               <span
                 className="
