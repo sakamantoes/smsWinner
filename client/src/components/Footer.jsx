@@ -45,7 +45,7 @@ const Footer = () => {
         
         <div className="border-t border-red-500/20 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm">
-            © 2024 Smswinners. All rights reserved.
+            © 2026 Smswinners. All rights reserved.
           </p>
           <motion.button
             whileHover={{ y: -3 }}

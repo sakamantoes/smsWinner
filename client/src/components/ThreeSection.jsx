@@ -88,9 +88,9 @@ export default function ThreeSection() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-4xl md:text-5xl font-bold"
+          className="text-4xl md:text-6xl font-bold"
         >
-          Global <span className="text-red-500">Connectivity</span> Visualized
+          Global <span className="text-red-light">Connectivity</span> Visualized
         </motion.h2>
         <motion.p
           initial={{ opacity: 0, y: 30 }}
