@@ -1,30 +1,36 @@
 import { verifyToken } from "../utils/jwttoken.js";
+import User from "../model/User.js";
 
-// Authentication Middleware
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
-    // Get token from cookie or Authorization header
-    const token =
-      req.cookies.authToken || req.headers.authorization?.split(" ")[1];
+    const token = req.cookies.smsWinnerToken;
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "No token provided. Authentication required.",
-      });
+      const error = new Error("No token provided. Authentication required")
+      error.statusCode = 401 
+      throw error;
     }
 
     // Verify token
     const decoded = verifyToken(token);
 
+    // if a user of our platform
+    const findUser = await User.findOne({
+      email: decoded.email
+    })
+
+    if(!findUser){
+      const error = new Error("unauthorized")
+      error.statusCode = 400 
+      throw error;
+    }
+
     // Attach user info to request
-    req.user = decoded;
+    req.user = findUser;
     next();
   } catch (error) {
-    res.status(401).json({
-      success: false,
-      message: error.message || "Invalid or expired token",
-    });
+    console.log("auth middleware error:", error)
+    next(error)
   }
 };
 
