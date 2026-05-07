@@ -10,7 +10,7 @@ import Testimonials from '../components/Testimonials';
 import Contact from '../components/Contact';
 import Footer from '../components/Footer';
 import { motion } from 'framer-motion';
-import FloatingWhatsApp from '../components/FloatingWhatsApp';
+import FloatingChat from '../components/FloatingChat';
 
 function App() {
   // Add smooth scroll behavior for anchor links
@@ -59,7 +59,7 @@ function App() {
       <Testimonials />
       <section id="contact"><Contact /></section>
       <Footer />
-      <FloatingWhatsApp />
+      <FloatingChat />
     </div>
   );
 }
