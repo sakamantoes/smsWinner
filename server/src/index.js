@@ -3,7 +3,7 @@ import { env } from "./config/constant.js";
 import { disconnectDb } from "./config/db.js";
 
 app.listen(env.port, () => {
-  console.log("server running on port: http://localhost:",env.port);
+  console.log(`server running on port:http://localhost:${env.port}`);
 });
 
 process.on("unhandledRejection", async (err) => {
