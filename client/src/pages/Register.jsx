@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { User, Mail, Lock, Eye, EyeOff, ArrowRight,CheckCircle, XCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaGoogle } from 'react-icons/fa';
+import imageObject from '../utils/image';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -163,9 +164,9 @@ const Register = () => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="mx-auto w-20 h-20 bg-gradient-to-br from-red-500 to-red-700 rounded-2xl flex items-center justify-center mb-6 shadow-xl"
+            className="mx-auto w-20 h-20 bg-gradient-to-br from-white to-white rounded-2xl flex items-center justify-center mb-6 shadow-xl"
           >
-            <span className="text-3xl font-bold text-white">S</span>
+            <img src={imageObject.Logo} alt="Logo" className="w-20 h-20 rounded-full" />
           </motion.div>
           <h2 className="text-3xl font-bold text-white">Create Account</h2>
           <p className="mt-2 text-gray-400">Join Smswinners today</p>
