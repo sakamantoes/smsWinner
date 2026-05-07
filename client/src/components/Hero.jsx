@@ -71,6 +71,7 @@ const Hero = () => {
                 Get Started <ArrowRight size={20} />
               </motion.button> </Link>
               
+              <Link to='#services'>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -78,6 +79,7 @@ const Hero = () => {
               >
                 <Play size={20} /> View Services
               </motion.button>
+              </Link>
             </motion.div>
 
             {/* Stats */}
