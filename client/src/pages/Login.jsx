@@ -1,10 +1,10 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Shield } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaGoogle } from 'react-icons/fa';
 import imageObject from '../utils/image';
+import GoogleButton from '../components/GoogleButton.jsx';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -53,12 +53,6 @@ const Login = () => {
       const data = await response.json();
       
       if (response.ok) {
-        // Store token and user data
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        if (formData.rememberMe) {
-          localStorage.setItem('rememberMe', 'true');
-        }
         navigate('/dashboard');
       } else {
         setError(data.message || 'Invalid email or password');
@@ -68,12 +62,6 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGoogleAuth = async () => {
-    setLoading(true);
-    // Redirect to Google OAuth endpoint
-    window.location.href = 'YOUR_API_URL/auth/google';
   };
 
   return (
@@ -208,15 +196,9 @@ const Login = () => {
           </div>
 
           {/* Google Auth Button */}
-          <motion.button
-            onClick={handleGoogleAuth}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full py-3 bg-white/5 border border-white/10 rounded-lg font-semibold text-white hover:bg-white/10 transition-all flex items-center justify-center gap-3"
-          >
-            <FaGoogle size={20} />
-            Continue with Google
-          </motion.button>
+          <div className="flex justify-center">
+            <GoogleButton />
+          </div>
 
           {/* Register Link */}
           <p className="text-center text-gray-400">

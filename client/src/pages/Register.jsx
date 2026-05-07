@@ -123,9 +123,6 @@ const Register = () => {
       const data = await response.json();
       
       if (response.ok) {
-        // Store token or user data
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
         navigate('/dashboard');
       } else {
         setErrors({ submit: data.message || 'Registration failed' });
