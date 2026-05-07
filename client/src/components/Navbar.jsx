@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
+import imageObject from "../utils/image";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -75,101 +76,7 @@ const Navbar = () => {
                   }}
                   className="w-8 h-8"
                 >
-                  <svg
-                    viewBox="0 0 100 100"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-full h-full"
-                  >
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="45"
-                      stroke="#dc2626"
-                      strokeWidth="3"
-                      fill="none"
-                    />
-                    <ellipse
-                      cx="50"
-                      cy="50"
-                      rx="45"
-                      ry="15"
-                      stroke="#dc2626"
-                      strokeWidth="2"
-                      fill="none"
-                    />
-                    <ellipse
-                      cx="50"
-                      cy="30"
-                      rx="38"
-                      ry="10"
-                      stroke="#ef4444"
-                      strokeWidth="1.5"
-                      fill="none"
-                    />
-                    <ellipse
-                      cx="50"
-                      cy="70"
-                      rx="38"
-                      ry="10"
-                      stroke="#ef4444"
-                      strokeWidth="1.5"
-                      fill="none"
-                    />
-                    <ellipse
-                      cx="50"
-                      cy="50"
-                      rx="15"
-                      ry="45"
-                      stroke="#dc2626"
-                      strokeWidth="2"
-                      fill="none"
-                    />
-                    <ellipse
-                      cx="30"
-                      cy="50"
-                      rx="8"
-                      ry="45"
-                      stroke="#ef4444"
-                      strokeWidth="1.5"
-                      fill="none"
-                    />
-                    <ellipse
-                      cx="70"
-                      cy="50"
-                      rx="8"
-                      ry="45"
-                      stroke="#ef4444"
-                      strokeWidth="1.5"
-                      fill="none"
-                    />
-                    <path
-                      d="M35,35 Q40,30 45,35 Q50,40 48,48 Q45,55 38,52 Q32,48 35,35Z"
-                      fill="#dc2626"
-                      opacity="0.4"
-                    />
-                    <path
-                      d="M60,40 Q65,35 70,40 Q75,48 68,55 Q62,58 58,52 Q55,45 60,40Z"
-                      fill="#ef4444"
-                      opacity="0.4"
-                    />
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="48"
-                      stroke="#dc2626"
-                      strokeWidth="1"
-                      strokeOpacity="0.3"
-                      fill="none"
-                    >
-                      <animate
-                        attributeName="r"
-                        values="48;52;48"
-                        dur="2s"
-                        repeatCount="indefinite"
-                      />
-                    </circle>
-                  </svg>
+                   <img src={imageObject.Logo} alt="Logo" className="w-8 h-8 rounded-full" />
                 </motion.div>
 
                 <motion.div
