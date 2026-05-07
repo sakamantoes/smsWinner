@@ -138,8 +138,8 @@ const FloatingChat = () => {
               {/* Header */}
               <div className="bg-gradient-to-r from-red-light to-orange-500 p-5 flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-14 h-12 rounded-full bg-white flex items-center justify-center shadow-lg">
-                    <FaHeadset className="text-red-500 text-3xl" />
+                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg">
+                    <FaHeadset className="text-red-light text-3xl" />
                   </div>
                   <span className="absolute bottom-1 right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white animate-pulse" />
                 </div>
