@@ -7,9 +7,8 @@ const googleSetup = async (req, res, next) => {
   const { token } = req.body;
   try {
     if (!token) {
-      return res.status(400).json({
-        message: "Token missing",
-      });
+      res.statusCode(400)
+      throw new Error("missing token")
     }
 
     // Verify Google token
@@ -21,9 +20,8 @@ const googleSetup = async (req, res, next) => {
     const payload = ticket.getPayload();
 
     if (!payload) {
-      return res.status(401).json({
-        message: "Invalid token",
-      });
+      res.statusCode(401)
+      throw new Error("invaild token")
     }
 
     const { email, name, sub } = payload;
