@@ -86,7 +86,7 @@ const FloatingChat = () => {
           
           {/* Customer Support Badge */}
           <div className="absolute -top-2 -right-2 bg-white rounded-full px-2 py-0.5 shadow-lg">
-            <span className="text-xs font-bold text-red-500">CS</span>
+            <span className="text-xs font-bold text-red-light">CS</span>
           </div>
         </motion.button>
       </motion.div>
