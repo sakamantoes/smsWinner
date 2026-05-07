@@ -187,43 +187,7 @@ const Navbar = () => {
                       }}
                       className="w-12 h-12"
                     >
-                      <svg
-                        viewBox="0 0 100 100"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <circle
-                          cx="50"
-                          cy="50"
-                          r="45"
-                          stroke="#dc2626"
-                          strokeWidth="3"
-                          fill="none"
-                        />
-                        <ellipse
-                          cx="50"
-                          cy="50"
-                          rx="45"
-                          ry="15"
-                          stroke="#dc2626"
-                          strokeWidth="2"
-                          fill="none"
-                        />
-                        <ellipse
-                          cx="50"
-                          cy="50"
-                          rx="15"
-                          ry="45"
-                          stroke="#dc2626"
-                          strokeWidth="2"
-                          fill="none"
-                        />
-                        <path
-                          d="M35,35 Q40,30 45,35 Q50,40 48,48 Q45,55 38,52 Q32,48 35,35Z"
-                          fill="#dc2626"
-                          opacity="0.4"
-                        />
-                      </svg>
+                     <img src={imageObject.Logo} alt="Logo" className="rounded-full " />
                     </motion.div>
                   </div>
                   <h2 className="text-3xl font-bold bg-gradient-to-r from-red-light to-red-dark bg-clip-text text-transparent">
