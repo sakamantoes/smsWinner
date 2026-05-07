@@ -3,6 +3,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Play } from "lucide-react";
 import Hero3DPhone from "./Hero3DPhone";
+import { Link } from "react-router-dom";
 
 const Hero = () => {
   return (
@@ -62,13 +63,15 @@ const Hero = () => {
               transition={{ delay: 0.6 }}
               className="mt-10 flex flex-wrap gap-4"
             >
-              <motion.button
+              <Link to='/signup'><motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="px-8 py-4 bg-gradient-to-r from-red-500 to-red-700 rounded-lg font-semibold text-white border-white border shadow-lg shadow-red-500/30 flex items-center gap-2"
               >
                 Get Started <ArrowRight size={20} />
-              </motion.button>
+              </motion.button> </Link>
+              
+              <Link to='#services'>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -76,6 +79,7 @@ const Hero = () => {
               >
                 <Play size={20} /> View Services
               </motion.button>
+              </Link>
             </motion.div>
 
             {/* Stats */}
