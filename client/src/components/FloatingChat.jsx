@@ -11,6 +11,7 @@ const FloatingChat = () => {
   const whatsappNumber = "09074705972";
   const whatsappMessage = "Hello! I'm interested in Smswinners services.";
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+  const whatsappGroupUrl = "https://chat.whatsapp.com/BPXIzzwuftU4f3ZTCPRhuj";
 
   // Telegram Configuration
   const telegramUsername = "SmswinnersSupport"; // Your Telegram username
@@ -20,7 +21,7 @@ const FloatingChat = () => {
   const telegramPhoneUrl = `https://t.me/+${telegramNumber}`;
 
   const handleWhatsApp = () => {
-    window.open(whatsappUrl, "_blank");
+    window.open(whatsappGroupUrl, "_blank");
     setIsOpen(false);
     setShowOptions(false);
   };
@@ -200,8 +201,8 @@ const FloatingChat = () => {
                       <FaWhatsapp className="text-green-500 text-2xl" />
                     </div>
                     <div className="flex-1 text-left">
-                      <h4 className="text-white font-semibold">WhatsApp</h4>
-                      <p className="text-gray-400 text-sm">Fast replies within minutes</p>
+                      <h4 className="text-white font-semibold">WhatsApp Group</h4>
+                      <p className="text-gray-400 text-sm">Join our community & get support</p>
                     </div>
                     <span className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity">
                       →
