@@ -1,18 +1,10 @@
 import Log from "../models/Log.js";
 import { maskEmail, maskPassword } from "../utils/maskDate.js";
 
-
-// ================================
-// ADMIN CREATE LOG
-// ================================
+// create log
 const createLog = async (req, res) => {
   try {
-    const {
-      email,
-      password,
-      price,
-      country,
-    } = req.body;
+    const { email, password, price, country } = req.body;
 
     const log = await Log.create({
       email,
@@ -27,18 +19,11 @@ const createLog = async (req, res) => {
       log,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+   next(error);
   }
 };
 
-
-
-// ================================
-// GET ALL UNSOLD LOGS (MASKED)
-// ================================
+// get all logs
 const getLogs = async (req, res) => {
   try {
     const logs = await Log.find({ sold: false });
@@ -58,18 +43,11 @@ const getLogs = async (req, res) => {
       logs: maskedLogs,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+   next(error);
   }
 };
 
-
-
-// ================================
-// BUY LOG
-// ================================
+// buy log
 const buyLog = async (req, res) => {
   try {
     const { id } = req.params;
@@ -80,39 +58,34 @@ const buyLog = async (req, res) => {
     const log = await Log.findById(id);
 
     if (!log) {
-      return res.status(404).json({
-        success: false,
-        message: "Log not found",
-      });
+     res.statusCode = 400;
+     throw new Error("Log not found");
     }
 
     if (log.sold) {
-      return res.status(400).json({
-        success: false,
-        message: "Log already sold",
-      });
+        res.statusCode = 400;
+        throw new Error("Log already sold");
     }
 
-    // ================================
-    // MARK AS SOLD
-    // ================================
+//   mark as sold
     log.sold = true;
     log.soldTo = userId;
     log.purchasedAt = new Date();
 
     await log.save();
 
-    // ================================
-    // AUTO DELETE AFTER 24 HOURS
-    // ================================
-    setTimeout(async () => {
-      try {
-        await Log.findByIdAndDelete(log._id);
-        console.log("Sold log auto deleted");
-      } catch (err) {
-        console.log(err.message);
-      }
-    }, 24 * 60 * 60 * 1000);
+//    auto delete after 24 hours
+    setTimeout(
+      async () => {
+        try {
+          await Log.findByIdAndDelete(log._id);
+          console.log("Sold log auto deleted");
+        } catch (err) {
+            console.error("Error auto deleting log:", err.message);
+        }
+      },
+      24 * 60 * 60 * 1000,
+    );
 
     res.status(200).json({
       success: true,
@@ -125,36 +98,22 @@ const buyLog = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+   next(error);
   }
 };
 
-
-
-// ================================
-// UPDATE LOG
-// ================================
+// update log
 const updateLog = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const {
-      email,
-      password,
-      price,
-      country,
-    } = req.body;
+    const { email, password, price, country } = req.body;
 
     const log = await Log.findById(id);
 
     if (!log) {
-      return res.status(404).json({
-        success: false,
-        message: "Log not found",
-      });
+    res.statusCode = 400;
+    throw new Error("Log not found");
     }
 
     log.email = email || log.email;
@@ -170,18 +129,11 @@ const updateLog = async (req, res) => {
       log,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-
-
-// ================================
-// DELETE LOG MANUALLY
-// ================================
+// delete log
 const deleteLog = async (req, res) => {
   try {
     const { id } = req.params;
@@ -189,10 +141,8 @@ const deleteLog = async (req, res) => {
     const log = await Log.findById(id);
 
     if (!log) {
-      return res.status(404).json({
-        success: false,
-        message: "Log not found",
-      });
+      res.statusCode = 400;
+      throw new Error("Log not found");
     }
 
     await log.deleteOne();
@@ -202,18 +152,11 @@ const deleteLog = async (req, res) => {
       message: "Log deleted successfully",
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  next(error);
   }
 };
 
-
-
-// ================================
-// USER PURCHASE HISTORY
-// ================================
+// get my purchased logs
 const myPurchasedLogs = async (req, res) => {
   try {
     const logs = await Log.find({
@@ -225,21 +168,8 @@ const myPurchasedLogs = async (req, res) => {
       logs,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+   next(error);
   }
 };
 
-
-
-
-module.exports = {
-  createLog,
-  getLogs,
-  buyLog,
-  updateLog,
-  deleteLog,
-  myPurchasedLogs,
-};
+export { createLog, getLogs, buyLog, updateLog, deleteLog, myPurchasedLogs };
