@@ -9,7 +9,7 @@ import {
   updateLog,
   deleteLog,
   myPurchasedLogs,
-} from "../controllers/logs.js";
+} from "../controller/logs.js";
 
 import { logSchema } from "../validator/auth.validator.js";
 
