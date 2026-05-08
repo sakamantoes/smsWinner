@@ -11,3 +11,15 @@ export const getAuthUser = async () => {
 
   return res.data;
 };
+
+export const login = async (data) => {
+  const res = await api.post("/auth/login", data);
+
+  return res;
+};
+
+export const signup = async (data) => {
+  const res = await api.post("/auth/signup", data);
+
+  return res;
+};

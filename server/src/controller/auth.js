@@ -53,6 +53,7 @@ const googleSetup = async (req, res, next) => {
     setAuthCookie(res, jwtToken);
 
     res.status(201).json({
+      status: 201,
       success: true,
       message: "You're Google registration was successful",
     });
@@ -71,8 +72,9 @@ const getAuthUser = async (req, res, next) => {
     }
 
     res.status(200).json({
+      status: 200,
       success: true,
-      user: {
+      data: {
         id: user._id,
         email: user.email,
         username: user.username,
@@ -98,7 +100,7 @@ const emailSignup = async (req, res, next) => {
 
     const hashedPassword = await hashPassword(password);
     const user = await User.create({
-      email: normalizedEmail,
+      email: email,
       username,
       password: hashedPassword,
     });
@@ -112,6 +114,7 @@ const emailSignup = async (req, res, next) => {
     setAuthCookie(res, jwtToken);
 
     res.status(201).json({
+      status: 201,
       success: true,
       message: "Registration successful",
     });
@@ -146,6 +149,7 @@ const emailLogin = async (req, res, next) => {
     setAuthCookie(res, jwtToken);
 
     res.status(200).json({
+      status: 200,
       success: true,
       message: "Login successful",
     });

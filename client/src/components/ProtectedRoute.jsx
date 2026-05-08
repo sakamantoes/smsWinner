@@ -1,24 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { getAuthUser } from "../service/auth.js";
+import useAuth from "../store/useAuth.js";
 
-export default function ProtectedRoute({ role }) {
-  const [status, setStatus] = useState("checking");
-  const [user, setUser] = useState(null);
+export default function ProtectedRoute({ role, children }) {
+  const { user, status, setStatus, setAuthUser, clearAuth } = useAuth();
 
   useEffect(() => {
     const checkUser = async () => {
+      setStatus("checking");
       try {
         const res = await getAuthUser();
-        setUser(res.data);
-        setStatus("authenticated");
-      } catch {
-        setStatus("unauthenticated");
+
+        if (res.status === 200 || res.status === 201) {
+          setAuthUser(res.data);
+          return;
+        }
+
+        clearAuth();
+      } catch (error) {
+        console.error("fetching user data: ", error);
+        clearAuth();
       }
     };
 
     checkUser();
-  }, []);
+  }, [clearAuth, setAuthUser, setStatus]);
 
   if (status === "checking") {
     return null;
@@ -32,5 +39,5 @@ export default function ProtectedRoute({ role }) {
     return <Navigate to="/login" replace />;
   }
 
-  return <Outlet />;
+  return children || <Outlet />;
 }
