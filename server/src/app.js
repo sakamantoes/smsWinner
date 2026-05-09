@@ -4,6 +4,7 @@ import errorHandle from "./middleware/errorHandler.js";
 import morgan from "morgan";
 import authRoutes from "./routes/auth.js";
 import logsRoutes from "./routes/logs.js";
+import otpRoutes from "./routes/otpRoutes.js";
 import cors from "cors";
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(cors());
 // routes
 app.use("/auth", authRoutes);
 app.use('/logs', logsRoutes);
+app.use('/otp', otpRoutes);
 // database connection
 connectDB();
 

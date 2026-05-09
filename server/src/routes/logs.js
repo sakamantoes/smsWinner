@@ -9,14 +9,14 @@ import {
   updateLog,
   deleteLog,
   myPurchasedLogs
-} from "../controllers/logs.js";
-import { logSchema } from "../validator/auth.validator.js";
+} from "../controller/logs.js";
+import validateLog from '../validator/log.validator.js'
 import { validateData } from "../validator/validator.js";
 import authMiddleware, { validateAdminRole, validateUserRole } from "../middleware/authMiddleware.js";
 
 
 // CREATE
-router.post("/create", logSchema, validateData, authMiddleware, validateAdminRole, createLog);
+router.post("/create", validateLog, validateData, authMiddleware, validateAdminRole, createLog);
 
 // GET ALL
 router.get("/", validateData, authMiddleware, getLogs);
@@ -25,7 +25,7 @@ router.get("/", validateData, authMiddleware, getLogs);
 router.post("/buy/:id", validateData, authMiddleware, validateUserRole, buyLog);
 
 // UPDATE
-router.put("/update/:id",logSchema, validateData, authMiddleware,validateAdminRole, updateLog);
+router.put("/update/:id",validateLog, validateData, authMiddleware,validateAdminRole, updateLog);
 
 // DELETE
 router.delete("/delete/:id",authMiddleware, validateAdminRole, deleteLog);
