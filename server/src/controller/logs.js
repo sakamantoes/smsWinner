@@ -2,7 +2,7 @@ import Log from "../model/Logs.js";
 import { maskEmail, maskPassword } from "../utils/maskDate.js";
 
 // create log
-const createLog = async (req, res) => {
+const createLog = async (req, res, next) => {
   try {
     const { email, password, price, country } = req.body;
 
@@ -19,12 +19,12 @@ const createLog = async (req, res) => {
       log,
     });
   } catch (error) {
-   next(error);
+    next(error);
   }
 };
 
 // get all logs
-const getLogs = async (req, res) => {
+const getLogs = async (req, res, next) => {
   try {
     const logs = await Log.find({ sold: false });
 
@@ -43,12 +43,12 @@ const getLogs = async (req, res) => {
       logs: maskedLogs,
     });
   } catch (error) {
-   next(error);
+    next(error);
   }
 };
 
 // buy log
-const buyLog = async (req, res) => {
+const buyLog = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -58,30 +58,30 @@ const buyLog = async (req, res) => {
     const log = await Log.findById(id);
 
     if (!log) {
-     res.statusCode = 400;
-     throw new Error("Log not found");
+      res.statusCode = 400;
+      throw new Error("Log not found");
     }
 
     if (log.sold) {
-        res.statusCode = 400;
-        throw new Error("Log already sold");
+      res.statusCode = 400;
+      throw new Error("Log already sold");
     }
 
-//   mark as sold
+    //   mark as sold
     log.sold = true;
     log.soldTo = userId;
     log.purchasedAt = new Date();
 
     await log.save();
 
-//    auto delete after 24 hours
+    //    auto delete after 24 hours
     setTimeout(
       async () => {
         try {
           await Log.findByIdAndDelete(log._id);
           console.log("Sold log auto deleted");
         } catch (err) {
-            console.error("Error auto deleting log:", err.message);
+          console.error("Error auto deleting log:", err.message);
         }
       },
       24 * 60 * 60 * 1000,
@@ -98,12 +98,12 @@ const buyLog = async (req, res) => {
       },
     });
   } catch (error) {
-   next(error);
+    next(error);
   }
 };
 
 // update log
-const updateLog = async (req, res) => {
+const updateLog = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -112,8 +112,8 @@ const updateLog = async (req, res) => {
     const log = await Log.findById(id);
 
     if (!log) {
-    res.statusCode = 400;
-    throw new Error("Log not found");
+      res.statusCode = 400;
+      throw new Error("Log not found");
     }
 
     log.email = email || log.email;
@@ -134,7 +134,7 @@ const updateLog = async (req, res) => {
 };
 
 // delete log
-const deleteLog = async (req, res) => {
+const deleteLog = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -152,12 +152,12 @@ const deleteLog = async (req, res) => {
       message: "Log deleted successfully",
     });
   } catch (error) {
-  next(error);
+    next(error);
   }
 };
 
 // get my purchased logs
-const myPurchasedLogs = async (req, res) => {
+const myPurchasedLogs = async (req, res, next) => {
   try {
     const logs = await Log.find({
       soldTo: req.user._id,
@@ -168,7 +168,7 @@ const myPurchasedLogs = async (req, res) => {
       logs,
     });
   } catch (error) {
-   next(error);
+    next(error);
   }
 };
 

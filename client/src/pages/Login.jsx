@@ -1,64 +1,58 @@
 // src/pages/Login.jsx
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import imageObject from '../utils/image';
-import GoogleButton from '../components/GoogleButton.jsx';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import imageObject from "../utils/image";
+import GoogleButton from "../components/GoogleButton.jsx";
+import { login } from "../service/auth.js";
+import { toast } from "react-toastify";
 
 const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    rememberMe: false
+    email: "",
+    password: "",
+    rememberMe: false,
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     });
-    if (error) setError('');
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.email || !formData.password) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
-    
+
     setLoading(true);
-    
+
     // Simulate API call
     try {
       // Replace with your actual API endpoint
-      const response = await fetch('YOUR_API_URL/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
-        navigate('/dashboard');
+      const response = await login(formData);
+
+      if (response.status === 200 || response.status === 201) {
+        navigate("/f/dashboard", { replace: true });
       } else {
-        setError(data.message || 'Invalid email or password');
+        toast.error(response.data.message || "Invalid Credentials");
+        setError(response.data.message || "Invalid Credentials");
       }
     } catch (error) {
-      setError('Network error. Please try again.');
+      console.error("login error: ", error);
+      toast.error(error.message || "Something Went Wrong");
+      setError(error.message || "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -87,7 +81,11 @@ const Login = () => {
             transition={{ duration: 0.5 }}
             className="mx-auto w-20 h-20 bg-gradient-to-br from-white to-white rounded-2xl flex items-center justify-center mb-6 shadow-xl"
           >
-            <img src={imageObject.Logo} alt="Logo" className="w-20 h-20 rounded-full" />
+            <img
+              src={imageObject.Logo}
+              alt="Logo"
+              className="w-20 h-20 rounded-full"
+            />
           </motion.div>
           <h2 className="text-3xl font-bold text-white">Welcome Back</h2>
           <p className="mt-2 text-gray-400">Sign in to your account</p>
@@ -156,7 +154,10 @@ const Login = () => {
                 />
                 <span className="text-sm text-gray-400">Remember me</span>
               </label>
-              <Link to="/forgot-password" className="text-sm text-red-500 hover:text-red-400 transition-colors">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-red-500 hover:text-red-400 transition-colors"
+              >
                 Forgot password?
               </Link>
             </div>
@@ -191,7 +192,9 @@ const Login = () => {
               <div className="w-full border-t border-white/10"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-transparent text-gray-400">Or continue with</span>
+              <span className="px-2 bg-transparent text-gray-400">
+                Or continue with
+              </span>
             </div>
           </div>
 
@@ -202,8 +205,11 @@ const Login = () => {
 
           {/* Register Link */}
           <p className="text-center text-gray-400">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-red-500 hover:text-red-400 font-semibold transition-colors">
+            Don't have an account?{" "}
+            <Link
+              to="/signup"
+              className="text-red-500 hover:text-red-400 font-semibold transition-colors"
+            >
               Create one
             </Link>
           </p>

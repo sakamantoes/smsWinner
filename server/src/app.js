@@ -6,13 +6,20 @@ import authRoutes from "./routes/auth.js";
 import logsRoutes from "./routes/logs.js";
 import otpRoutes from "./routes/otpRoutes.js";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "https://sms-winner.vercel.app"],
+    credentials: true,
+  }),
+);
+app.use(cookieParser());
 
 // routes
 app.use("/auth", authRoutes);

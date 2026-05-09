@@ -11,6 +11,8 @@ const authMiddleware = async (req, res, next) => {
       throw error;
     }
 
+    console.log("token: ", token)
+
     // Verify token
     const decoded = verifyToken(token);
 
