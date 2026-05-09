@@ -1,4 +1,4 @@
-import Log from "../models/Log.js";
+import Log from "../model/Logs.js";
 import { maskEmail, maskPassword } from "../utils/maskDate.js";
 
 // create log
