@@ -119,15 +119,18 @@ const Register = () => {
     // Simulate API call
     try {
       // Replace with your actual API endpoint
-      const response = await signup(data);
+      const response = await signup(formData);
 
       if (response.status === 200 || response.status === 201) {
-        navigate("/dashboard");
+        navigate("/f/dashboard", { replace: true });
       } else {
         setErrors({ submit: response.data.message || "Registration failed" });
       }
     } catch (error) {
-      setErrors({ submit: "Network error. Please try again." });
+      console.error("registration erorr: ", error);
+      setErrors({
+        submit: error.message || "Network error. Please try again.",
+      });
     } finally {
       setLoading(false);
     }

@@ -20,6 +20,7 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       window.location.href = "/login";
     }
+    console.log("global error:", error)
     return Promise.reject(error);
   },
 );
