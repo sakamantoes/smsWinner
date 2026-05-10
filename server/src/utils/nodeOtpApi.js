@@ -1,12 +1,12 @@
 import axios from 'axios';
-import dotenv from 'dotenv';
+import { env } from '../config/constant.js';
 
-dotenv.config()
+const API_KEY = env.nodeApiKey;
 
 const nodeApi = axios.create({
     baseURL:  "https://nodeotp.com/api/v1",
     headers: {
-        "Authorization": `Bearer ${process.env.NODEOTP_API_KEY}`,
+        "Authorization": `Bearer ${API_KEY}`,
         "Content-Type": "application/json",
     },
 })
