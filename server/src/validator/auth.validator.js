@@ -17,8 +17,6 @@ const loginSchema = [
 
 const googleSchema = [body("token").notEmpty().withMessage("missing token")];
 
-<<<<<<< HEAD
-=======
 const logSchema = [
   body("email")
     .isEmail()
@@ -36,6 +34,5 @@ const logSchema = [
     .notEmpty()
     .withMessage("Country is required"),
 ];
->>>>>>> 895fac904769d18821b1eb38e33e3a5c297775f1
 
-export { registerSchema, loginSchema, googleSchema };
+export { registerSchema, loginSchema, googleSchema, logSchema };
