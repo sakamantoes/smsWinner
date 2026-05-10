@@ -1,4 +1,4 @@
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import PaymentModal from "../../components/PaymentModal.jsx";
 import AlatPayment from "../../components/payment/AlatPayment.jsx";
 import ManualTransferPayment from "../../components/payment/ManualTransferPayment.jsx";
@@ -6,7 +6,6 @@ import SquadPayment from "../../components/payment/SquadPayment.jsx";
 
 export default function FundAccount() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const paymentMethod = searchParams.get("paymentMethod");

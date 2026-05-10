@@ -1,24 +1,45 @@
-import { ArrowLeft, ArrowRight, Landmark } from "lucide-react";
+import { ArrowLeft, ArrowRight, Landmark, Loader } from "lucide-react";
 import { useState } from "react";
+import { toast } from "react-toastify";
+import { initializeSquadPayment } from "../../service/payment.js";
 
 const inputClass =
   "mt-2 h-12 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none transition-colors placeholder:text-gray-600 focus:border-red-light/60";
 
-export default function SquadPayment({ amount = "", onBack}) {
+export default function SquadPayment({ amount = "", onBack }) {
   const [formData, setFormData] = useState({
-    email: "",
-    phone: "",
     amount,
   });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((current) => ({ ...current, [name]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
+    const squadData = {
+      amount: Number(formData.amount),
+      paymentMethod: "SQUAD",
+    };
+
+    // Call the API to initialize Squad payment
+    setLoading(true);
+
+    try {
+      const response = await initializeSquadPayment(squadData);
+      console.log("Squad Payment Response: ", response);
+      window.location.href = response.data;
+    } catch (error) {
+      console.error("Error initializing Squad payment: ", error);
+      toast.error(
+        error.message || "Failed to initiate Squad payment. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,7 +71,7 @@ export default function SquadPayment({ amount = "", onBack}) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 p-5">
-          <label className="block">
+          {/* <label className="block">
             <span className="text-sm font-semibold text-gray-300">Email</span>
             <input
               name="email"
@@ -76,7 +97,7 @@ export default function SquadPayment({ amount = "", onBack}) {
               required
               className={inputClass}
             />
-          </label>
+          </label> */}
 
           <label className="block">
             <span className="text-sm font-semibold text-gray-300">Amount</span>
@@ -93,10 +114,15 @@ export default function SquadPayment({ amount = "", onBack}) {
 
           <button
             type="submit"
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-red-dark px-4 text-sm font-bold text-white transition-colors hover:bg-red"
+            disabled={loading}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-red-dark px-4 text-sm font-bold text-white transition-colors hover:bg-red disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-gray-500"
           >
-            Proceed with Squad
-            <ArrowRight size={17} />
+            <span>Proceed with Squad</span>
+            {loading ? (
+              <Loader size={16} className="animate-spin text-white" />
+            ) : (
+              <ArrowRight size={17} />
+            )}
           </button>
         </form>
       </div>

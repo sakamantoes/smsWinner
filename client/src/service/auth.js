@@ -23,3 +23,10 @@ export const signup = async (data) => {
 
   return res.data;
 };
+
+
+export const VerifyCallback = async (data) => {
+  const res = await api.post("/payment/callback", data);
+
+  return res.data;
+}

@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, query } from "express-validator";
 
 export const initialiseDepositValidator = [
   body("amount")
@@ -6,19 +6,16 @@ export const initialiseDepositValidator = [
     .withMessage("Amount must be a number")
     .notEmpty()
     .withMessage("Amount is required"),
-  body("transactionId")
-    .isString()
-    .withMessage("Transaction ID must be a string")
-    .notEmpty()
-    .withMessage("Transaction ID is required"),
-  body("referenceId")
-    .isString()
-    .withMessage("Reference ID must be a string")
-    .notEmpty()
-    .withMessage("Reference ID is required"),
   body("paymentMethod")
-    .isString()
-    .withMessage("Payment method must be a string")
-    .notEmpty()
-    .withMessage("Payment method is required"),
+    .isIn(["SQUAD", "ALAT", "MANUAL_TRANSFER"])
+    .withMessage("Payment method must be one of: SQUAD, ALAT, MANUAL_TRANSFER")
+    .notEmpty(),
+];
+
+export const callbackUrlValidator = [
+  body("referenceId").notEmpty().withMessage("Reference ID is required"),
+];
+
+export const paymentStatusValidator = [
+  query("referenceId").notEmpty().withMessage("Reference ID is required"),
 ];
