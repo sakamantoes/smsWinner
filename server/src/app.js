@@ -4,6 +4,7 @@ import errorHandle from "./middleware/errorHandler.js";
 import morgan from "morgan";
 import authRoutes from "./routes/auth.js";
 import logsRoutes from "./routes/logs.js";
+import paymentRoutes from "./routes/payment.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
@@ -22,7 +23,10 @@ app.use(cookieParser());
 
 // routes
 app.use("/auth", authRoutes);
-app.use('/logs', logsRoutes);
+app.use("/logs", logsRoutes);
+app.use("/payment", paymentRoutes);
+
+
 // database connection
 connectDB();
 

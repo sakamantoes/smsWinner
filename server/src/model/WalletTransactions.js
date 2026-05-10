@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
 
 const walletTransactionSchema = new mongoose.Schema({
-  walletId: {
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "wallet",
+    ref: "User",
     require: true,
     index: true,
   },
@@ -24,11 +24,6 @@ const walletTransactionSchema = new mongoose.Schema({
   reference: {
     type: String,
     unique: true,
-  },
-
-  productId: {
-    type: String,
-    required: true,
   },
   orderId: String,
   paymentMethod: {

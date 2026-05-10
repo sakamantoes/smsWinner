@@ -1,19 +1,35 @@
 import axios from "axios";
 
-const initialiseDeposite = async (req, res, next) => {
-  const { amount } = req.body;
+const initialiseDeposit = async (req, res, next) => {
+  const { amount, transactionId, referenceId, paymentMethod } = req.body;
   const user = req.user;
   try {
-    const pay = axios.post(
-      "https://apibox.alatpay.ng/merchant-onboarding/api/v1/payment/initialize",
-      {
-        email: user.email,
-        redirectUrl: "http://localhost:5173/",
-        amount,
-        currency: 2,
-      },
-    );
+    const transaction = await WalletTransaction.create({
+      userId: user._id,
+      amount,
+      type: "DEPOSIT",
+      transactionId,
+      reference: referenceId,
+      paymentMethod,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Deposit initiated, you will be notified once it's processed",
+      data: transaction,
+    });
   } catch (error) {
     next(error);
   }
 };
+
+const webhookHandler = async (req, res, next) => {
+  const event = req.body;
+
+  {
+    try {
+    } catch (error) {}
+  }
+};
+
+export { initialiseDeposit, webhookHandler };

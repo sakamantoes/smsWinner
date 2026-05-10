@@ -13,6 +13,7 @@ import {
   Smartphone,
   Wallet,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const stats = [
   {
@@ -133,6 +134,8 @@ const quickActions = [
 ];
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       {/* ── Hero banner ── */}
@@ -155,7 +158,13 @@ export default function Dashboard() {
               purchases, and receive verification codes as they arrive.
             </p>
           </div>
-          <button className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-red-dark/40 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-500 active:bg-red-700">
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/f/fund-account", { state: { from: "/f/dashboard" } })
+            }
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-red-dark/40 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-500 active:bg-red-700"
+          >
             <Wallet size={16} />
             Fund Account
           </button>
@@ -204,6 +213,14 @@ export default function Dashboard() {
               {quickActions.map(({ label, icon: Icon }) => (
                 <button
                   key={label}
+                  type="button"
+                  onClick={() => {
+                    if (label === "Fund Account") {
+                      navigate("/f/fund-account", {
+                        state: { from: "/f/dashboard" },
+                      });
+                    }
+                  }}
                   className="flex flex-col items-center justify-center gap-2 rounded-xl border border-red-light/10 shadow-md bg-black/20 py-5 text-center transition-all hover:border-red-light/30 hover:bg-red-light/10 active:scale-105"
                 >
                   <Icon size={20} className="text-white/40" />
