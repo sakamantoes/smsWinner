@@ -299,7 +299,6 @@ const buyFromSmsActivate = async ({ country, service }) => {
 };
 
 // CANCEL SMSACTIVATE NUMBER
-
 const cancelSmsActivateNumber = async (activationId) => {
   try {
     await smsActivateApi.get("/sms.php", {
@@ -316,7 +315,6 @@ const cancelSmsActivateNumber = async (activationId) => {
 };
 
 // CANCEL NODEOTP NUMBER
-
 const cancelNodeOtpNumber = async (orderId) => {
   try {
     await nodeApi.post(`/order/${orderId}/cancel`);
@@ -327,7 +325,6 @@ const cancelNodeOtpNumber = async (orderId) => {
 };
 
 // buy number controller
-
 export const buyNumber = async (req, res, next) => {
   try {
     // Get userId from authenticated user (NOT from request body)
@@ -476,7 +473,6 @@ export const buyNumber = async (req, res, next) => {
 };
 
 // CHECK OTP STATUS
-
 export const checkOtpStatus = async (req, res, next) => {
   try {
     const { orderId } = req.params;
@@ -583,7 +579,6 @@ export const checkOtpStatus = async (req, res, next) => {
 };
 
 // CANCEL ACTIVATION
-
 export const cancelActivation = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -703,7 +698,6 @@ export const getUserBalance = async (req, res) => {
 };
 
 // GET COMPANY STATS (Admin only)
-
 export const getCompanyStats = async (req, res) => {
   try {
     const companyWallet = await CompanyWallet.findOne();
@@ -784,7 +778,6 @@ export const updateMarkup = async (req, res, next) => {
 };
 
 // GET ORDER HISTORY (User specific)
-
 export const getOrderHistory = async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -817,7 +810,6 @@ export const getOrderHistory = async (req, res) => {
 };
 
 // GET SMSACTIVATE BALANCE (Admin utility)
-
 export const getSmsActivateBalance = async (req, res) => {
   try {
     const response = await smsActivateApi.get("/sms.php", {
@@ -841,7 +833,6 @@ export const getSmsActivateBalance = async (req, res) => {
 };
 
 // GET AVAILABLE SERVICES (Utility)
-
 export const getAvailableServices = async (req, res) => {
   try {
     const response = await smsActivateApi.get("/sms.php", {
@@ -865,7 +856,6 @@ export const getAvailableServices = async (req, res) => {
 };
 
 // GET ORDER DETAILS
-
 export const getOrderDetails = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -916,5 +906,169 @@ export const getOrderDetails = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+
+// SMSACTIVATE WEBHOOK HANDLER
+export const smsActivateWebhook = async (req, res) => {
+  try {
+
+    console.log("📩 SMSACTIVATE WEBHOOK RECEIVED");
+
+    console.log(req.body);
+
+    const {
+      activationid,
+      receiver,
+      sms_code,
+      sms_body,
+      service_id,
+      service_name,
+    } = req.body;
+
+    if (!activationid) {
+      return res.status(400).json({
+        success: false,
+        message: "Activation ID missing",
+      });
+    }
+
+    const existingOrder = await OtpOrder.findOne({
+      orderId: activationid.toString(),
+      provider: "smsactivate",
+    });
+
+    if (!existingOrder) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    // SAVE OTP
+
+    if (sms_code) {
+
+      existingOrder.otpCode = sms_code;
+
+      existingOrder.smsBody = sms_body || "";
+
+      existingOrder.status = "OTP_RECEIVED";
+
+      existingOrder.completedAt = new Date();
+
+      await existingOrder.save();
+
+      console.log(
+        `✅ SMSACTIVATE OTP SAVED: ${sms_code}`
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Webhook received successfully",
+    });
+
+  } catch (error) {
+
+    console.log("❌ SMSACTIVATE WEBHOOK ERROR");
+
+    console.log(error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+};
+
+
+// NODEOTP WEBHOOK HANDLER
+export const nodeOtpWebhook = async (req, res) => {
+  try {
+    console.log("📩 NODEOTP WEBHOOK RECEIVED");
+
+    console.log(req.body);
+
+    const { success, event, data } = req.body;
+
+    if (!success || !data) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid webhook payload",
+      });
+    }
+
+    const existingOrder = await OtpOrder.findOne({
+      orderId: data.orderId.toString(),
+      provider: "nodeotp",
+    });
+
+    if (!existingOrder) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    // OTP RECEIVED
+    if (event === "otp_received") {
+
+      existingOrder.otpCode = data.code;
+      existingOrder.status = "OTP_RECEIVED";
+
+      existingOrder.smsBody = data.smsBody || "";
+
+      existingOrder.completedAt = new Date();
+
+      await existingOrder.save();
+
+      console.log(
+        `✅ OTP SAVED FOR ORDER ${existingOrder.orderId}: ${data.code}`
+      );
+    }
+
+    // ORDER CANCELLED
+    if (event === "order_cancelled") {
+
+      existingOrder.status = "CANCELLED";
+
+      await existingOrder.save();
+
+      console.log(
+        `❌ NODEOTP ORDER CANCELLED: ${existingOrder.orderId}`
+      );
+    }
+
+    // ORDER EXPIRED
+    if (event === "order_expired") {
+
+      existingOrder.status = "EXPIRED";
+
+      await existingOrder.save();
+
+      console.log(
+        `⌛ NODEOTP ORDER EXPIRED: ${existingOrder.orderId}`
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Webhook received successfully",
+    });
+
+  } catch (error) {
+
+    console.log("❌ NODEOTP WEBHOOK ERROR");
+
+    console.log(error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
   }
 };

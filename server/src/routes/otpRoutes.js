@@ -11,22 +11,30 @@ import {
   getAvailableServices,
   getOrderDetails,
   updateMarkup,
+  nodeOtpWebhook,
+  smsActivateWebhook,
 } from "../controller/otpController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { validateAdminRole } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Routes
+//user Routes
 router.post("/buy-number", authMiddleware, buyNumber);
 router.get("/status/:orderId", authMiddleware, checkOtpStatus);
 router.post("/cancel/:orderId", authMiddleware, cancelActivation);
 router.get("/my-balance", authMiddleware, getUserBalance);
 router.get("/my-orders", authMiddleware, getOrderHistory);
 router.get("/order/:orderId", authMiddleware, getOrderDetails);
+
+// admin routes
 router.get("/company-stats", authMiddleware, validateAdminRole, getCompanyStats);
-router.get("/sms-balance", authMiddleware, getSmsActivateBalance);
-router.get("/available-services", authMiddleware, getAvailableServices);
+router.get("/sms-balance", authMiddleware, validateAdminRole, getSmsActivateBalance);
+router.get("/available-services", authMiddleware, validateAdminRole, getAvailableServices);
 router.put("/admin-update-markup", authMiddleware,validateAdminRole, updateMarkup);
+
+//webhook route
+router.post("/webhook/nodeotp", nodeOtpWebhook);
+router.post("/webhook/smsactivate", smsActivateWebhook);
 
 export default router;

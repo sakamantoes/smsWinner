@@ -1,7 +1,4 @@
-import nodeApi from "../utils/nodeOtpApi.js";
-import { env } from "../config/constant.js";
-
-console.log("API KEY:", env.nodeApiKey); 
+import nodeApi from "../utils/nodeOtpApi.js"; 
 
 const testNodeOtp = async () => {
   try {
