@@ -33,8 +33,11 @@ router.get("/sms-balance", authMiddleware, validateAdminRole, getSmsActivateBala
 router.get("/available-services", authMiddleware, validateAdminRole, getAvailableServices);
 router.put("/admin-update-markup", authMiddleware,validateAdminRole, updateMarkup);
 
+router.get("/preferred-countries/:service", getPreferredCountries);
+
 //webhook route
 router.post("/webhook/nodeotp", nodeOtpWebhook);
 router.post("/webhook/smsactivate", smsActivateWebhook);
+router.post("/webhook/smsbower", smsBowerWebhook);
 
 export default router;

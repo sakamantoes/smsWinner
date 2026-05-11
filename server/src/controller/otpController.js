@@ -6,25 +6,46 @@ import Transaction from "../model/Transaction.js";
 import CompanyWallet from "../model/CompanyWallet.js";
 import nodeApi from "../utils/nodeOtpApi.js";
 import smsActivateApi from "../utils/smsActivateApi.js";
+import smsBowerApi from "../utils/smsBowerApi.js";
 import systemSettingsModel from "../model/systemSettingsSchema.js";
 import Wallet from "../model/Wallet.js";
 
 // PRICING ENGINE
-const calculateSellingPrice = async (providerCost) => {
+// controllers/otpController.js (updated pricing engine)
+
+import priceInterceptor from "../utils/priceInterceptor.js";
+
+// UPDATED PRICING ENGINE WITH INTERCEPTOR
+const calculateSellingPrice = async (
+  providerCost,
+  service = null,
+  country = null,
+) => {
+  // Get profit calculation from interceptor
+  const profitCalculation = await priceInterceptor.calculateProfit(
+    providerCost,
+    service,
+    country,
+  );
+
+  // Also check legacy markup for backward compatibility
   const settings = await systemSettingsModel.findOne();
+  const legacyMarkup = settings?.profitMarkup || 0;
 
-  const markup = settings?.profitMarkup || 1.0;
-
-  const sellingPrice = providerCost + markup;
+  // Use the higher of interceptor profit or legacy markup
+  const finalProfit = Math.max(profitCalculation.profit, legacyMarkup);
+  const sellingPrice = providerCost + finalProfit;
 
   return {
     providerCost,
-    markup,
+    markup: finalProfit,
     sellingPrice,
+    profitCalculation, // Include detailed profit info
   };
 };
 
-// COMPLETE COUNTRY MAPPING
+// ==================== COUNTRY MAPPING ====================
+// Complete country mapping for all providers
 const countryMap = {
   // Numeric codes to country names (SMSActivate format)
   0: "RU",
@@ -53,85 +74,359 @@ const countryMap = {
   23: "PT",
   24: "RO",
   25: "IE",
-  // Direct country names
-  us: "US",
+
+  // Direct country name mappings
   usa: "US",
+  us: "US",
+  "united states": "US",
+  "united states of america": "US",
   uk: "GB",
-  ng: "NG",
-  nigeria: "NG",
-  russia: "RU",
-  ukraine: "UA",
-  kazakhstan: "KZ",
-  germany: "DE",
-  france: "FR",
-  italy: "IT",
-  spain: "ES",
-  netherlands: "NL",
-  poland: "PL",
-  brazil: "BR",
-  mexico: "MX",
-  argentina: "AR",
-  australia: "AU",
-  japan: "JP",
+  "united kingdom": "GB",
+  "great britain": "GB",
+  canada: "CA",
+  ca: "CA",
   indonesia: "ID",
-  thailand: "TH",
+  id: "ID",
+  colombia: "CO",
+  co: "CO",
   vietnam: "VN",
-  norway: "NO",
-  denmark: "DK",
-  czech: "CZ",
+  vn: "VN",
+  "south africa": "ZA",
+  za: "ZA",
+  southafrica: "ZA",
+  brazil: "BR",
+  br: "BR",
+  philippines: "PH",
+  ph: "PH",
+  malaysia: "MY",
+  my: "MY",
+  australia: "AU",
+  au: "AU",
+  netherlands: "NL",
+  nl: "NL",
+  germany: "DE",
+  de: "DE",
+  chile: "CL",
+  cl: "CL",
+  sweden: "SE",
+  se: "SE",
+  cameroon: "CM",
+  cm: "CM",
+  mexico: "MX",
+  mx: "MX",
+  thailand: "TH",
+  th: "TH",
+  spain: "ES",
+  es: "ES",
+  france: "FR",
+  fr: "FR",
   portugal: "PT",
+  pt: "PT",
   romania: "RO",
+  ro: "RO",
   ireland: "IE",
+  ie: "IE",
+  argentina: "AR",
+  ar: "AR",
+  poland: "PL",
+  pl: "PL",
+  italy: "IT",
+  it: "IT",
+  denmark: "DK",
+  dk: "DK",
+  nigeria: "NG",
+  ng: "NG",
+  "ivory coast": "CI",
+  ci: "CI",
+  cotedivoire: "CI",
+  austria: "AT",
+  at: "AT",
+  morocco: "MA",
+  ma: "MA",
+  kenya: "KE",
+  ke: "KE",
+  croatia: "HR",
+  hr: "HR",
+  finland: "FI",
+  fi: "FI",
+  egypt: "EG",
+  eg: "EG",
+  ghana: "GH",
+  gh: "GH",
+  congo: "CG",
+  cg: "CG",
+  czech: "CZ",
+  cz: "CZ",
+  "czech republic": "CZ",
+  uruguay: "UY",
+  uy: "UY",
+  greece: "GR",
+  gr: "GR",
+  ukraine: "UA",
+  ua: "UA",
+  "new zealand": "NZ",
+  nz: "NZ",
+  bulgaria: "BG",
+  bg: "BG",
+  switzerland: "CH",
+  ch: "CH",
+  russia: "RU",
+  ru: "RU",
+  kazakhstan: "KZ",
+  kz: "KZ",
+  norway: "NO",
+  no: "NO",
 };
 
-const getCountryName = (countryInput) => {
-  const normalized = countryInput?.toString().toLowerCase();
+// Preferred countries for specific services
+const preferredCountries = {
+  whatsapp: [
+    "US",
+    "CA",
+    "ID",
+    "CO",
+    "VN",
+    "ZA",
+    "BR",
+    "PH",
+    "GB",
+    "MY",
+    "AU",
+    "NL",
+    "DE",
+    "CL",
+    "SE",
+    "CM",
+    "MX",
+    "TH",
+    "ES",
+    "FR",
+    "PT",
+    "RO",
+    "IE",
+    "AR",
+    "US_VIRTUAL",
+    "PL",
+    "IT",
+    "DK",
+    "NG",
+    "CI",
+    "AT",
+    "MA",
+    "KE",
+    "HR",
+    "FI",
+    "EG",
+    "GH",
+    "CG",
+    "CZ",
+    "UY",
+    "GR",
+    "UA",
+    "NZ",
+    "BG",
+  ],
+  google: [
+    "US",
+    "CA",
+    "GB",
+    "AU",
+    "DE",
+    "FR",
+    "NL",
+    "ES",
+    "IT",
+    "PL",
+    "BR",
+    "MX",
+    "AR",
+    "ID",
+    "TH",
+    "VN",
+    "NG",
+    "ZA",
+    "TR",
+    "PK",
+    "EG",
+    "PH",
+    "BD",
+    "KE",
+    "UA",
+    "RO",
+    "CZ",
+    "GR",
+    "PT",
+    "SE",
+    "NO",
+    "DK",
+    "FI",
+    "IE",
+    "NZ",
+  ],
+  gmail: [
+    "US",
+    "CA",
+    "GB",
+    "AU",
+    "DE",
+    "FR",
+    "NL",
+    "ES",
+    "IT",
+    "PL",
+    "BR",
+    "MX",
+    "AR",
+    "ID",
+    "TH",
+    "VN",
+    "NG",
+    "ZA",
+    "TR",
+    "PK",
+    "EG",
+    "PH",
+    "BD",
+    "KE",
+    "UA",
+    "RO",
+    "CZ",
+    "GR",
+    "PT",
+    "SE",
+    "NO",
+    "DK",
+    "FI",
+    "IE",
+    "NZ",
+  ],
+  youtube: [
+    "US",
+    "CA",
+    "GB",
+    "AU",
+    "DE",
+    "FR",
+    "NL",
+    "ES",
+    "IT",
+    "PL",
+    "BR",
+    "MX",
+    "AR",
+    "ID",
+    "TH",
+    "VN",
+    "NG",
+    "ZA",
+    "TR",
+    "PK",
+    "EG",
+    "PH",
+    "BD",
+    "KE",
+    "UA",
+    "RO",
+    "CZ",
+    "GR",
+    "PT",
+    "SE",
+    "NO",
+    "DK",
+    "FI",
+    "IE",
+    "NZ",
+  ],
+  walmart: ["US", "CA", "GB", "US_VIRTUAL"],
+  instagram: [
+    "US",
+    "CO",
+    "FR",
+    "GB",
+    "ID",
+    "TH",
+    "BR",
+    "UA",
+    "DE",
+    "CA",
+    "SE",
+    "NL",
+    "PL",
+    "ES",
+    "RO",
+    "IT",
+    "FI",
+    "GR",
+    "CH",
+  ],
+};
+
+const getCountryCode = (countryInput) => {
+  const normalized = countryInput?.toString().toLowerCase().trim();
   const mapped = countryMap[normalized];
 
-  if (!mapped) {
-    const upperCountry = countryInput?.toString().toUpperCase();
-    const validCountries = [
-      "US",
-      "UK",
-      "GB",
-      "RU",
-      "UA",
-      "KZ",
-      "DE",
-      "FR",
-      "IT",
-      "ES",
-      "NL",
-      "PL",
-      "BR",
-      "MX",
-      "AR",
-      "AU",
-      "JP",
-      "ID",
-      "TH",
-      "VN",
-      "NG",
-      "NO",
-      "DK",
-      "CZ",
-      "PT",
-      "RO",
-      "IE",
-    ];
+  if (mapped) return mapped;
 
-    if (validCountries.includes(upperCountry)) {
-      return upperCountry;
-    }
-    throw new Error(`Invalid country: ${countryInput}`);
-  }
+  // Check if it's already a valid country code
+  const upperCountry = countryInput?.toString().toUpperCase();
+  const validCountries = [
+    "US",
+    "CA",
+    "GB",
+    "RU",
+    "UA",
+    "KZ",
+    "DE",
+    "FR",
+    "IT",
+    "ES",
+    "NL",
+    "PL",
+    "BR",
+    "MX",
+    "AR",
+    "AU",
+    "JP",
+    "ID",
+    "TH",
+    "VN",
+    "NG",
+    "NO",
+    "DK",
+    "CZ",
+    "PT",
+    "RO",
+    "IE",
+    "CO",
+    "ZA",
+    "MY",
+    "CL",
+    "SE",
+    "CM",
+    "AT",
+    "MA",
+    "KE",
+    "HR",
+    "FI",
+    "EG",
+    "GH",
+    "CG",
+    "UY",
+    "GR",
+    "NZ",
+    "BG",
+    "CH",
+    "US_VIRTUAL",
+  ];
 
-  return mapped;
+  if (validCountries.includes(upperCountry)) return upperCountry;
+
+  throw new Error(`Invalid country: ${countryInput}`);
 };
 
-// COMPLETE SERVICE MAPPING
+// ==================== SERVICE MAPPING ====================
 const serviceMap = {
-  // Short codes to service names
+  // Short codes
   tg: "telegram",
   go: "google",
   fb: "facebook",
@@ -160,6 +455,8 @@ const serviceMap = {
   nt: "netflix",
   hz: "hbo",
   ds: "disney",
+  wm: "walmart",
+
   // Full names
   telegram: "telegram",
   google: "google",
@@ -189,20 +486,165 @@ const serviceMap = {
   netflix: "netflix",
   hbo: "hbo",
   disney: "disney",
+  walmart: "walmart",
 };
 
 const getServiceName = (serviceInput) => {
   const normalized = serviceInput?.toString().toLowerCase();
   const mapped = serviceMap[normalized];
-
-  if (!mapped) {
-    throw new Error(`Invalid service: ${serviceInput}`);
-  }
-
+  if (!mapped) throw new Error(`Invalid service: ${serviceInput}`);
   return mapped;
 };
 
-// BUY FROM NODEOTP
+// Get SMSBower service ID
+const getSmsBowerServiceId = (serviceName) => {
+  const serviceIds = {
+    whatsapp: "wa",
+    google: "go",
+    gmail: "gp",
+    youtube: "yt",
+    instagram: "ig",
+    facebook: "fb",
+    telegram: "tg",
+    twitter: "tw",
+    apple: "ap",
+    microsoft: "ms",
+    discord: "dc",
+    snapchat: "sn",
+    tiktok: "tk",
+    amazon: "am",
+    linkedin: "li",
+    zoom: "zl",
+    uber: "ub",
+    line: "lv",
+    vkontakte: "vk",
+    paypal: "pf",
+    spotify: "sp",
+    netflix: "nt",
+    walmart: "wm",
+  };
+  return serviceIds[serviceName] || serviceName;
+};
+
+// ==================== PROVIDER FUNCTIONS ====================
+
+// BUY FROM SMSBOWER (PRIMARY)
+const buyFromSmsBower = async ({ country, service }) => {
+  try {
+    const countryCode = getCountryCode(country);
+    const serviceName = getServiceName(service);
+    const serviceId = getSmsBowerServiceId(serviceName);
+
+    console.log(`📞 SMSBower: Buying ${serviceName} number in ${countryCode}`);
+
+    const response = await smsBowerApi.get("/stubs/handler_api.php", {
+      params: {
+        api_key: process.env.SMS_BOWER_API_KEY,
+        action: "getNumber",
+        service: serviceId,
+        country: countryCode,
+      },
+    });
+
+    console.log("SMSBower Response:", JSON.stringify(response.data, null, 2));
+
+    // Handle response - SMSBower returns semicolon separated values
+    const responseData = response.data;
+
+    if (typeof responseData === "string") {
+      const parts = responseData.split(":");
+
+      if (parts[0] === "ACCESS_NUMBER") {
+        const activationId = parts[1];
+        const phoneNumber = parts[2];
+        const cost = parseFloat(parts[3]) || 0;
+
+        return {
+          provider: "smsbower",
+          orderId: activationId,
+          phone: phoneNumber,
+          providerCost: cost,
+          raw: responseData,
+        };
+      }
+
+      if (parts[0] === "NO_NUMBERS") {
+        throw new Error("No numbers available for this country/service");
+      }
+
+      if (parts[0] === "ERROR") {
+        throw new Error(parts[1] || "SMSBower API error");
+      }
+
+      if (parts[0] === "BAD_SERVICE") {
+        throw new Error("Invalid service for SMSBower");
+      }
+
+      if (parts[0] === "BAD_COUNTRY") {
+        throw new Error("Invalid country for SMSBower");
+      }
+    }
+
+    throw new Error(`Unexpected response: ${JSON.stringify(responseData)}`);
+  } catch (error) {
+    console.error("❌ SMSBower error:", error.message);
+    throw new Error(`SMS_BOWER_FAILED: ${error.message}`);
+  }
+};
+
+// CANCEL SMSBOWER NUMBER
+const cancelSmsBowerNumber = async (activationId) => {
+  try {
+    await smsBowerApi.get("/stubs/handler_api.php", {
+      params: {
+        api_key: process.env.SMS_BOWER_API_KEY,
+        action: "cancelNumber",
+        activation_id: activationId,
+      },
+    });
+    console.log(`✅ Cancelled SMSBower activation ${activationId}`);
+  } catch (error) {
+    console.error("❌ SMSBOWER CANCEL ERROR:", error.message);
+  }
+};
+
+// CHECK SMSBOWER STATUS
+const checkSmsBowerStatus = async (activationId) => {
+  try {
+    const response = await smsBowerApi.get("/stubs/handler_api.php", {
+      params: {
+        api_key: process.env.SMS_BOWER_API_KEY,
+        action: "getSms",
+        activation_id: activationId,
+      },
+    });
+
+    const data = response.data;
+
+    if (typeof data === "string") {
+      const parts = data.split(":");
+
+      if (parts[0] === "STATUS_OK") {
+        return { otpCode: parts[2], status: "OTP_RECEIVED" };
+      }
+
+      if (parts[0] === "STATUS_WAIT_CODE") {
+        return { otpCode: null, status: "WAITING_FOR_SMS" };
+      }
+
+      if (parts[0] === "STATUS_CANCEL") {
+        return { otpCode: null, status: "CANCELLED" };
+      }
+    }
+
+    return { otpCode: null, status: "WAITING_FOR_SMS" };
+  } catch (error) {
+    console.error("SMSBower status check error:", error.message);
+    return { otpCode: null, status: "WAITING_FOR_SMS" };
+  }
+};
+
+// BUY FROM NODEOTP (FIRST FALLBACK)
 const buyFromNodeOtp = async ({ country, service, operator }) => {
   try {
     const response = await nodeApi.post("/order", {
@@ -210,9 +652,6 @@ const buyFromNodeOtp = async ({ country, service, operator }) => {
       service,
       operator: operator || "any",
     });
-
-    console.log("NODEOTP RESPONSE:");
-    console.log(response.data);
 
     if (!response.data.success) {
       throw new Error(response.data.message || "NODEOTP_FAILED");
@@ -228,28 +667,22 @@ const buyFromNodeOtp = async ({ country, service, operator }) => {
       raw: response.data,
     };
   } catch (error) {
-    console.log("❌ FULL NODEOTP ERROR");
-
+    console.error("❌ NODEOTP error:", error.message);
     if (error.response) {
-      console.log("STATUS:", error.response.status);
-      console.log("DATA:", error.response.data);
-
-      const apiError =
+      throw new Error(
         error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.message;
-
-      throw new Error(apiError);
+          error.response?.data?.message ||
+          error.message,
+      );
     }
-
     throw new Error(error.message);
   }
 };
 
-// BUY FROM SMSACTIVATE
+// BUY FROM SMSACTIVATE (SECOND FALLBACK)
 const buyFromSmsActivate = async ({ country, service }) => {
   try {
-    const countryName = getCountryName(country);
+    const countryName = getCountryCode(country);
     const serviceName = getServiceName(service);
 
     console.log(
@@ -266,12 +699,8 @@ const buyFromSmsActivate = async ({ country, service }) => {
     });
 
     const result = response.data;
-    console.log("📱 SMSActivate Response:", JSON.stringify(result, null, 2));
 
     if (result.success === true && result.activation_id && result.number) {
-      console.log(
-        `✅ Got number: ${result.number} (ID: ${result.activation_id})`,
-      );
       return {
         provider: "smsactivate",
         orderId: result.activation_id.toString(),
@@ -285,10 +714,11 @@ const buyFromSmsActivate = async ({ country, service }) => {
       throw new Error(result.error || "API returned error");
     }
 
-    if (typeof result === "string") {
-      if (result.includes("ERROR") || result.includes("NO_NUMBERS")) {
-        throw new Error(result);
-      }
+    if (
+      typeof result === "string" &&
+      (result.includes("ERROR") || result.includes("NO_NUMBERS"))
+    ) {
+      throw new Error(result);
     }
 
     throw new Error(`Unexpected response: ${JSON.stringify(result)}`);
@@ -298,7 +728,7 @@ const buyFromSmsActivate = async ({ country, service }) => {
   }
 };
 
-// CANCEL SMSACTIVATE NUMBER
+// CANCEL FUNCTIONS
 const cancelSmsActivateNumber = async (activationId) => {
   try {
     await smsActivateApi.get("/sms.php", {
@@ -314,7 +744,6 @@ const cancelSmsActivateNumber = async (activationId) => {
   }
 };
 
-// CANCEL NODEOTP NUMBER
 const cancelNodeOtpNumber = async (orderId) => {
   try {
     await nodeApi.post(`/order/${orderId}/cancel`);
@@ -324,85 +753,105 @@ const cancelNodeOtpNumber = async (orderId) => {
   }
 };
 
-// buy number controller
-export const buyNumber = async (req, res, next) => {
+// ==================== MAIN CONTROLLERS ====================
+
+
+// Update the buyNumber function in otpController.js
+
+export const buyNumber = async (req, res) => {
   try {
-    // Get userId from authenticated user (NOT from request body)
     const userId = req.user?.id;
     const { country, service, operator } = req.body;
-
-    // Validation
+    
     if (!userId) {
-      res.statusCode = 401;
-      throw new Error("Unauthorized: User ID missing");
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
-
+    
     if (!country || !service) {
-      res.statusCode = 400;
-      throw new Error("Country and service are required");
+      return res.status(400).json({ success: false, message: "Country and service are required" });
     }
-
-    // Find user
+    
     const user = await User.findById(userId);
     if (!user) {
-      res.statusCode = 404;
-      throw new Error("User not found");
+      return res.status(404).json({ success: false, message: "User not found" });
     }
-
-    // Purchase number (try NodeOTP first, fallback to SMSActivate)
+    
+    // Try providers in order: SMSBower -> NodeOTP -> SMSActivate
     let purchaseData;
     let errors = [];
-
+    
+    // Try SMSBower first
     try {
-      purchaseData = await buyFromNodeOtp({ country, service, operator });
-      console.log("✅ Purchased from NODEOTP");
-    } catch (nodeError) {
-      console.log("❌ NODEOTP FAILED:", nodeError.message);
-      errors.push(`NodeOTP: ${nodeError.message}`);
-
+      purchaseData = await buyFromSmsBower({ country, service });
+      console.log("✅ Purchased from SMSBOWER");
+    } catch (smsBowerError) {
+      console.log("❌ SMSBOWER FAILED:", smsBowerError.message);
+      errors.push(`SMSBower: ${smsBowerError.message}`);
+      
+      // Try NodeOTP
       try {
-        purchaseData = await buyFromSmsActivate({ country, service });
-        console.log("✅ Purchased from SMSACTIVATE");
-      } catch (smsError) {
-        console.log("❌ SMSACTIVATE FAILED:", smsError.message);
-        errors.push(`SMSActivate: ${smsError.message}`);
-
-        res.statusCode = 500;
-        throw new Error(
-          `Failed to purchase number from both providers. Errors: ${errors.join(
-            " | ",
-          )}`,
-        );
+        purchaseData = await buyFromNodeOtp({ country, service, operator });
+        console.log("✅ Purchased from NODEOTP");
+      } catch (nodeError) {
+        console.log("❌ NODEOTP FAILED:", nodeError.message);
+        errors.push(`NodeOTP: ${nodeError.message}`);
+        
+        // Try SMSActivate
+        try {
+          purchaseData = await buyFromSmsActivate({ country, service });
+          console.log("✅ Purchased from SMSACTIVATE");
+        } catch (smsError) {
+          console.log("❌ SMSACTIVATE FAILED:", smsError.message);
+          errors.push(`SMSActivate: ${smsError.message}`);
+          
+          return res.status(500).json({
+            success: false,
+            message: `Failed to purchase number from all providers. Errors: ${errors.join(" | ")}`,
+          });
+        }
       }
     }
-
-    // Calculate pricing with markup
-    const pricing = await calculateSellingPrice(purchaseData.providerCost);
-    const providerCost = pricing.providerCost;
+    
+    // Calculate pricing with interceptor
+    const serviceName = getServiceName(service);
+    const countryCode = getCountryCode(country);
+    const pricing = await calculateSellingPrice(
+      purchaseData.providerCost, 
+      serviceName, 
+      countryCode
+    );
+    
     const totalCost = pricing.sellingPrice;
     const profit = pricing.markup;
-
-    // Check if user has sufficient balance
+    
+    // Check balance
     if (user.walletBalance < totalCost) {
-      // Cancel the purchased number since user can't pay
-      if (purchaseData.provider === "nodeotp") {
+      // Cancel the number
+      if (purchaseData.provider === "smsbower") {
+        await cancelSmsBowerNumber(purchaseData.orderId);
+      } else if (purchaseData.provider === "nodeotp") {
         await cancelNodeOtpNumber(purchaseData.orderId);
       } else {
         await cancelSmsActivateNumber(purchaseData.orderId);
       }
-
+      
       return res.status(402).json({
         success: false,
         message: "Insufficient balance",
         required: totalCost,
         available: user.walletBalance,
+        breakdown: {
+          providerCost: purchaseData.providerCost,
+          adminProfit: profit,
+          totalCost: totalCost
+        }
       });
     }
-
+    
     // Deduct from user wallet
     user.walletBalance -= totalCost;
     await user.save();
-
+    
     // Update company wallet
     let companyWallet = await CompanyWallet.findOne();
     if (!companyWallet) {
@@ -412,41 +861,44 @@ export const buyNumber = async (req, res, next) => {
         totalProviderCost: 0,
       });
     }
-
+    
     companyWallet.totalProfit += profit;
     companyWallet.totalRevenue += totalCost;
-    companyWallet.totalProviderCost += providerCost;
+    companyWallet.totalProviderCost += purchaseData.providerCost;
     await companyWallet.save();
-
-    // Create order in database
+    
+    // Create order with enhanced pricing info
     const order = await OtpOrder.create({
       userId,
       provider: purchaseData.provider,
       orderId: purchaseData.orderId,
       phone: purchaseData.phone,
-      service: service,
-      country: getCountryName(country),
+      service: serviceName,
+      country: countryCode,
       operator: operator || "any",
       status: "WAITING_FOR_SMS",
       cost: totalCost,
-      providerCost: providerCost,
+      providerCost: purchaseData.providerCost,
       profit: profit,
+      profitDetails: pricing.profitCalculation, // Store detailed profit info
       rawResponse: purchaseData.raw,
     });
-
-    // Create transaction record
+    
+    // Create transaction
     await Transaction.create({
       userId,
       type: "OTP_PURCHASE",
       provider: purchaseData.provider,
       amount: totalCost,
-      providerCost: providerCost,
+      providerCost: purchaseData.providerCost,
       profit: profit,
       description: `Purchased ${service} OTP number in ${country}`,
       orderId: order._id,
+      metadata: {
+        profitCalculation: pricing.profitCalculation
+      }
     });
-
-    // Return success response
+    
     return res.status(201).json({
       success: true,
       message: "Number purchased successfully",
@@ -459,7 +911,8 @@ export const buyNumber = async (req, res, next) => {
         status: order.status,
         cost: order.cost,
         providerCost: order.providerCost,
-        profit: order.profit,
+        adminProfit: order.profit,
+        profitDetails: order.profitDetails,
         createdAt: order.createdAt,
       },
     });
@@ -473,7 +926,7 @@ export const buyNumber = async (req, res, next) => {
 };
 
 // CHECK OTP STATUS
-export const checkOtpStatus = async (req, res, next) => {
+export const checkOtpStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
     const userId = req.user?.id;
@@ -481,35 +934,30 @@ export const checkOtpStatus = async (req, res, next) => {
     const order = await OtpOrder.findById(orderId);
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
-    // Verify order belongs to user
     if (order.userId.toString() !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: "Unauthorized to access this order",
-      });
+      return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
     let otpCode = null;
     let status = order.status;
 
-    // Check NodeOTP status
-    if (order.provider === "nodeotp") {
+    // Check based on provider
+    if (order.provider === "smsbower") {
+      const result = await checkSmsBowerStatus(order.orderId);
+      otpCode = result.otpCode;
+      status = result.status;
+    } else if (order.provider === "nodeotp") {
       const response = await nodeApi.get(`/order/${order.orderId}/status`);
-
       if (response.data?.data?.code) {
         otpCode = response.data.data.code;
         status = "OTP_RECEIVED";
       }
-    }
-
-    // Check SMSActivate status
-    if (order.provider === "smsactivate") {
+    } else if (order.provider === "smsactivate") {
       const response = await smsActivateApi.get("/sms.php", {
         params: {
           api_key: process.env.SMS_ACTIVATE_API_KEY,
@@ -519,8 +967,6 @@ export const checkOtpStatus = async (req, res, next) => {
       });
 
       const result = response.data;
-      console.log("SMSActivate Status Response:", result);
-
       if (
         result.success === true &&
         result.status === "SMS Received" &&
@@ -528,23 +974,15 @@ export const checkOtpStatus = async (req, res, next) => {
       ) {
         otpCode = result.verification_code;
         status = "OTP_RECEIVED";
-      }
-
-      if (result.status === "SMS Received" && result.code) {
+      } else if (result.status === "SMS Received" && result.code) {
         otpCode = result.code;
         status = "OTP_RECEIVED";
-      }
-
-      if (result.status === "Cancelled") {
+      } else if (result.status === "Cancelled") {
         status = "CANCELLED";
-      }
-
-      if (result.status === "Not Found") {
-        status = "FAILED";
       }
     }
 
-    // Update database if OTP received
+    // Update database
     if (otpCode) {
       order.otpCode = otpCode;
       order.status = status;
@@ -565,16 +1003,11 @@ export const checkOtpStatus = async (req, res, next) => {
         service: order.service,
         country: order.country,
         cost: order.cost,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
       },
     });
   } catch (error) {
     console.error("CHECK OTP STATUS ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -587,50 +1020,47 @@ export const cancelActivation = async (req, res) => {
     const order = await OtpOrder.findById(orderId);
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
-    // Verify order belongs to user
     if (order.userId.toString() !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: "Unauthorized to cancel this order",
-      });
+      return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
-    // Check if order can be cancelled
     if (order.status === "OTP_RECEIVED" || order.status === "COMPLETED") {
-      return res.status(400).json({
-        success: false,
-        message: "Cannot cancel order that has already received OTP",
-      });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Cannot cancel - OTP already received",
+        });
     }
 
     if (order.status === "CANCELLED") {
-      return res.status(400).json({
-        success: false,
-        message: "Order is already cancelled",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Order already cancelled" });
     }
 
     // Cancel with provider
-    if (order.provider === "smsactivate") {
+    if (order.provider === "smsbower") {
+      await cancelSmsBowerNumber(order.orderId);
+    } else if (order.provider === "smsactivate") {
       await cancelSmsActivateNumber(order.orderId);
     } else if (order.provider === "nodeotp") {
       await cancelNodeOtpNumber(order.orderId);
     }
 
-    // Refund user (full amount)
+    // Refund user
     const user = await User.findById(userId);
     if (user) {
       user.walletBalance += order.cost;
       await user.save();
     }
 
-    // Update company wallet (deduct profit)
+    // Update company wallet
     const companyWallet = await CompanyWallet.findOne();
     if (companyWallet) {
       companyWallet.totalProfit -= order.profit;
@@ -639,32 +1069,25 @@ export const cancelActivation = async (req, res) => {
       await companyWallet.save();
     }
 
-    // Update order status
     order.status = "CANCELLED";
     await order.save();
 
-    // Create transaction record for refund
     await Transaction.create({
       userId,
       type: "REFUND",
       provider: order.provider,
       amount: -order.cost,
-      providerCost: -order.providerCost,
-      profit: -order.profit,
       description: `Refund for cancelled ${order.service} OTP`,
       orderId: order._id,
     });
 
     return res.json({
       success: true,
-      message: "Activation cancelled and refunded successfully",
+      message: "Activation cancelled and refunded",
     });
   } catch (error) {
     console.error("CANCEL ACTIVATION ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -672,36 +1095,23 @@ export const cancelActivation = async (req, res) => {
 export const getUserBalance = async (req, res) => {
   try {
     const userId = req.user?.id;
-
     let wallet = await Wallet.findOne({ userId });
 
-    // 🟢 CREATE WALLET IF NOT EXISTS
     if (!wallet) {
-      wallet = await Wallet.create({
-        userId,
-        balance: 0,
-      });
+      wallet = await Wallet.create({ userId, balance: 0 });
     }
 
-    return res.json({
-      success: true,
-      balance: wallet.balance,
-    });
-
+    return res.json({ success: true, balance: wallet.balance });
   } catch (error) {
     console.error("GET BALANCE ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// GET COMPANY STATS (Admin only)
+// GET COMPANY STATS
 export const getCompanyStats = async (req, res) => {
   try {
     const companyWallet = await CompanyWallet.findOne();
-
     const totalOrders = await OtpOrder.countDocuments();
     const completedOrders = await OtpOrder.countDocuments({
       status: "OTP_RECEIVED",
@@ -728,31 +1138,19 @@ export const getCompanyStats = async (req, res) => {
     });
   } catch (error) {
     console.error("GET COMPANY STATS ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-export const updateMarkup = async (req, res, next) => {
+// UPDATE MARKUP
+export const updateMarkup = async (req, res) => {
   try {
     const { profitMarkup } = req.body;
 
-    // VALIDATION
-    if (profitMarkup === undefined || isNaN(profitMarkup)) {
-      return res.status(400).json({
-        success: false,
-        message: "Valid profitMarkup is required",
-      });
-    }
-
-    // Prevent negative markup
-    if (Number(profitMarkup) < 0) {
-      return res.status(400).json({
-        success: false,
-        message: "profitMarkup cannot be negative",
-      });
+    if (profitMarkup === undefined || isNaN(profitMarkup) || profitMarkup < 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Valid profitMarkup required (>=0)" });
     }
 
     let settings = await systemSettingsModel.findOne();
@@ -767,21 +1165,18 @@ export const updateMarkup = async (req, res, next) => {
 
     return res.json({
       success: true,
-      message: "Profit markup updated successfully",
-      data: {
-        profitMarkup: settings.profitMarkup,
-      },
+      message: "Profit markup updated",
+      data: { profitMarkup: settings.profitMarkup },
     });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// GET ORDER HISTORY (User specific)
+// GET ORDER HISTORY
 export const getOrderHistory = async (req, res) => {
   try {
     const userId = req.user?.id;
-
     const orders = await OtpOrder.find({ userId })
       .sort({ createdAt: -1 })
       .limit(50);
@@ -802,56 +1197,7 @@ export const getOrderHistory = async (req, res) => {
     });
   } catch (error) {
     console.error("GET ORDER HISTORY ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-// GET SMSACTIVATE BALANCE (Admin utility)
-export const getSmsActivateBalance = async (req, res) => {
-  try {
-    const response = await smsActivateApi.get("/sms.php", {
-      params: {
-        api_key: process.env.SMS_ACTIVATE_API_KEY,
-        action: "account_balance",
-      },
-    });
-
-    return res.json({
-      success: true,
-      balance: response.data,
-    });
-  } catch (error) {
-    console.error("Get SMSActivate balance error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-// GET AVAILABLE SERVICES (Utility)
-export const getAvailableServices = async (req, res) => {
-  try {
-    const response = await smsActivateApi.get("/sms.php", {
-      params: {
-        api_key: process.env.SMS_ACTIVATE_API_KEY,
-        action: "get_services",
-      },
-    });
-
-    return res.json({
-      success: true,
-      services: response.data,
-    });
-  } catch (error) {
-    console.error("Get services error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -864,211 +1210,219 @@ export const getOrderDetails = async (req, res) => {
     const order = await OtpOrder.findById(orderId);
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
-    // Verify order belongs to user (unless admin)
     if (order.userId.toString() !== userId) {
-      // Check if user is admin here if you have admin role
-      return res.status(403).json({
-        success: false,
-        message: "Unauthorized to view this order",
-      });
+      return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
-    return res.json({
-      success: true,
-      data: {
-        _id: order._id,
-        userId: order.userId,
-        provider: order.provider,
-        orderId: order.orderId,
-        phone: order.phone,
-        service: order.service,
-        country: order.country,
-        operator: order.operator,
-        otpCode: order.otpCode,
-        status: order.status,
-        cost: order.cost,
-        providerCost: order.providerCost,
-        profit: order.profit,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
-        rawResponse: order.rawResponse,
-      },
-    });
+    return res.json({ success: true, data: order });
   } catch (error) {
-    console.error("Get order details error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    console.error("GET ORDER DETAILS ERROR:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
-// SMSACTIVATE WEBHOOK HANDLER
-export const smsActivateWebhook = async (req, res) => {
+// GET PREFERRED COUNTRIES FOR SERVICE
+export const getPreferredCountries = async (req, res) => {
   try {
+    const { service } = req.params;
+    const serviceName = service?.toLowerCase();
 
-    console.log("📩 SMSACTIVATE WEBHOOK RECEIVED");
+    let countries = [];
 
-    console.log(req.body);
-
-    const {
-      activationid,
-      receiver,
-      sms_code,
-      sms_body,
-      service_id,
-      service_name,
-    } = req.body;
-
-    if (!activationid) {
-      return res.status(400).json({
-        success: false,
-        message: "Activation ID missing",
-      });
+    if (serviceName === "whatsapp") {
+      countries = preferredCountries.whatsapp;
+    } else if (
+      serviceName === "google" ||
+      serviceName === "gmail" ||
+      serviceName === "youtube"
+    ) {
+      countries = preferredCountries.google;
+    } else if (serviceName === "walmart") {
+      countries = preferredCountries.walmart;
+    } else if (serviceName === "instagram") {
+      countries = preferredCountries.instagram;
+    } else {
+      // Return all available countries
+      countries = Object.keys(countryMap).filter(
+        (c) => c.length === 2 && c === c.toUpperCase(),
+      );
     }
 
-    const existingOrder = await OtpOrder.findOne({
+    return res.json({ success: true, service: serviceName, countries });
+  } catch (error) {
+    console.error("GET PREFERRED COUNTRIES ERROR:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET AVAILABLE SERVICES FROM SMSBOWER
+export const getAvailableServices = async (req, res) => {
+  try {
+    const response = await smsBowerApi.get("/stubs/handler_api.php", {
+      params: {
+        api_key: process.env.SMS_BOWER_API_KEY,
+        action: "getServicesList",
+      },
+    });
+
+    return res.json({ success: true, services: response.data });
+  } catch (error) {
+    console.error("Get services error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET SMSBOWER BALANCE
+export const getSmsBowerBalance = async (req, res) => {
+  try {
+    const response = await smsBowerApi.get("/stubs/handler_api.php", {
+      params: {
+        api_key: process.env.SMS_BOWER_API_KEY,
+        action: "getBalance",
+      },
+    });
+
+    return res.json({ success: true, balance: response.data });
+  } catch (error) {
+    console.error("Get SMSBower balance error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// SMSBOWER WEBHOOK HANDLER
+export const smsBowerWebhook = async (req, res) => {
+  try {
+    console.log("📩 SMSBOWER WEBHOOK RECEIVED:", req.body);
+
+    const { activation_id, sms_code, status } = req.body;
+
+    if (!activation_id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Activation ID missing" });
+    }
+
+    const order = await OtpOrder.findOne({
+      orderId: activation_id.toString(),
+      provider: "smsbower",
+    });
+
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
+    }
+
+    if (sms_code) {
+      order.otpCode = sms_code;
+      order.status = "OTP_RECEIVED";
+      order.completedAt = new Date();
+      await order.save();
+      console.log(`✅ SMSBOWER OTP SAVED: ${sms_code}`);
+    }
+
+    if (status === "CANCELLED") {
+      order.status = "CANCELLED";
+      await order.save();
+      console.log(`❌ SMSBOWER ORDER CANCELLED: ${activation_id}`);
+    }
+
+    return res.status(200).json({ success: true, message: "Webhook received" });
+  } catch (error) {
+    console.error("SMSBOWER WEBHOOK ERROR:", error.message);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// SMSACTIVATE WEBHOOK
+export const smsActivateWebhook = async (req, res) => {
+  try {
+    console.log("📩 SMSACTIVATE WEBHOOK RECEIVED:", req.body);
+
+    const { activationid, sms_code } = req.body;
+
+    if (!activationid) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Activation ID missing" });
+    }
+
+    const order = await OtpOrder.findOne({
       orderId: activationid.toString(),
       provider: "smsactivate",
     });
 
-    if (!existingOrder) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
-
-    // SAVE OTP
 
     if (sms_code) {
-
-      existingOrder.otpCode = sms_code;
-
-      existingOrder.smsBody = sms_body || "";
-
-      existingOrder.status = "OTP_RECEIVED";
-
-      existingOrder.completedAt = new Date();
-
-      await existingOrder.save();
-
-      console.log(
-        `✅ SMSACTIVATE OTP SAVED: ${sms_code}`
-      );
+      order.otpCode = sms_code;
+      order.status = "OTP_RECEIVED";
+      order.completedAt = new Date();
+      await order.save();
+      console.log(`✅ SMSACTIVATE OTP SAVED: ${sms_code}`);
     }
 
-    return res.status(200).json({
-      success: true,
-      message: "Webhook received successfully",
-    });
-
+    return res.status(200).json({ success: true, message: "Webhook received" });
   } catch (error) {
-
-    console.log("❌ SMSACTIVATE WEBHOOK ERROR");
-
-    console.log(error.message);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-
+    console.error("SMSACTIVATE WEBHOOK ERROR:", error.message);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
-// NODEOTP WEBHOOK HANDLER
+// NODEOTP WEBHOOK
 export const nodeOtpWebhook = async (req, res) => {
   try {
-    console.log("📩 NODEOTP WEBHOOK RECEIVED");
-
-    console.log(req.body);
+    console.log("📩 NODEOTP WEBHOOK RECEIVED:", req.body);
 
     const { success, event, data } = req.body;
 
     if (!success || !data) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid webhook payload",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid webhook payload" });
     }
 
-    const existingOrder = await OtpOrder.findOne({
+    const order = await OtpOrder.findOne({
       orderId: data.orderId.toString(),
       provider: "nodeotp",
     });
 
-    if (!existingOrder) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
-    // OTP RECEIVED
     if (event === "otp_received") {
-
-      existingOrder.otpCode = data.code;
-      existingOrder.status = "OTP_RECEIVED";
-
-      existingOrder.smsBody = data.smsBody || "";
-
-      existingOrder.completedAt = new Date();
-
-      await existingOrder.save();
-
-      console.log(
-        `✅ OTP SAVED FOR ORDER ${existingOrder.orderId}: ${data.code}`
-      );
+      order.otpCode = data.code;
+      order.status = "OTP_RECEIVED";
+      order.completedAt = new Date();
+      await order.save();
+      console.log(`✅ OTP SAVED: ${data.code}`);
     }
 
-    // ORDER CANCELLED
     if (event === "order_cancelled") {
-
-      existingOrder.status = "CANCELLED";
-
-      await existingOrder.save();
-
-      console.log(
-        `❌ NODEOTP ORDER CANCELLED: ${existingOrder.orderId}`
-      );
+      order.status = "CANCELLED";
+      await order.save();
     }
 
-    // ORDER EXPIRED
     if (event === "order_expired") {
-
-      existingOrder.status = "EXPIRED";
-
-      await existingOrder.save();
-
-      console.log(
-        `⌛ NODEOTP ORDER EXPIRED: ${existingOrder.orderId}`
-      );
+      order.status = "EXPIRED";
+      await order.save();
     }
 
-    return res.status(200).json({
-      success: true,
-      message: "Webhook received successfully",
-    });
-
+    return res.status(200).json({ success: true, message: "Webhook received" });
   } catch (error) {
-
-    console.log("❌ NODEOTP WEBHOOK ERROR");
-
-    console.log(error.message);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-
+    console.error("NODEOTP WEBHOOK ERROR:", error.message);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

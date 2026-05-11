@@ -87,6 +87,12 @@ const otpOrderSchema = new mongoose.Schema(
       default: 0,
     },
 
+    profitDetails: {
+      type: Object,
+      default: null,
+      description: "Detailed profit calculation from interceptor",
+    },
+
     rawResponse: {
       type: Object,
 
