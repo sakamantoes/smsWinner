@@ -4,7 +4,8 @@ import errorHandle from "./middleware/errorHandler.js";
 import morgan from "morgan";
 import authRoutes from "./routes/auth.js";
 import logsRoutes from "./routes/logs.js";
-import otpRoutes from "./routes/otpRoutes.js";
+import paymentRoutes from "./routes/payment.js";
+import otpRoutes from './routes/otpRoutes.js';
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
@@ -23,8 +24,10 @@ app.use(cookieParser());
 
 // routes
 app.use("/auth", authRoutes);
-app.use('/logs', logsRoutes);
-app.use('/otp', otpRoutes);
+app.use("/logs", logsRoutes);
+app.use("/payment", paymentRoutes);
+app.use("/otp", otpRoutes);
+
 // database connection
 connectDB();
 

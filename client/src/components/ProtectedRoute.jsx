@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { getAuthUser } from "../service/auth.js";
 import useAuth from "../store/useAuth.js";
+import { Loader2 } from "lucide-react";
 
 export default function ProtectedRoute({ role, children }) {
   const { user, status, setStatus, setAuthUser, clearAuth } = useAuth();
@@ -28,7 +29,13 @@ export default function ProtectedRoute({ role, children }) {
   }, [clearAuth, setAuthUser, setStatus]);
 
   if (status === "checking") {
-    return null;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="flex flex-col items-center justify-center">
+          <Loader2 className="animate-spin" /> <p>Getting you set up...</p>
+        </div>
+      </div>
+    );
   }
 
   if (status === "unauthenticated" || !user) {

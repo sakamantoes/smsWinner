@@ -1,0 +1,21 @@
+import { body, query } from "express-validator";
+
+export const initialiseDepositValidator = [
+  body("amount")
+    .isNumeric()
+    .withMessage("Amount must be a number")
+    .notEmpty()
+    .withMessage("Amount is required"),
+  body("paymentMethod")
+    .isIn(["SQUAD", "ALAT", "MANUAL_TRANSFER"])
+    .withMessage("Payment method must be one of: SQUAD, ALAT, MANUAL_TRANSFER")
+    .notEmpty(),
+];
+
+export const callbackUrlValidator = [
+  body("referenceId").notEmpty().withMessage("Reference ID is required"),
+];
+
+export const paymentStatusValidator = [
+  query("referenceId").notEmpty().withMessage("Reference ID is required"),
+];

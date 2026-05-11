@@ -6,12 +6,9 @@ const authMiddleware = async (req, res, next) => {
     const token = req.cookies.smsWinnerToken;
 
     if (!token) {
-      const error = new Error("No token provided. Authentication required");
-      error.statusCode = 401;
-      throw error;
+      res.statusCode = 401;
+      throw new Error("No Authorization token provided");
     }
-
-    console.log("token: ", token)
 
     // Verify token
     const decoded = verifyToken(token);
@@ -22,9 +19,8 @@ const authMiddleware = async (req, res, next) => {
     }).select("-password");
 
     if (!findUser) {
-      const error = new Error("Unauthorized");
-      error.statusCode = 401;
-      throw error;
+      res.statusCode = 401;
+      throw new Error("unauthorize");
     }
 
     // Attach user info to request

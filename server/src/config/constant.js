@@ -9,4 +9,6 @@ export const env = {
   google_client_secret: process.env.GOOGLE_CLIENT_SECRET,
   nodeApiKey: process.env.NODEOTP_API_KEY,
   smsActivateApiKey: process.env.SMS_ACTIVATE_API_KEY,
+  squad_api_key: process.env.SQUAD_API_KEY,
+  squad_api_secret: process.env.SQUAD_API_SECRET,
 };
