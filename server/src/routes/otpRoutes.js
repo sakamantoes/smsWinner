@@ -10,19 +10,23 @@ import {
   getSmsActivateBalance,
   getAvailableServices,
   getOrderDetails,
+  updateMarkup,
 } from "../controller/otpController.js";
+import authMiddleware from "../middleware/authMiddleware.js";
+import { validateAdminRole } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 // Routes
-router.post("/buy-number", buyNumber);
-router.get("/status/:orderId", checkOtpStatus);
-router.post("/cancel/:orderId", cancelActivation);
-router.get("/my-balance", getUserBalance);
-router.get("/my-orders", getOrderHistory);
-router.get("/order/:orderId", getOrderDetails);
-router.get("/company-stats", getCompanyStats);
-router.get("/sms-balance", getSmsActivateBalance);
-router.get("/available-services", getAvailableServices);
+router.post("/buy-number", authMiddleware, buyNumber);
+router.get("/status/:orderId", authMiddleware, checkOtpStatus);
+router.post("/cancel/:orderId", authMiddleware, cancelActivation);
+router.get("/my-balance", authMiddleware, getUserBalance);
+router.get("/my-orders", authMiddleware, getOrderHistory);
+router.get("/order/:orderId", authMiddleware, getOrderDetails);
+router.get("/company-stats", authMiddleware, validateAdminRole, getCompanyStats);
+router.get("/sms-balance", authMiddleware, getSmsActivateBalance);
+router.get("/available-services", authMiddleware, getAvailableServices);
+router.put("/admin-update-markup", authMiddleware,validateAdminRole, updateMarkup);
 
 export default router;

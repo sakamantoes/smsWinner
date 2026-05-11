@@ -146,7 +146,7 @@ const webhookHandler = async (req, res, next) => {
     await session.withTransaction(async () => {
       const transaction = await WalletTransaction.findOne({
         referenceId,
-      }).session(ses sion);
+      }).session(session);
 
       if (!transaction) {
         res.statusCode = 404;

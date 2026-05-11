@@ -4,19 +4,22 @@ import OtpOrder from "../model/OtpOrder.js";
 import User from "../model/User.js";
 import Transaction from "../model/Transaction.js";
 import CompanyWallet from "../model/CompanyWallet.js";
-import nodeOtpApi from "../utils/nodeOtpApi.js";
+import nodeApi from "../utils/nodeOtpApi.js";
 import smsActivateApi from "../utils/smsActivateApi.js";
-
-// CONFIGURATION
-
-const FIXED_MARKUP = parseFloat(process.env.PROFIT_MARKUP) || 1.0; // Add $1 to every purchase
+import systemSettingsModel from "../model/systemSettingsSchema.js";
+import Wallet from "../model/Wallet.js";
 
 // PRICING ENGINE
-const calculateSellingPrice = (providerCost) => {
-  const sellingPrice = providerCost + FIXED_MARKUP;
+const calculateSellingPrice = async (providerCost) => {
+  const settings = await systemSettingsModel.findOne();
+
+  const markup = settings?.profitMarkup || 1.0;
+
+  const sellingPrice = providerCost + markup;
+
   return {
     providerCost,
-    markup: FIXED_MARKUP,
+    markup,
     sellingPrice,
   };
 };
@@ -201,25 +204,46 @@ const getServiceName = (serviceInput) => {
 
 // BUY FROM NODEOTP
 const buyFromNodeOtp = async ({ country, service, operator }) => {
-  const response = await nodeOtpApi.post("/order", {
-    country,
-    service,
-    operator: operator || "any",
-  });
+  try {
+    const response = await nodeApi.post("/order", {
+      country,
+      service,
+      operator: operator || "any",
+    });
 
-  if (!response.data.success) {
-    throw new Error("NODEOTP_FAILED");
+    console.log("NODEOTP RESPONSE:");
+    console.log(response.data);
+
+    if (!response.data.success) {
+      throw new Error(response.data.message || "NODEOTP_FAILED");
+    }
+
+    const cost = parseFloat(response.data.data.cost) || 0;
+
+    return {
+      provider: "nodeotp",
+      orderId: response.data.data.orderId.toString(),
+      phone: response.data.data.phone,
+      providerCost: cost,
+      raw: response.data,
+    };
+  } catch (error) {
+    console.log("❌ FULL NODEOTP ERROR");
+
+    if (error.response) {
+      console.log("STATUS:", error.response.status);
+      console.log("DATA:", error.response.data);
+
+      const apiError =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message;
+
+      throw new Error(apiError);
+    }
+
+    throw new Error(error.message);
   }
-
-  const cost = parseFloat(response.data.data.cost) || 0;
-
-  return {
-    provider: "nodeotp",
-    orderId: response.data.data.orderId.toString(),
-    phone: response.data.data.phone,
-    providerCost: cost,
-    raw: response.data,
-  };
 };
 
 // BUY FROM SMSACTIVATE
@@ -295,7 +319,7 @@ const cancelSmsActivateNumber = async (activationId) => {
 
 const cancelNodeOtpNumber = async (orderId) => {
   try {
-    await nodeOtpApi.post(`/order/${orderId}/cancel`);
+    await nodeApi.post(`/order/${orderId}/cancel`);
     console.log(`✅ Cancelled NodeOTP order ${orderId}`);
   } catch (error) {
     console.error("❌ NODEOTP CANCEL ERROR:", error.message);
@@ -356,7 +380,7 @@ export const buyNumber = async (req, res, next) => {
     }
 
     // Calculate pricing with markup
-    const pricing = calculateSellingPrice(purchaseData.providerCost);
+    const pricing = await calculateSellingPrice(purchaseData.providerCost);
     const providerCost = pricing.providerCost;
     const totalCost = pricing.sellingPrice;
     const profit = pricing.markup;
@@ -480,7 +504,7 @@ export const checkOtpStatus = async (req, res, next) => {
 
     // Check NodeOTP status
     if (order.provider === "nodeotp") {
-      const response = await nodeOtpApi.get(`/order/${order.orderId}/status`);
+      const response = await nodeApi.get(`/order/${order.orderId}/status`);
 
       if (response.data?.data?.code) {
         otpCode = response.data.data.code;
@@ -650,24 +674,25 @@ export const cancelActivation = async (req, res) => {
 };
 
 // GET USER BALANCE
-
 export const getUserBalance = async (req, res) => {
   try {
     const userId = req.user?.id;
 
-    const user = await User.findById(userId);
+    let wallet = await Wallet.findOne({ userId });
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
+    // 🟢 CREATE WALLET IF NOT EXISTS
+    if (!wallet) {
+      wallet = await Wallet.create({
+        userId,
+        balance: 0,
       });
     }
 
     return res.json({
       success: true,
-      balance: user.walletBalance,
+      balance: wallet.balance,
     });
+
   } catch (error) {
     console.error("GET BALANCE ERROR:", error);
     return res.status(500).json({
@@ -713,6 +738,48 @@ export const getCompanyStats = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+export const updateMarkup = async (req, res, next) => {
+  try {
+    const { profitMarkup } = req.body;
+
+    // VALIDATION
+    if (profitMarkup === undefined || isNaN(profitMarkup)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid profitMarkup is required",
+      });
+    }
+
+    // Prevent negative markup
+    if (Number(profitMarkup) < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "profitMarkup cannot be negative",
+      });
+    }
+
+    let settings = await systemSettingsModel.findOne();
+    if (!settings) {
+      settings = await systemSettingsModel.create({
+        profitMarkup: Number(profitMarkup),
+      });
+    } else {
+      settings.profitMarkup = Number(profitMarkup);
+      await settings.save();
+    }
+
+    return res.json({
+      success: true,
+      message: "Profit markup updated successfully",
+      data: {
+        profitMarkup: settings.profitMarkup,
+      },
+    });
+  } catch (error) {
+    next(error);
   }
 };
 

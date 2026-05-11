@@ -23,10 +23,10 @@ app.use(
 app.use(cookieParser());
 
 // routes
-app.use("/auth", authRoutes);
-app.use("/logs", logsRoutes);
-app.use("/payment", paymentRoutes);
-app.use("/otp", otpRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/logs", logsRoutes);
+app.use("/api/payment", paymentRoutes);
+app.use("/api/otp", otpRoutes);
 
 // database connection
 connectDB();
