@@ -5,6 +5,7 @@ import morgan from "morgan";
 import authRoutes from "./routes/auth.js";
 import logsRoutes from "./routes/logs.js";
 import paymentRoutes from "./routes/payment.js";
+import otpRoutes from './routes/otpRoutes.js';
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
@@ -21,11 +22,15 @@ app.use(
 );
 app.use(cookieParser());
 
-// routes
-app.use("/auth", authRoutes);
-app.use("/logs", logsRoutes);
-app.use("/payment", paymentRoutes);
+app.get("/", (req, res) => {
+  res.send("Welcome to SMS Winners API");
+});
 
+// routes
+app.use("/api/auth", authRoutes);
+app.use("/api/logs", logsRoutes);
+app.use("/api/payment", paymentRoutes);
+app.use("/api/otp", otpRoutes);
 
 // database connection
 connectDB();

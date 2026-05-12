@@ -62,8 +62,8 @@ const Login = () => {
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-radial from-red-500/10 via-transparent to-transparent" />
-        <div className="absolute top-20 right-10 w-72 h-72 bg-red-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute inset-0 bg-gradient-radial from-red-light/10 via-transparent to-transparent" />
+        <div className="absolute top-20 right-10 w-72 h-72 bg-red-light/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-20 left-10 w-96 h-96 bg-red-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
@@ -111,7 +111,7 @@ const Login = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-red-500/20 rounded-lg focus:outline-none focus:border-red-500 text-white transition-colors"
+                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-red-light/20 rounded-lg focus:outline-none focus:border-red-light text-white transition-colors"
                   placeholder="you@example.com"
                 />
               </div>
@@ -129,7 +129,7 @@ const Login = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-12 py-3 bg-white/5 border border-red-500/20 rounded-lg focus:outline-none focus:border-red-500 text-white transition-colors"
+                  className="w-full pl-10 pr-12 py-3 bg-white/5 border border-red-light/20 rounded-lg focus:outline-none focus:border-red-light text-white transition-colors"
                   placeholder="••••••••"
                 />
                 <button
@@ -150,21 +150,21 @@ const Login = () => {
                   name="rememberMe"
                   checked={formData.rememberMe}
                   onChange={handleChange}
-                  className="w-4 h-4 bg-white/5 border border-red-500/20 rounded focus:ring-red-500 focus:ring-2"
+                  className="w-4 h-4 bg-white/5 border border-red-light/20 rounded focus:ring-red-light focus:ring-2"
                 />
                 <span className="text-sm text-gray-400">Remember me</span>
               </label>
               <Link
                 to="/forgot-password"
-                className="text-sm text-red-500 hover:text-red-400 transition-colors"
+                className="text-sm text-red-light hover:text-red-400 transition-colors"
               >
                 Forgot password?
               </Link>
             </div>
 
             {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                <p className="text-red-500 text-sm text-center">{error}</p>
+              <div className="p-3 bg-red-light/10 border border-red-light/20 rounded-lg">
+                <p className="text-red-light text-sm text-center">{error}</p>
               </div>
             )}
 
@@ -208,7 +208,7 @@ const Login = () => {
             Don't have an account?{" "}
             <Link
               to="/signup"
-              className="text-red-500 hover:text-red-400 font-semibold transition-colors"
+              className="text-red-light hover:text-red-400 font-semibold transition-colors"
             >
               Create one
             </Link>

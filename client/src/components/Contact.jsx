@@ -151,7 +151,7 @@ const Contact = () => {
       case 'delivered': return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'sent': return <Clock className="w-4 h-4 text-blue-500" />;
       case 'pending': return <Clock className="w-4 h-4 text-yellow-500" />;
-      default: return <XCircle className="w-4 h-4 text-red-500" />;
+      default: return <XCircle className="w-4 h-4 text-red-light" />;
     }
   };
 
@@ -166,7 +166,7 @@ const Contact = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Get In <span className="text-red-500">Touch</span>
+            Get In <span className="text-red-light">Touch</span>
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
             Have questions? We're here to help you 24/7
@@ -191,7 +191,7 @@ const Contact = () => {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/5 border border-red-500/20 rounded-lg focus:outline-none focus:border-red-500 text-white"
+                  className="w-full px-4 py-3 bg-white/5 border border-red-light/20 rounded-lg focus:outline-none focus:border-red-light text-white"
                 />
               </div>
               <div>
@@ -201,7 +201,7 @@ const Contact = () => {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/5 border border-red-500/20 rounded-lg focus:outline-none focus:border-red-500 text-white"
+                  className="w-full px-4 py-3 bg-white/5 border border-red-light/20 rounded-lg focus:outline-none focus:border-red-light text-white"
                 />
               </div>
               <div>
@@ -211,7 +211,7 @@ const Contact = () => {
                   required
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/5 border border-red-500/20 rounded-lg focus:outline-none focus:border-red-500 text-white"
+                  className="w-full px-4 py-3 bg-white/5 border border-red-light/20 rounded-lg focus:outline-none focus:border-red-light text-white"
                 />
               </div>
               <motion.button
@@ -236,15 +236,15 @@ const Contact = () => {
             viewport={{ once: true }}
             className="glass-card rounded-2xl p-8 flex flex-col justify-center items-center text-center"
           >
-            <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
-              <Mail className="w-10 h-10 text-red-500" />
+            <div className="w-20 h-20 bg-red-light/10 rounded-full flex items-center justify-center mb-6">
+              <Mail className="w-10 h-10 text-red-light" />
             </div>
             <h3 className="text-2xl font-bold mb-4">Email Us Directly</h3>
             <p className="text-gray-300 mb-2">Our support team responds within 24 hours</p>
-            <a href="mailto:wowwin96@gmail.com" className="text-2xl font-bold text-red-500 hover:text-red-400 transition-colors">
+            <a href="mailto:wowwin96@gmail.com" className="text-2xl font-bold text-red-light hover:text-red-400 transition-colors">
               wowwin96@gmail.com
             </a>
-            <div className="mt-8 p-4 bg-red-500/5 rounded-lg border border-red-500/20">
+            <div className="mt-8 p-4 bg-red-light/5 rounded-lg border border-red-light/20">
               <p className="text-sm text-gray-400">📧 Enterprise Email Support Available</p>
               <p className="text-sm text-gray-400">⏱️ 24/7 Email Response Team</p>
               <p className="text-sm text-gray-400">🔒 End-to-end Email Encryption</p>
@@ -284,7 +284,7 @@ const Contact = () => {
                   className={`flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all ${
                     item.available 
                       ? 'bg-green-500/5 hover:bg-green-500/10 border border-green-500/20' 
-                      : 'bg-red-500/5 opacity-50 cursor-not-allowed border border-red-500/20'
+                      : 'bg-red-light/5 opacity-50 cursor-not-allowed border border-red-light/20'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -305,7 +305,7 @@ const Contact = () => {
                         <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded-full">Available</span>
                       </>
                     ) : (
-                      <span className="text-xs px-2 py-1 bg-red-500/20 text-red-400 rounded-full">Busy</span>
+                      <span className="text-xs px-2 py-1 bg-red-light/20 text-red-400 rounded-full">Busy</span>
                     )}
                   </div>
                 </motion.div>

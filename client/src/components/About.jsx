@@ -26,7 +26,7 @@ const About = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            About <span className="text-red-500">Smswinners</span>
+            About <span className="text-red-light">Smswinners</span>
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
             We provide cutting-edge virtual number solutions, Google Voice assistance, 
@@ -72,7 +72,7 @@ const About = () => {
           >
             {stats.map((stat, idx) => (
               <div key={idx} className="glass-card rounded-2xl p-6 text-center glow-border">
-                <div className="sm:text-4xl text-2xl font-bold text-red-500 mb-2">
+                <div className="sm:text-4xl text-2xl font-bold text-red-light mb-2">
                   {isInView ? <CountUp end={stat.value} duration={2} /> : 0}{stat.suffix}
                 </div>
                 <p className="text-gray-300">{stat.label}</p>

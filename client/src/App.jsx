@@ -5,6 +5,7 @@ import Login from "./pages/Login.jsx";
 import PaymentStatus from "./pages/PaymentStatus.jsx";
 import Dashboard from "./pages/user/Dashboard.jsx";
 import FundAccount from "./pages/user/FundAccount.jsx";
+import PhoneNumber from "./pages/user/PhoneNumber.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -30,6 +31,7 @@ const App = () => {
           <Route index element={<Navigate to="/f/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="fund-account" element={<FundAccount />} />
+          <Route path="numbers" element={<PhoneNumber />} /> 
         </Route>
       </Routes>
     </>

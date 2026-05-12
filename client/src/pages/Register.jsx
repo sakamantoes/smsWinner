@@ -146,8 +146,8 @@ const Register = () => {
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-radial from-red-500/10 via-transparent to-transparent" />
-        <div className="absolute top-20 left-10 w-72 h-72 bg-red-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute inset-0 bg-gradient-radial from-red-light/10 via-transparent to-transparent" />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-red-light/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-red-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
@@ -195,14 +195,14 @@ const Register = () => {
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-3 bg-white/5 border rounded-lg focus:outline-none focus:border-red-500 text-white transition-colors ${
-                    errors.username ? "border-red-500" : "border-red-500/20"
+                  className={`w-full pl-10 pr-4 py-3 bg-white/5 border rounded-lg focus:outline-none focus:border-red-light text-white transition-colors ${
+                    errors.username ? "border-red-light" : "border-red-light/20"
                   }`}
                   placeholder="johndoe123"
                 />
               </div>
               {errors.username && (
-                <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                <p className="mt-1 text-xs text-red-light flex items-center gap-1">
                   <XCircle size={12} /> {errors.username}
                 </p>
               )}
@@ -220,14 +220,14 @@ const Register = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-3 bg-white/5 border rounded-lg focus:outline-none focus:border-red-500 text-white transition-colors ${
-                    errors.email ? "border-red-500" : "border-red-500/20"
+                  className={`w-full pl-10 pr-4 py-3 bg-white/5 border rounded-lg focus:outline-none focus:border-red-light text-white transition-colors ${
+                    errors.email ? "border-red-light" : "border-red-light/20"
                   }`}
                   placeholder="you@example.com"
                 />
               </div>
               {errors.email && (
-                <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                <p className="mt-1 text-xs text-red-light flex items-center gap-1">
                   <XCircle size={12} /> {errors.email}
                 </p>
               )}
@@ -245,8 +245,8 @@ const Register = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-12 py-3 bg-white/5 border rounded-lg focus:outline-none focus:border-red-500 text-white transition-colors ${
-                    errors.password ? "border-red-500" : "border-red-500/20"
+                  className={`w-full pl-10 pr-12 py-3 bg-white/5 border rounded-lg focus:outline-none focus:border-red-light text-white transition-colors ${
+                    errors.password ? "border-red-light" : "border-red-light/20"
                   }`}
                   placeholder="••••••••"
                 />
@@ -271,7 +271,7 @@ const Register = () => {
                         }}
                         className={`h-full rounded-full ${
                           passwordStrength.score <= 1
-                            ? "bg-red-500"
+                            ? "bg-red-light"
                             : passwordStrength.score === 2
                               ? "bg-yellow-500"
                               : passwordStrength.score === 3
@@ -283,7 +283,7 @@ const Register = () => {
                     <span
                       className={`text-xs ${
                         passwordStrength.score <= 1
-                          ? "text-red-500"
+                          ? "text-red-light"
                           : passwordStrength.score === 2
                             ? "text-yellow-500"
                             : passwordStrength.score === 3
@@ -364,7 +364,7 @@ const Register = () => {
                 </div>
               )}
               {errors.password && (
-                <p className="mt-1 text-xs text-red-500">{errors.password}</p>
+                <p className="mt-1 text-xs text-red-light">{errors.password}</p>
               )}
             </div>
 
@@ -380,10 +380,10 @@ const Register = () => {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-12 py-3 bg-white/5 border rounded-lg focus:outline-none focus:border-red-500 text-white transition-colors ${
+                  className={`w-full pl-10 pr-12 py-3 bg-white/5 border rounded-lg focus:outline-none focus:border-red-light text-white transition-colors ${
                     errors.confirmPassword
-                      ? "border-red-500"
-                      : "border-red-500/20"
+                      ? "border-red-light"
+                      : "border-red-light/20"
                   }`}
                   placeholder="••••••••"
                 />
@@ -400,15 +400,15 @@ const Register = () => {
                 </button>
               </div>
               {errors.confirmPassword && (
-                <p className="mt-1 text-xs text-red-500">
+                <p className="mt-1 text-xs text-red-light">
                   {errors.confirmPassword}
                 </p>
               )}
             </div>
 
             {errors.submit && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                <p className="text-red-500 text-sm text-center">
+              <div className="p-3 bg-red-light/10 border border-red-light/20 rounded-lg">
+                <p className="text-red-light text-sm text-center">
                   {errors.submit}
                 </p>
               </div>
@@ -454,7 +454,7 @@ const Register = () => {
             Already have an account?{" "}
             <Link
               to="/login"
-              className="text-red-500 hover:text-red-400 font-semibold transition-colors"
+              className="text-red-light hover:text-red-400 font-semibold transition-colors"
             >
               Sign in
             </Link>

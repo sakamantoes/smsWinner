@@ -144,7 +144,7 @@ export default function Dashboard() {
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-red-dark/10 blur-3xl" />
         <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-red-light/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-300">
+            <div className="inline-flex items-center gap-2 rounded-full border border-red-light/40 bg-red-light/10 px-3 py-1 text-xs font-semibold text-red-300">
               <ShieldCheck size={13} />
               Verification workspace
             </div>
@@ -163,7 +163,7 @@ export default function Dashboard() {
             onClick={() =>
               navigate("/f/fund-account", { state: { from: "/f/dashboard" } })
             }
-            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-red-dark/40 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-500 active:bg-red-700"
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-red-dark/40 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-light active:bg-red-dark"
           >
             <Wallet size={16} />
             Fund Account
@@ -243,7 +243,7 @@ export default function Dashboard() {
                   Purchased numbers waiting for codes
                 </p>
               </div>
-              <button className="flex items-center gap-1.5 rounded-lg border border-white/10 shadow-md px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors hover:border-red-500/30 hover:bg-red-500/8">
+              <button className="flex items-center gap-1.5 rounded-lg border border-white/10 shadow-md px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors hover:border-red-light/30 hover:bg-red-light/8">
                 <RefreshCw size={13} />
                 Refresh
               </button>

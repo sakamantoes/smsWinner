@@ -152,6 +152,13 @@ const emailLogin = async (req, res, next) => {
       status: 200,
       success: true,
       message: "Login successful",
+      data: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+      },
+      token: jwtToken,
     });
   } catch (error) {
     next(error);
