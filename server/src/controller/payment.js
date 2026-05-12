@@ -44,6 +44,7 @@ const initialiseDeposit = async (req, res, next) => {
     );
 
     const value = squad.data.data;
+
     const transaction = await WalletTransaction.create({
       userId: user._id,
       amount: value.transaction_amount / 100,
@@ -88,7 +89,7 @@ const callbackUrlHandler = async (req, res, next) => {
 };
 
 const getPaymentStatus = async (req, res, next) => {
-  const { referenceId } = req.query;
+  const { referenceId } = req.body;
 
   try {
     const transaction = await WalletTransaction.findOne({ referenceId });
@@ -122,14 +123,9 @@ const webhookHandler = async (req, res, next) => {
       .digest("hex")
       .toUpperCase();
 
-    console.log("Webhook event received: ", event);
+    if (hash !== req.headers["x-squad-encrypted-body"]) return;
 
-    if (hash !== req.headers["x-squad-signature"]) return;
-
-    res.status(200).json({
-      success: true,
-      message: "Webhook processed",
-    });
+    res.send(200);
 
     const referenceId = event.TransactionRef || event.Body?.transaction_ref;
     const gatewayStatus = normalizeSquadStatus(event.Body?.transaction_status);
@@ -212,6 +208,7 @@ const webhookHandler = async (req, res, next) => {
         balanceBefore: transaction.balanceBefore,
         balanceAfter: transaction.balanceAfter,
       };
+
     });
   } catch (error) {
     next(error);

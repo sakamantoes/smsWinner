@@ -13,7 +13,8 @@ const validateData = (req, res, next) => {
   return res.status(422).json({
     status: 422,
     success: false,
-    errors: extractedErrors,
+    error: extractedErrors,
+    message: extractedErrors,
   });
 };
 

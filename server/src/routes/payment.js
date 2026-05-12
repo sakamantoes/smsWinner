@@ -32,7 +32,7 @@ router.post(
   callbackUrlHandler,
 );
 
-router.get(
+router.post(
   "/status",
   paymentStatusValidator,
   validateData,

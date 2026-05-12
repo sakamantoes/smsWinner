@@ -124,12 +124,13 @@ const Register = () => {
       if (response.status === 200 || response.status === 201) {
         navigate("/f/dashboard", { replace: true });
       } else {
-        setErrors({ submit: response.data.message || "Registration failed" });
+        setErrors({ submit: response.message || "Registration failed" });
       }
     } catch (error) {
       console.error("registration erorr: ", error);
+      toast.error(error.data.message || "Something Went Wrong");
       setErrors({
-        submit: error.message || "Network error. Please try again.",
+        submit: error.data.message || "Network error. Please try again.",
       });
     } finally {
       setLoading(false);

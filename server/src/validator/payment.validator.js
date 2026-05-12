@@ -17,5 +17,5 @@ export const callbackUrlValidator = [
 ];
 
 export const paymentStatusValidator = [
-  query("referenceId").notEmpty().withMessage("Reference ID is required"),
+  body("referenceId").notEmpty().withMessage("Reference ID is required"),
 ];

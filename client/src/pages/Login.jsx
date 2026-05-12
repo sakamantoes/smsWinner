@@ -46,13 +46,13 @@ const Login = () => {
       if (response.status === 200 || response.status === 201) {
         navigate("/f/dashboard", { replace: true });
       } else {
-        toast.error(response.data.message || "Invalid Credentials");
-        setError(response.data.message || "Invalid Credentials");
+        toast.error(response.message || "Invalid Credentials");
+        setError(response.message || "Invalid Credentials");
       }
     } catch (error) {
       console.error("login error: ", error);
-      toast.error(error.message || "Something Went Wrong");
-      setError(error.message || "Network error. Please try again.");
+      toast.error(error.data.message || "Something Went Wrong");
+      setError(error.data.message || "Network error. Please try again.");
     } finally {
       setLoading(false);
     }

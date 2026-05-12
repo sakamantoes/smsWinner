@@ -1,26 +1,29 @@
 import { CheckCircle2, Clock3, X, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import api from "../../service/api.js";
+import { getSquadPaymentStatus } from "../../service/payment";
 
 const statusContent = {
   success: {
     title: "Payment Successful",
-    message: "Your payment was completed successfully. Your wallet will update shortly.",
+    message:
+      "Your payment was completed successfully. Your wallet will update shortly.",
     icon: CheckCircle2,
     iconClass: "bg-emerald-500/10 text-emerald-400",
     buttonClass: "bg-emerald-600 hover:bg-emerald-500",
   },
   pending: {
     title: "Payment Pending",
-    message: "Your payment is still being confirmed. We will update your wallet once it clears.",
+    message:
+      "Your payment is still being confirmed. We will update your wallet once it clears.",
     icon: Clock3,
     iconClass: "bg-amber-500/10 text-amber-400",
     buttonClass: "bg-red-dark hover:bg-red",
   },
   failed: {
     title: "Payment Failed",
-    message: "We could not confirm this payment. Please try again or use another payment method.",
+    message:
+      "We could not confirm this payment. Please try again or use another payment method.",
     icon: XCircle,
     iconClass: "bg-red-light/10 text-red-light",
     buttonClass: "bg-red-dark hover:bg-red",
@@ -43,7 +46,8 @@ export default function PaymentStatusModal() {
   const content = statusContent[transactionStatus] || {
     title: "Payment Status Unavailable",
     message:
-      statusError || "We could not read the payment status from this redirect link.",
+      statusError ||
+      "We could not read the payment status from this redirect link.",
     icon: Clock3,
     iconClass: "bg-white/10 text-gray-300",
     buttonClass: "bg-red-dark hover:bg-red",
@@ -62,16 +66,14 @@ export default function PaymentStatusModal() {
 
       try {
         setIsLoading(true);
-        const response = await api.get("/payment/status", {
-          params: { referenceId: reference },
-        });
-        const returnedStatus = response.data?.data?.status || response.data?.data;
-        setTransactionStatus(String(returnedStatus).toLowerCase());
+        const response = await getSquadPaymentStatus({referenceId: reference});
+
+        setTransactionStatus(String(response.data.status).toLowerCase());
         setStatusError("");
       } catch (error) {
         setTransactionStatus("unavailable");
         setStatusError(
-          error.response?.data?.message ||
+          error.data.message ||
             "We could not verify this payment status. Please try again.",
         );
       } finally {
@@ -85,8 +87,6 @@ export default function PaymentStatusModal() {
   const handleClose = () => {
     navigate("/f/dashboard", { replace: true });
   };
-
-  
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-black px-4 py-6">
