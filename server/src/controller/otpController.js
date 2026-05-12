@@ -804,6 +804,60 @@ export const getSmsActivateBalance = async (req, res) => {
   }
 };
 
+// GET SMSBOWER COUNTRIES
+export const getSmsBowerCountries = async (req, res) => {
+  try {
+    const API_KEY = env.smsBowerApiKey;
+
+    console.log("🌍 Fetching SMSBower countries...");
+    console.log(`🔑 API Key exists: ${!!API_KEY}`);
+
+    const response = await smsBowerApi.get("/stubs/handler_api.php", {
+      params: {
+        api_key: API_KEY,
+        action: "getCountries",
+      },
+      timeout: 30000,
+    });
+
+    const countries = response.data;
+
+    if (!countries) {
+      return res.status(500).json({
+        success: false,
+        message: "No countries returned from SMSBower",
+      });
+    }
+
+    // Return ALL country fields
+    const formattedCountries = Array.isArray(countries)
+      ? countries.map((country) => ({
+          ...country,
+        }))
+      : Object.values(countries).map((country) => ({
+          ...country,
+        }));
+
+    return res.status(200).json({
+      success: true,
+      total: formattedCountries.length,
+      countries: formattedCountries,
+    });
+  } catch (error) {
+    console.error("❌ GET SMSBOWER COUNTRIES ERROR:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch countries from SMSBower",
+      error: error.message,
+    });
+  }
+};
+
 // WEBHOOKS
 export const smsBowerWebhook = async (req, res) => {
   try {

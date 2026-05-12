@@ -13,6 +13,7 @@ import {
   updateMarkup,
   nodeOtpWebhook,
   smsActivateWebhook,
+  getSmsBowerCountries,
 } from "../controller/otpController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { validateAdminRole } from "../middleware/authMiddleware.js";
@@ -26,6 +27,8 @@ router.post("/cancel/:orderId", authMiddleware, cancelActivation);
 router.get("/my-balance", authMiddleware, getUserBalance);
 router.get("/my-orders", authMiddleware, getOrderHistory);
 router.get("/order/:orderId", authMiddleware, getOrderDetails);
+router.get("/available-services", authMiddleware, getAvailableServices);
+router.get("/countrys", authMiddleware, getSmsBowerCountries);
 
 // admin routes
 router.get("/company-stats", authMiddleware, validateAdminRole, getCompanyStats);
