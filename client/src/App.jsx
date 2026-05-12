@@ -11,6 +11,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import UserLayout from "./layouts/UserLayout.jsx";
 import Logs from "./pages/user/Logs.jsx";
+import OtpBox from "./pages/user/OtpBox.jsx";
 
 const App = () => {
   return (
@@ -34,6 +35,7 @@ const App = () => {
           <Route path="fund-account" element={<FundAccount />} />
           <Route path="numbers" element={<PhoneNumber />} /> 
           <Route path="logs" element={<Logs />} />
+          <Route path="otp-box" element={<OtpBox />} />
         </Route>
       </Routes>
     </>

@@ -27,6 +27,7 @@ import {
   MapPin,
   ArrowUpRight,
   ArrowDownRight,
+  Currency,
 } from "lucide-react";
 import { getLogs, buyLog, getUserPurchasedApi } from "../../service/logs";
 
@@ -373,11 +374,11 @@ const Logs = () => {
                   
                   <div className="mt-4 flex items-center justify-between">
                     <div className="flex items-center gap-1">
-                      <DollarSign size={14} className="text-gray-500" />
+                      <p className="text-gray-500">#</p>
                       <span className="text-lg font-bold text-white">
                         {log.price || log.cost || "0.00"}
                       </span>
-                      <span className="text-xs text-gray-500">USD</span>
+                      <span className="text-xs text-gray-500">NGN</span>
                     </div>
                     <div className="flex gap-2">
                       <button
