@@ -124,10 +124,12 @@ const webhookHandler = async (req, res, next) => {
 
     console.log("Webhook event received: ", event);
 
-    if (hash !== req.headers["x-squad-signature"]) {
-      res.statusCode = 401;
-      throw new Error("Invalid signature");
-    }
+    if (hash !== req.headers["x-squad-signature"]) return;
+
+    res.status(200).json({
+      success: true,
+      message: "Webhook processed",
+    });
 
     const referenceId = event.TransactionRef || event.Body?.transaction_ref;
     const gatewayStatus = normalizeSquadStatus(event.Body?.transaction_status);
@@ -146,7 +148,7 @@ const webhookHandler = async (req, res, next) => {
     await session.withTransaction(async () => {
       const transaction = await WalletTransaction.findOne({
         referenceId,
-      }).session(ses sion);
+      }).session(session);
 
       if (!transaction) {
         res.statusCode = 404;
@@ -211,12 +213,6 @@ const webhookHandler = async (req, res, next) => {
         balanceAfter: transaction.balanceAfter,
       };
     });
-
-    res.status(200).json({
-      success: true,
-      message: "Webhook processed",
-      data: webhookResult,
-    });
   } catch (error) {
     next(error);
   } finally {
@@ -230,28 +226,3 @@ export {
   callbackUrlHandler,
   getPaymentStatus,
 };
-
-
-// Webhook event received:  {
-//   Event: 'charge_successful',
-//   TransactionRef: 'SQJABE6391404711062900019',
-//   Body: {
-//     amount: 20000,
-//     transaction_ref: 'SQJABE6391404711062900019',
-//     gateway_ref: 'SQJABE6391404711062900019_1_18_1',
-//     transaction_status: 'Success',
-//     email: 'emmanueldartey02@gmail.com',
-//     merchant_id: 'SBBHFY3B8W',
-//     currency: 'NGN',
-//     transaction_type: 'Card',
-//     merchant_amount: 19800,
-//     created_at: '2026-05-10T22:58:30.648',
-//     meta: {},
-//     payment_information: {
-//       payment_type: 'card',
-//       pan: '424242******4242|0526',
-//       card_type: 'verve'
-//     },
-//     is_recurring: false
-//   }
-// }
