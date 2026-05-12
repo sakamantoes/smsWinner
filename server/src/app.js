@@ -22,6 +22,10 @@ app.use(
 );
 app.use(cookieParser());
 
+app.get("/", (req, res) => {
+  res.send("Welcome to SMS Winners API");
+});
+
 // routes
 app.use("/api/auth", authRoutes);
 app.use("/api/logs", logsRoutes);

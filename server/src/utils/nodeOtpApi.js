@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { env } from '../config/constant.js';
 
-const API_KEY = env.nodeApiKey;
+const API_KEY = env.nodeApiKey ;
 
 const nodeApi = axios.create({
     baseURL:  "https://nodeotp.com/api/v1",
