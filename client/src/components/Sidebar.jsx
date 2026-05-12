@@ -36,8 +36,8 @@ export default function Sidebar({
             className={({ isActive }) =>
               `flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition ${
                 isActive
-                  ? "bg-gradient-to-r from-red-500 to-red-700 text-white shadow-lg shadow-red-500/25"
-                  : "text-gray-400 hover:bg-red-500/10 hover:text-white"
+                  ? "bg-gradient-to-r from-red-light to-red-dark text-white shadow-lg shadow-red-light/25"
+                  : "text-gray-400 hover:bg-red-light/10 hover:text-white"
               }`
             }
           >
@@ -57,7 +57,7 @@ export default function Sidebar({
             {statusDescription}
           </p>
         </div>
-        <button className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-red-light/30 text-sm font-semibold text-gray-200 hover:bg-red-500/10">
+        <button className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-red-light/30 text-sm font-semibold text-gray-200 hover:bg-red-light/10">
           <LifeBuoy size={17} />
           {supportLabel}
         </button>

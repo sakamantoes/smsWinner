@@ -52,7 +52,7 @@ const FloatingChat = () => {
             repeat: Infinity,
             ease: "easeInOut",
           }}
-          className="absolute inset-0 rounded-full bg-gradient-to-r from-red-500 to-orange-500 blur-xl"
+          className="absolute inset-0 rounded-full bg-gradient-to-r from-red-light to-orange-500 blur-xl"
         />
 
         {/* Main Button */}
@@ -72,10 +72,10 @@ const FloatingChat = () => {
             h-16
             rounded-full
             bg-gradient-to-br
-            from-red-500
+            from-red-light
             to-orange-500
             shadow-2xl
-            shadow-red-500/40
+            shadow-red-light/40
             border
             border-white/20
             backdrop-blur-md
@@ -129,7 +129,7 @@ const FloatingChat = () => {
                 rounded-3xl
                 overflow-hidden
                 border
-                border-red-500/20
+                border-red-light/20
                 bg-gradient-to-br
                 from-gray-900
                 to-black
@@ -294,11 +294,11 @@ const FloatingChat = () => {
               initial={{ opacity: 0, scale: 0.8, y: 40 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 40 }}
-              className="fixed bottom-28 right-6 z-50 w-[90vw] max-w-md rounded-3xl overflow-hidden border border-red-500/20 bg-gradient-to-br from-gray-900 to-black shadow-2xl"
+              className="fixed bottom-28 right-6 z-50 w-[90vw] max-w-md rounded-3xl overflow-hidden border border-red-light/20 bg-gradient-to-br from-gray-900 to-black shadow-2xl"
             >
-              <div className="bg-gradient-to-r from-red-500 to-orange-500 p-5 flex items-center gap-3">
+              <div className="bg-gradient-to-r from-red-light to-orange-500 p-5 flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
-                  <FaHeadset className="text-red-500 text-2xl" />
+                  <FaHeadset className="text-red-light text-2xl" />
                 </div>
                 <div>
                   <h3 className="text-white font-bold">Connecting...</h3>
@@ -306,7 +306,7 @@ const FloatingChat = () => {
                 </div>
               </div>
               <div className="p-6 text-center">
-                <div className="w-12 h-12 border-4 border-red-500/30 border-t-red-500 rounded-full animate-spin mx-auto mb-4" />
+                <div className="w-12 h-12 border-4 border-red-light/30 border-t-red-light rounded-full animate-spin mx-auto mb-4" />
                 <p className="text-gray-300">Redirecting to chat...</p>
               </div>
             </motion.div>

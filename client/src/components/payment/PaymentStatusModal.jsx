@@ -22,7 +22,7 @@ const statusContent = {
     title: "Payment Failed",
     message: "We could not confirm this payment. Please try again or use another payment method.",
     icon: XCircle,
-    iconClass: "bg-red-500/10 text-red-light",
+    iconClass: "bg-red-light/10 text-red-light",
     buttonClass: "bg-red-dark hover:bg-red",
   },
 };
