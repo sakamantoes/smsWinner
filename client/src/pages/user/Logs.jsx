@@ -11,25 +11,12 @@ import {
   AlertCircle,
   Loader2,
   Search,
-  Filter,
-  Calendar,
   DollarSign,
   Wallet,
-  CreditCard,
   ChevronRight,
-  RefreshCw,
-  Copy,
-  TrendingUp,
-  Package,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  ArrowUpRight,
-  ArrowDownRight,
-  Currency,
 } from "lucide-react";
 import { getLogs, buyLog, getUserPurchasedApi } from "../../service/logs";
+import WalletBalanceCard from "../../components/WalletBalanceCard.jsx";
 
 const Logs = () => {
   const navigate = useNavigate();
@@ -167,15 +154,6 @@ const Logs = () => {
       iconBg: "bg-blue-500/15",
       iconColor: "text-blue-400",
     },
-    {
-      label: "Wallet Balance",
-      value: "NGN 48,250",
-      change: "Available",
-      icon: Wallet,
-      iconBg: "bg-red/15",
-      iconColor: "text-red",
-      changeBg: "bg-red/10 text-red",
-    },
   ];
 
   return (
@@ -210,6 +188,8 @@ const Logs = () => {
 
       {/* Stats Cards */}
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <WalletBalanceCard statusText="Available" />
+
         {stats.map((stat) => (
           <div
             key={stat.label}

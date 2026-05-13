@@ -1,7 +1,6 @@
 import axios from "axios";
 import { env } from "../config/constant.js";
 import WalletTransaction from "../model/WalletTransactions.js";
-import Wallet from "../model/Wallet.js";
 import crypto from "crypto";
 import mongoose from "mongoose";
 
@@ -186,11 +185,11 @@ const webhookHandler = async (req, res, next) => {
         throw new Error("Webhook amount does not match transaction amount");
       }
 
-      const wallet = await Wallet.findOneAndUpdate(
-        { userId: transaction.userId },
+      const wallet = await User.findOneAndUpdate(
+        { _id: transaction.userId },
         {
-          $setOnInsert: { userId: transaction.userId },
-          $inc: { balance: amountToCredit },
+          $setOnInsert: { _id: transaction.userId },
+          $inc: { walletBalance: amountToCredit },
         },
         {
           new: true,
@@ -201,8 +200,8 @@ const webhookHandler = async (req, res, next) => {
 
       transaction.status = "SUCCESS";
       transaction.orderId = event.Body?.gateway_ref || transaction.orderId;
-      transaction.balanceAfter = wallet.balance;
-      transaction.balanceBefore = wallet.balance - amountToCredit;
+      transaction.balanceAfter = wallet.walletBalance;
+      transaction.balanceBefore = wallet.walletBalance - amountToCredit;
 
       await transaction.save({ session });
 

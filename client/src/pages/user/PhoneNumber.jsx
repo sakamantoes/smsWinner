@@ -15,6 +15,7 @@ import {
   Wallet,
   CreditCard,
 } from "lucide-react";
+import WalletBalanceCard from "../../components/WalletBalanceCard.jsx";
 
 import {
   buyNumber,
@@ -234,6 +235,8 @@ const PhoneNumber = () => {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Purchase Form - Left Column */}
         <div className="lg:col-span-1 space-y-6">
+          <WalletBalanceCard />
+
           <div className="rounded-xl border border-white/10 shadow-md bg-white/5 p-5">
             <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-gray-400">
               <Globe size={14} />

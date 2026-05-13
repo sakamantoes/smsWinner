@@ -14,17 +14,9 @@ import {
   Wallet,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import WalletBalanceCard from "../../components/WalletBalanceCard.jsx";
 
 const stats = [
-  {
-    label: "Wallet Balance",
-    value: "NGN 48,250",
-    change: "Ready to spend",
-    icon: Wallet,
-    iconBg: "bg-red/15",
-    iconColor: "text-red",
-    changeBg: "bg-red/10 text-red border-white/10 shadow-md",
-  },
   {
     label: "Active Orders",
     value: "6",
@@ -138,9 +130,7 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      {/* ── Hero banner ── */}
       <section className="relative overflow-hidden rounded-2xl border border-white/10 shadow-md bg-gradient-to-br from-red-950/40 via-black to-black p-6 text-white sm:p-8">
-        {/* subtle radial glow */}
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-red-dark/10 blur-3xl" />
         <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
@@ -171,8 +161,9 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* ── Stat cards ── */}
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <WalletBalanceCard />
+
         {stats.map((stat) => (
           <div
             key={stat.label}
@@ -200,17 +191,14 @@ export default function Dashboard() {
         ))}
       </section>
 
-      {/* ── Main grid ── */}
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        {/* Left column */}
         <div className="space-y-5">
-          {/* Quick actions */}
           <div className="rounded-xl border border-red-light/10 shadow-md bg-white/5 p-5">
             <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400">
               Quick Actions
             </h2>
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {quickActions.map(({ label, icon: Icon   }) => (
+              {quickActions.map(({ label, icon: Icon }) => (
                 <button
                   key={label}
                   type="button"
@@ -232,7 +220,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Active OTP sessions */}
           <div className="overflow-hidden rounded-xl border border-red-light/10 shadow-md bg-white/5">
             <div className="flex items-center justify-between border-b border-red-light/10 shadow-md px-5 py-4">
               <div>
@@ -255,7 +242,6 @@ export default function Dashboard() {
                   key={session.number}
                   className="flex flex-col gap-3 px-5 py-4 hover:bg-white/5 sm:flex-row sm:items-center sm:gap-4 transform transition-all hover:-translate-y-1"
                 >
-                  {/* Service + number */}
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-white">
@@ -276,7 +262,6 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Status */}
                   <div className="flex items-center gap-1.5 text-xs font-medium">
                     {session.received ? (
                       <CheckCircle2 size={14} className="text-emerald-500" />
@@ -292,7 +277,6 @@ export default function Dashboard() {
                     </span>
                   </div>
 
-                  {/* Code / time */}
                   <div className="w-24 shrink-0 rounded-lg border border-red-light/10 shadow-md bg-black/40 px-3 py-2 text-center font-mono text-sm font-bold tracking-widest text-white">
                     {session.code}
                   </div>
@@ -302,16 +286,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Right column */}
         <div className="space-y-5">
-          {/* Available services */}
           <div className="rounded-xl border border-red-light/10 shadow-md bg-white/5 p-5">
             <h2 className="font-semibold text-white">Available Services</h2>
             <div className="mt-4 space-y-2.5">
               {serviceCards.map((service) => (
                 <div
                   key={service.title}
-                  className="group flex gap-3 rounded-xl border border-red-light/10 shadow-md bg-black/20 p-4 transform transition-all hover:-translate-y-1  hover:border-red-light/40 hover:bg-red-light/5"
+                  className="group flex gap-3 rounded-xl border border-red-light/10 shadow-md bg-black/20 p-4 transform transition-all hover:-translate-y-1 hover:border-red-light/40 hover:bg-red-light/5"
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-light/10 text-red transition-colors group-hover:bg-red-light/20">
                     <service.icon size={18} />
@@ -332,7 +314,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Recent activity */}
           <div className="rounded-xl border border-red-light/10 shadow-md bg-white/5 p-5">
             <h2 className="font-semibold text-white">Recent Activity</h2>
             <div className="mt-4 space-y-1">

@@ -8,7 +8,6 @@ import nodeApi from "../utils/nodeOtpApi.js";
 import smsActivateApi from "../utils/smsActivateApi.js";
 import smsBowerApi from "../utils/smsBowerApi.js";
 import systemSettingsModel from "../model/systemSettingsSchema.js";
-import Wallet from "../model/Wallet.js";
 import priceInterceptor from "../utils/priceInterceptor.js";
 import { env } from "../config/constant.js";
 
@@ -676,18 +675,6 @@ export const cancelActivation = async (req, res) => {
   }
 };
 
-// GET USER BALANCE
-export const getUserBalance = async (req, res) => {
-  try {
-    const userId = req.user?.id;
-    let wallet = await Wallet.findOne({ userId });
-    if (!wallet) wallet = await Wallet.create({ userId, balance: 0 });
-    return res.json({ success: true, balance: wallet.balance });
-  } catch (error) {
-    console.error("GET BALANCE ERROR:", error);
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
 
 // GET COMPANY STATS
 export const getCompanyStats = async (req, res) => {

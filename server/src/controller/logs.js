@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import Log from "../model/Logs.js";
 import User from "../model/User.js";
-import Wallet from "../model/Wallet.js";
 import { maskEmail, maskPassword } from "../utils/maskDate.js";
 
 // create log
@@ -53,20 +52,14 @@ const getLogs = async (req, res, next) => {
 // buy log
 const buyLog = async (req, res, next) => {
   const { id } = req.params;
-  const userId = req.user._id;
+  const userId = req.user;
   const session = await mongoose.startSession();
   const recieptNo = recieptNumberGenerator();
   try {
     let finalResult = null;
 
     await session.withTransaction(async () => {
-      const isUser = await User.findById(userId).session(session);
-
-      if (!isUser) {
-        res.statusCode = 401;
-        throw new Error("UnAuthorized Access");
-      }
-
+      
       const log = await Log.findById(id).session(session);
 
       if (!log) {
@@ -78,14 +71,13 @@ const buyLog = async (req, res, next) => {
         res.statusCode = 400;
         throw new Error("Log already sold");
       }
-
-      const userWallet = await Wallet.findOneAndUpdate(
+      const isUser = await User.findOneAndUpdate(
         {
-          userId: isUser._id,
-          balance: { $gte: log.price },
+          _id: userId._id,
+          walletBalance: { $gte: log.price },
         },
         {
-          $inc: { balance: -log.price },
+          $inc: { walletBalance: -log.price },
         },
         {
           session,
@@ -93,10 +85,13 @@ const buyLog = async (req, res, next) => {
         },
       );
 
-      if (!userWallet) {
-        res.statusCode = 400;
-        throw new Error("Insufficient balance");
+
+      if (!isUser) {
+        res.statusCode = 401;
+        throw new Error("UnAuthorized Access");
       }
+
+
 
       const [reciept] = await PurchaseReceipt.create(
         [

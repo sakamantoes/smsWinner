@@ -4,7 +4,6 @@ import {
   buyNumber,
   checkOtpStatus,
   cancelActivation,
-  getUserBalance,
   getCompanyStats,
   getOrderHistory,
   getSmsActivateBalance,
@@ -24,7 +23,6 @@ const router = express.Router();
 router.post("/buy-number", authMiddleware, buyNumber);
 router.get("/status/:orderId", authMiddleware, checkOtpStatus);
 router.post("/cancel/:orderId", authMiddleware, cancelActivation);
-router.get("/my-balance", authMiddleware, getUserBalance);
 router.get("/my-orders", authMiddleware, getOrderHistory);
 router.get("/order/:orderId", authMiddleware, getOrderDetails);
 router.get("/available-services", authMiddleware, getAvailableServices);

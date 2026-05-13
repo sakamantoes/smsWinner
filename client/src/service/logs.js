@@ -6,26 +6,26 @@ export const createLog = async (data) => {
 };
 
 export const getLogs = async () => {
-  const res = await api.get("api/logs/");
+  const res = await api.get("/api/logs/");
     return res.data;
 };
 
 export const buyLog = async (id) => {
-  const res = await api.post(`api/logs/buy/${id}`);
+  const res = await api.post(`/api/logs/buy/${id}`);
     return res.data;
 }
 
 export const updateLog = async (id, data) => {
-  const res = await api.put(`api/logs/update/${id}`, data);
+  const res = await api.put(`/api/logs/update/${id}`, data);
     return res.data;
 }
 
 export const deleteLog = async (id) => {
-  const res = await api.delete(`api/logs/delete/${id}`);
+  const res = await api.delete(`/api/logs/delete/${id}`);
     return res.data;
 }
 
 export const getUserPurchasedApi= async () => {
-    const res = await api.get(`api/logs/my-logs`);    
+    const res = await api.get(`/api/logs/my-logs`);    
     return res.data;
 }
