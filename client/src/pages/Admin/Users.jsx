@@ -48,7 +48,7 @@ export default function Users() {
       console.log("Users data:", data);
       
       // Handle different response structures
-     const usersArray = data?.data?.users || [];
+      const usersArray = data?.data?.users || [];
       setUsers(usersArray);
       setFilteredUsers(usersArray);
     } catch (error) {
@@ -119,9 +119,12 @@ export default function Users() {
       );
     }
     
-    // Apply status filter
+    // Apply status filter - FIXED: Check the actual status field
     if (statusFilter !== "all") {
-      filtered = filtered.filter((user) => user.status === statusFilter);
+      filtered = filtered.filter((user) => {
+        const userStatus = user.status === "active" || user.isActive === true ? "active" : "inactive";
+        return userStatus === statusFilter;
+      });
     }
     
     setFilteredUsers(filtered);
@@ -153,7 +156,7 @@ export default function Users() {
     {
       label: "Active Users",
       value: activeUsers,
-      change: `${((activeUsers / totalUsers) * 100).toFixed(1)}% of total`,
+      change: `${totalUsers > 0 ? ((activeUsers / totalUsers) * 100).toFixed(1) : 0}% of total`,
       icon: UserCheck,
       iconBg: "bg-emerald-500/15",
       iconColor: "text-emerald-400",
@@ -161,7 +164,7 @@ export default function Users() {
     {
       label: "Inactive Users",
       value: inactiveUsers,
-      change: `${((inactiveUsers / totalUsers) * 100).toFixed(1)}% of total`,
+      change: `${totalUsers > 0 ? ((inactiveUsers / totalUsers) * 100).toFixed(1) : 0}% of total`,
       icon: UserX,
       iconBg: "bg-amber-500/15",
       iconColor: "text-amber-400",
@@ -175,6 +178,11 @@ export default function Users() {
       iconColor: "text-blue-400",
     },
   ];
+
+  // Helper function to get user status consistently
+  const getUserStatus = (user) => {
+    return (user.status === "active" || user.isActive === true) ? "active" : "inactive";
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -249,11 +257,11 @@ export default function Users() {
             onClick={() => setStatusFilter("all")}
             className={`rounded-lg px-3 py-2 text-xs font-medium transition-all ${
               statusFilter === "all"
-                ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                ? "bg-red-500/20 text-red-light border border-red-500/30"
                 : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10"
             }`}
           >
-            All Users
+            All Users ({users.length})
           </button>
           <button
             onClick={() => setStatusFilter("active")}
@@ -263,7 +271,7 @@ export default function Users() {
                 : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10"
             }`}
           >
-            Active
+            Active ({activeUsers})
           </button>
           <button
             onClick={() => setStatusFilter("inactive")}
@@ -273,7 +281,7 @@ export default function Users() {
                 : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10"
             }`}
           >
-            Inactive
+            Inactive ({inactiveUsers})
           </button>
         </div>
       </div>
@@ -281,11 +289,12 @@ export default function Users() {
       {/* Users Table */}
       <div className="rounded-xl border border-white/10 shadow-md bg-white/5 overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-red-400" />
+          <div className="flex items-center justify-center py-12 flex-col gap-1">
+            <Loader2 className="h-8 w-8 animate-spin text-red-light" />
+            <p className="text-white text-[12px]">getting all user.....</p>
           </div>
         ) : error ? (
-          <div className="flex items-center justify-center gap-2 rounded-lg bg-red-500/10 p-4 text-red-400 m-4">
+          <div className="flex items-center justify-center gap-2 rounded-lg bg-red-500/10 p-4 text-red-light m-4">
             <AlertCircle size={20} />
             {error}
           </div>
@@ -319,12 +328,12 @@ export default function Users() {
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-400">
-                          {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-light font-semibold">
+                          {user.name ? user.name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || "U"}
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white">{user.name || "N/A"}</p>
-                          <p className="text-xs text-gray-500">ID: {user.id}</p>
+                          <p className="text-xs text-gray-500">ID: {user._id?.slice(-8)}</p>
                         </div>
                       </div>
                     </td>
@@ -332,7 +341,7 @@ export default function Users() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-1.5 text-xs text-gray-400">
                           <Mail size={12} />
-                          {user.email || "No email"}
+                          <span className="truncate max-w-[150px]">{user.email || "No email"}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-xs text-gray-400">
                           <Phone size={12} />
@@ -359,7 +368,9 @@ export default function Users() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 text-xs text-gray-400">
                         <Calendar size={12} />
-                        {new Date(user.createdAt || user.created_at).toLocaleDateString()}
+                        {user.createdAt || user.created_at
+                          ? new Date(user.createdAt || user.created_at).toLocaleDateString()
+                          : "N/A"}
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -376,13 +387,13 @@ export default function Users() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeactivateUser(user.id);
+                              handleDeactivateUser(user._id);
                             }}
-                            disabled={actionLoading === user.id}
+                            disabled={actionLoading === user._id}
                             className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-1.5 text-amber-400 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
                             title="Deactivate User"
                           >
-                            {actionLoading === user.id ? (
+                            {actionLoading === user._id ? (
                               <Loader2 size={14} className="animate-spin" />
                             ) : (
                               <UserX size={14} />
@@ -392,13 +403,13 @@ export default function Users() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleActivateUser(user.id);
+                              handleActivateUser(user._id);
                             }}
-                            disabled={actionLoading === user.id}
+                            disabled={actionLoading === user._id}
                             className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-1.5 text-emerald-400 transition-colors hover:bg-emerald-500/20 disabled:opacity-50"
                             title="Activate User"
                           >
-                            {actionLoading === user.id ? (
+                            {actionLoading === user._id ? (
                               <Loader2 size={14} className="animate-spin" />
                             ) : (
                               <UserCheck size={14} />
@@ -442,12 +453,12 @@ export default function Users() {
             <div className="p-6 space-y-4">
               {/* User Header */}
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-400 text-2xl font-bold">
-                  {selectedUser.name ? selectedUser.name.charAt(0).toUpperCase() : "U"}
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-light text-2xl font-bold">
+                  {selectedUser.name ? selectedUser.name.charAt(0).toUpperCase() : selectedUser.email?.charAt(0).toUpperCase() || "U"}
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white">{selectedUser.name || "N/A"}</h3>
-                  <p className="text-sm text-gray-400">@{selectedUser.username || "username"}</p>
+                  <p className="text-sm text-gray-400">ID: {selectedUser._id}</p>
                 </div>
               </div>
 
@@ -457,7 +468,7 @@ export default function Users() {
                   <p className="text-xs text-gray-500">Email Address</p>
                   <div className="flex items-center gap-1.5 mt-1">
                     <Mail size={14} className="text-gray-500" />
-                    <p className="text-sm text-white">{selectedUser.email || "Not provided"}</p>
+                    <p className="text-sm text-white break-all">{selectedUser.email || "Not provided"}</p>
                   </div>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/30 p-3">
@@ -498,7 +509,9 @@ export default function Users() {
                   <div className="flex items-center gap-1.5 mt-1">
                     <Calendar size={14} className="text-gray-500" />
                     <p className="text-sm text-white">
-                      {new Date(selectedUser.createdAt || selectedUser.created_at).toLocaleDateString()}
+                      {selectedUser.createdAt || selectedUser.created_at
+                        ? new Date(selectedUser.createdAt || selectedUser.created_at).toLocaleString()
+                        : "N/A"}
                     </p>
                   </div>
                 </div>
@@ -507,18 +520,20 @@ export default function Users() {
                   <div className="flex items-center gap-1.5 mt-1">
                     <Clock size={14} className="text-gray-500" />
                     <p className="text-sm text-white">
-                      {new Date(selectedUser.updatedAt || selectedUser.updated_at).toLocaleDateString()}
+                      {selectedUser.updatedAt || selectedUser.updated_at
+                        ? new Date(selectedUser.updatedAt || selectedUser.updated_at).toLocaleString()
+                        : "N/A"}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
+              {/* Action Buttons - FIXED: Properly reference selectedUser */}
               <div className="flex gap-3 pt-4">
                 {(selectedUser.status === "active" || selectedUser.isActive === true) ? (
                   <button
                     onClick={() => {
-                      handleDeactivateUser(selectedUser.id);
+                      handleDeactivateUser(selectedUser._id);
                       setSelectedUser(null);
                     }}
                     className="flex-1 rounded-lg bg-amber-500/20 py-2.5 text-sm font-semibold text-amber-400 transition-colors hover:bg-amber-500/30 border border-amber-500/20"
@@ -529,7 +544,7 @@ export default function Users() {
                 ) : (
                   <button
                     onClick={() => {
-                      handleActivateUser(selectedUser.id);
+                      handleActivateUser(selectedUser._id);
                       setSelectedUser(null);
                     }}
                     className="flex-1 rounded-lg bg-emerald-500/20 py-2.5 text-sm font-semibold text-emerald-400 transition-colors hover:bg-emerald-500/30 border border-emerald-500/20"
