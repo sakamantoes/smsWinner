@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Log from "../model/Logs.js";
 import User from "../model/User.js";
 import { maskEmail, maskPassword } from "../utils/maskDate.js";
+import  recieptNumberGenerator  from "../utils/recieptNo.generator.js";
 
 // create log
 const createLog = async (req, res, next) => {
@@ -59,7 +60,6 @@ const buyLog = async (req, res, next) => {
     let finalResult = null;
 
     await session.withTransaction(async () => {
-      
       const log = await Log.findById(id).session(session);
 
       if (!log) {
@@ -85,13 +85,10 @@ const buyLog = async (req, res, next) => {
         },
       );
 
-
       if (!isUser) {
         res.statusCode = 401;
         throw new Error("UnAuthorized Access");
       }
-
-
 
       const [reciept] = await PurchaseReceipt.create(
         [
