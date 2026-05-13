@@ -459,7 +459,7 @@ export default function AdminLogs() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <DollarSign size={12} className="text-gray-500" />
+                       <span className="text-gray-500 text-sm font-semibold">₦</span>
                         <span className="text-sm font-semibold text-white">
                           {log.price || log.cost || "0.00"}
                         </span>

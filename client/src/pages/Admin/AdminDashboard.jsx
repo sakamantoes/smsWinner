@@ -20,6 +20,8 @@ import {
   Server,
   UserCheck,
   UserX,
+  Coins,
+  CoinsIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -46,7 +48,7 @@ const stats = [
     label: "Total Revenue",
     value: "NGN 2.4M",
     change: "+18.2% vs last month",
-    icon: DollarSign,
+    icon: CoinsIcon,
     iconBg: "bg-white/10",
     iconColor: "text-gray-200",
     changeBg: "bg-white/8 text-gray-300 border-white/10",

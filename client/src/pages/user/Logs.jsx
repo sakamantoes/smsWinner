@@ -326,7 +326,7 @@ const Logs = () => {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredLogs.map((log) => (
                 <div
-                  key={log.id}
+                  key={log._id}
                   className="group rounded-xl border border-white/10 shadow-md bg-white/5 p-5 transition-all transform hover:-translate-y-1 hover:border-red-light/40 hover:bg-white/10"
                 >
                   <div className="flex items-start justify-between">
@@ -362,17 +362,17 @@ const Logs = () => {
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleViewDetails(log.id)}
+                        onClick={() => handleViewDetails(log._id)}
                         className="rounded-lg border border-white/10 p-1.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
                       >
                         <Eye size={16} />
                       </button>
                       <button
-                        onClick={() => handleBuyLog(log.id, log.price)}
-                        disabled={buyingId === log.id}
+                        onClick={() => handleBuyLog(log._id, log.price)}
+                        disabled={buyingId === log._id}
                         className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-red-light disabled:opacity-50"
                       >
-                        {buyingId === log.id ? (
+                        {buyingId === log._id ? (
                           <Loader2 size={12} className="animate-spin" />
                         ) : (
                           <ShoppingBag size={12} />
@@ -419,7 +419,7 @@ const Logs = () => {
                   </thead>
                   <tbody className="divide-y divide-white/10">
                     {purchaseHistory.map((purchase) => (
-                      <tr key={purchase.id} className="hover:bg-white/5 transition-colors">
+                      <tr key={purchaselog._id} className="hover:bg-white/5 transition-colors">
                         <td className="px-4 py-3">
                           <div>
                             <p className="text-sm font-medium text-white">{purchase.title || purchase.log_title}</p>
@@ -527,11 +527,11 @@ const Logs = () => {
               
               <div className="flex gap-3 pt-4">
                 <button
-                  onClick={() => handleBuyLog(selectedLog.id, selectedLog.price)}
-                  disabled={buyingId === selectedLog.id}
+                  onClick={() => handleBuyLog(selectedLoglog._id, selectedLog.price)}
+                  disabled={buyingId === selectedLoglog._id}
                   className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-light disabled:opacity-50"
                 >
-                  {buyingId === selectedLog.id ? (
+                  {buyingId === selectedLoglog._id ? (
                     <Loader2 size={16} className="mx-auto animate-spin" />
                   ) : (
                     `Purchase $${selectedLog.price}`
