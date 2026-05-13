@@ -15,14 +15,14 @@ import OtpBox from "./pages/user/OtpBox.jsx";
 import Deposit from "./pages/user/Deposit.jsx";
 import Wallet from "./pages/user/Wallet.jsx";
 import AdminLayout from "./layouts/AdminLayout.jsx";
-import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
-import Analytics from "./pages/Admin/Analytics.jsx";
-import Users from "./pages/Admin/Users.jsx";
-import Transactions from "./pages/Admin/Transactions.jsx";
-import AdminNumbers from './pages/Admin/AdminNumbers.jsx'
-import AdminLogs from "./pages/Admin/AdminLogs.jsx"; 
-import Reports from "./pages/Admin/Reports.jsx";
-import AdminSettings from "./pages/Admin/AdminSettings.jsx";
+import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
+import Analytics from "./pages/admin/Analytics.jsx";
+import Users from "./pages/admin/Users.jsx";
+import Transactions from "./pages/admin/Transactions.jsx";
+import AdminNumbers from './pages/admin/AdminNumbers.jsx'
+import AdminLogs from "./pages/admin/AdminLogs.jsx"; 
+import Reports from "./pages/admin/Reports.jsx";
+import AdminSettings from "./pages/admin/AdminSettings.jsx";
 import Setting from "./pages/user/Setting.jsx";
 
 const App = () => {
