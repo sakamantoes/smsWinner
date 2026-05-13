@@ -23,7 +23,7 @@ import AdminNumbers from './pages/Admin/AdminNumbers.jsx'
 import AdminLogs from "./pages/Admin/AdminLogs.jsx"; 
 import Reports from "./pages/Admin/Reports.jsx";
 import AdminSettings from "./pages/Admin/AdminSettings.jsx";
-import Setting from "./pages/user/setting.jsx";
+import Setting from "./pages/user/Setting.jsx";
 
 const App = () => {
   return (
