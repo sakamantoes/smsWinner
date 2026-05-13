@@ -13,7 +13,6 @@ import UserLayout from "./layouts/UserLayout.jsx";
 import Logs from "./pages/user/Logs.jsx";
 import OtpBox from "./pages/user/OtpBox.jsx";
 import Deposit from "./pages/user/Deposit.jsx";
-import Wallet from "./pages/user/Wallet.jsx";
 import AdminLayout from "./layouts/AdminLayout.jsx";
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import Analytics from "./pages/Admin/Analytics.jsx";
@@ -50,7 +49,6 @@ const App = () => {
           <Route path="logs" element={<Logs />} />
           <Route path="otp-box" element={<OtpBox />} />
           <Route path="deposits" element={<Deposit />} />
-          <Route path="wallet" element={<Wallet />} />
           <Route path="settings" element={<Setting />} />
         </Route>
 
