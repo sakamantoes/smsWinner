@@ -6,6 +6,6 @@ import { getUserWalletBalance } from "../controller/user.controller.js";
 
 const router = Router();
 
-router.get("/wallet", authMiddleware, validateUserRole, getUserWalletBalance);
+router.get("/wallet/balance", authMiddleware, validateUserRole, getUserWalletBalance);
 
 export default router;
