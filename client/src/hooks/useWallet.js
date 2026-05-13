@@ -14,7 +14,7 @@ const useWallet = () => {
       setError(null);
 
       const response = await getWalletBalance();
-      setWallet(response?.data || null);
+      setWallet(response?.data ?? null);
 
       return response;
     } catch (err) {
@@ -41,8 +41,7 @@ const useWallet = () => {
           return;
         }
 
-        console.log("Wallet response:", response);
-        setWallet(response?.data || null);
+        setWallet(response?.data ?? null);
       } catch (err) {
         if (!isMounted) {
           return;
@@ -66,7 +65,7 @@ const useWallet = () => {
 
   return {
     wallet,
-    balance: wallet?.balance || 0,
+    balance: typeof wallet === "number" ? wallet : wallet?.balance || 0,
     isLoading,
     isError,
     error,

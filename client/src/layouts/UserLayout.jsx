@@ -24,7 +24,6 @@ const userNavItems = [
   { label: "Logs", to: "/f/logs", icon: Mail },
   { label: "OTP Inbox", to: "/f/otp-box", icon: Inbox },
   { label: "Deposits", to: "/f/deposits", icon: CreditCard },
-  { label: "Wallet", to: "/f/wallet", icon: Wallet },
   { label: "Settings", to: "/f/settings", icon: Settings },
 ];
 
