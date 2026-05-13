@@ -165,4 +165,70 @@ const emailLogin = async (req, res, next) => {
   }
 };
 
-export { googleSetup, getAuthUser, emailSignup, emailLogin };
+const getAllUser = async (req, res, next) => {
+  try {
+    const users = await User.find({
+      role: "user",
+    });
+
+    res.status(200).json({
+      message: "All users found",
+      success: true,
+      data: {
+        users,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deactivateUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { isActive: false },
+      { new: true },
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "User deactivated",
+      user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const activateUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { isActive: true },
+      { new: true },
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "User activated",
+      user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export {
+  googleSetup,
+  getAuthUser,
+  emailSignup,
+  emailLogin,
+  getAllUser,
+  deactivateUser,
+  activateUser,
+};

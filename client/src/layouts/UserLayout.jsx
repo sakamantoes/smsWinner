@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import {
   Bell,
   CreditCard,
@@ -45,14 +45,21 @@ const userFallback = {
 
 const UserLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, clearAuth } = useAuth();
   const profile = user?.data || user || userFallback;
+ const navigate = useNavigate();
+
 
   const initial = (profile.name || profile.email || "U")
     .slice(0, 1)
     .toUpperCase();
   const displayName = profile.username || profile.name || userFallback.name;
   const displayEmail = profile.email || userFallback.email;
+
+  const handleLogout = () => {
+    clearAuth();
+    navigate("/login");
+  };
 
   return (
     <div className="min-h-screen text-white">
@@ -144,6 +151,7 @@ const UserLayout = () => {
               <button
                 type="button"
                 aria-label="Log out"
+                onClick={handleLogout}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950"
               >
                 <LogOut size={18} aria-hidden="true" />

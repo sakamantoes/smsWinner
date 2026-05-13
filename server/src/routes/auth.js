@@ -1,11 +1,14 @@
 import { Router } from "express";
 import {
+  activateUser,
+  deactivateUser,
   emailLogin,
   emailSignup,
+  getAllUser,
   getAuthUser,
   googleSetup,
 } from "../controller/auth.js";
-import authMiddleware from "../middleware/authMiddleware.js";
+import authMiddleware, { validateAdminRole } from "../middleware/authMiddleware.js";
 import { validateData } from "../validator/validator.js";
 import {
   googleSchema,
@@ -19,5 +22,8 @@ router.post("/signup", registerSchema, validateData, emailSignup);
 router.post("/login", loginSchema, validateData, emailLogin);
 router.post("/google", googleSchema, validateData, googleSetup);
 router.get("/me", authMiddleware, getAuthUser);
+router.get("/allUsers", authMiddleware, validateAdminRole, getAllUser)
+router.put("/activate/:id", activateUser);
+router.put("/deactivate/:id", deactivateUser);
 
 export default router;
