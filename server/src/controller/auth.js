@@ -167,7 +167,9 @@ const emailLogin = async (req, res, next) => {
 
 const getAllUser = async (req, res, next) => {
   try {
-    const users = await User.find(); 
+      const users = await User.find({
+      role: "user",
+    });
 
     res.status(200).json({
       message: "All users found",

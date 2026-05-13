@@ -1,5 +1,7 @@
 import { Router } from "express";
 import {
+  activateUser,
+  deactivateUser,
   emailLogin,
   emailSignup,
   getAllUser,
@@ -21,5 +23,7 @@ router.post("/login", loginSchema, validateData, emailLogin);
 router.post("/google", googleSchema, validateData, googleSetup);
 router.get("/me", authMiddleware, getAuthUser);
 router.get("/allUsers", authMiddleware, validateAdminRole, getAllUser)
+router.put("/activate/:id", activateUser);
+router.put("/deactivate/:id", deactivateUser);
 
 export default router;
