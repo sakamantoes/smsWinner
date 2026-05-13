@@ -335,7 +335,7 @@ export default function UserDeposits() {
                         <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-medium text-gray-300">
                           {deposit.type || "DEPOSIT"}
                         </span>
-                        <span className="rounded-full border border-red-light/20 bg-red-light/10 px-2.5 py-0.5 text-xs font-medium text-red-300">
+                        <span className="rounded-full border border-red-light/20 bg-red-light/10 px-2.5 py-0.5 text-xs font-medium text-red">
                           {formatMethod(deposit.paymentMethod)}
                         </span>
                         <span

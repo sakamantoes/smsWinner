@@ -60,7 +60,7 @@ const buyLog = async (req, res, next) => {
     let finalResult = null;
 
     await session.withTransaction(async () => {
-      const log = await Log.findById(id).session(session);
+      const log = await Log.findById({_id: id}).session(session);
 
       if (!log) {
         res.statusCode = 400;
@@ -99,6 +99,7 @@ const buyLog = async (req, res, next) => {
             itemModel: "Log",
             recieptNo: recieptNo,
             amount: log.price,
+            description: "User log purchase",
             balanceBefore: userWallet.balance + log.price,
             balanceAfter: userWallet.balance,
           },
