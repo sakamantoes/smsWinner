@@ -21,8 +21,8 @@ import useAuth from "../store/useAuth";
 const userNavItems = [
   { label: "Dashboard", to: "/f/dashboard", icon: Gauge },
   { label: "Numbers", to: "/f/numbers", icon: Phone },
-  { label: "Emails", to: "/f/emails", icon: Mail },
-  { label: "OTP Inbox", to: "/f/otp", icon: Inbox },
+  { label: "Logs", to: "/f/logs", icon: Mail },
+  { label: "OTP Inbox", to: "/f/otp-box", icon: Inbox },
   { label: "Deposits", to: "/f/deposits", icon: CreditCard },
   { label: "Wallet", to: "/f/wallet", icon: Wallet },
   { label: "Settings", to: "/f/settings", icon: Settings },

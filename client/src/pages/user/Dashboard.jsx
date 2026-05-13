@@ -210,7 +210,7 @@ export default function Dashboard() {
               Quick Actions
             </h2>
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {quickActions.map(({ label, icon: Icon }) => (
+              {quickActions.map(({ label, icon: Icon   }) => (
                 <button
                   key={label}
                   type="button"

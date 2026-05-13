@@ -23,6 +23,61 @@ import {
   getAvailableServices,
 } from "../../service/number";
 
+// Helper function to get flag emoji from country code
+const getCountryFlag = (countryCode, countryName) => {
+  const flags = {
+    // Common country codes
+    NG: "🇳🇬", US: "🇺🇸", GB: "🇬🇧", CA: "🇨🇦", AU: "🇦🇺", 
+    DE: "🇩🇪", FR: "🇫🇷", ES: "🇪🇸", IT: "🇮🇹", PT: "🇵🇹",
+    NL: "🇳🇱", BE: "🇧🇪", CH: "🇨🇭", AT: "🇦🇹", SE: "🇸🇪",
+    NO: "🇳🇴", DK: "🇩🇰", FI: "🇫🇮", PL: "🇵🇱", RU: "🇷🇺",
+    UA: "🇺🇦", TR: "🇹🇷", AE: "🇦🇪", SA: "🇸🇦", QA: "🇶🇦",
+    KW: "🇰🇼", BH: "🇧🇭", OM: "🇴🇲", JO: "🇯🇴", IL: "🇮🇱",
+    EG: "🇪🇬", MA: "🇲🇦", DZ: "🇩🇿", TN: "🇹🇳", LY: "🇱🇾",
+    ZA: "🇿🇦", KE: "🇰🇪", GH: "🇬🇭", SN: "🇸🇳", CI: "🇨🇮",
+    IN: "🇮🇳", PK: "🇵🇰", BD: "🇧🇩", LK: "🇱🇰", NP: "🇳🇵",
+    CN: "🇨🇳", JP: "🇯🇵", KR: "🇰🇷", ID: "🇮🇩", MY: "🇲🇾",
+    SG: "🇸🇬", PH: "🇵🇭", TH: "🇹🇭", VN: "🇻🇳", KH: "🇰🇭",
+    BR: "🇧🇷", AR: "🇦🇷", MX: "🇲🇽", CO: "🇨🇴", CL: "🇨🇱",
+    PE: "🇵🇪", VE: "🇻🇪", UY: "🇺🇾", PY: "🇵🇾", BO: "🇧🇴",
+    EC: "🇪🇨", CR: "🇨🇷", CU: "🇨🇺", DO: "🇩🇴", PR: "🇵🇷",
+  };
+  
+  // Try to match by country code first
+  if (countryCode && flags[countryCode.toUpperCase()]) {
+    return flags[countryCode.toUpperCase()];
+  }
+  
+  // Try to match by country name
+  const nameMap = {
+    "Nigeria": "🇳🇬", "United States": "🇺🇸", "USA": "🇺🇸", "America": "🇺🇸",
+    "United Kingdom": "🇬🇧", "UK": "🇬🇧", "Britain": "🇬🇧", "England": "🇬🇧",
+    "Canada": "🇨🇦", "Australia": "🇦🇺", "Germany": "🇩🇪", "France": "🇫🇷",
+    "Spain": "🇪🇸", "Italy": "🇮🇹", "Portugal": "🇵🇹", "Netherlands": "🇳🇱",
+    "Belgium": "🇧🇪", "Switzerland": "🇨🇭", "Austria": "🇦🇹", "Sweden": "🇸🇪",
+    "Norway": "🇳🇴", "Denmark": "🇩🇰", "Finland": "🇫🇮", "Poland": "🇵🇱",
+    "Russia": "🇷🇺", "Ukraine": "🇺🇦", "Turkey": "🇹🇷", "UAE": "🇦🇪",
+    "Saudi Arabia": "🇸🇦", "Qatar": "🇶🇦", "Kuwait": "🇰🇼", "Bahrain": "🇧🇭",
+    "Oman": "🇴🇲", "Jordan": "🇯🇴", "Israel": "🇮🇱", "Egypt": "🇪🇬",
+    "Morocco": "🇲🇦", "Algeria": "🇩🇿", "Tunisia": "🇹🇳", "Libya": "🇱🇾",
+    "South Africa": "🇿🇦", "Kenya": "🇰🇪", "Ghana": "🇬🇭", "Senegal": "🇸🇳",
+    "India": "🇮🇳", "Pakistan": "🇵🇰", "Bangladesh": "🇧🇩", "Sri Lanka": "🇱🇰",
+    "Nepal": "🇳🇵", "China": "🇨🇳", "Japan": "🇯🇵", "South Korea": "🇰🇷",
+    "Indonesia": "🇮🇩", "Malaysia": "🇲🇾", "Singapore": "🇸🇬", "Philippines": "🇵🇭",
+    "Thailand": "🇹🇭", "Vietnam": "🇻🇳", "Cambodia": "🇰🇭", "Brazil": "🇧🇷",
+    "Argentina": "🇦🇷", "Mexico": "🇲🇽", "Colombia": "🇨🇴", "Chile": "🇨🇱",
+    "Peru": "🇵🇪", "Venezuela": "🇻🇪", "Uruguay": "🇺🇾", "Paraguay": "🇵🇾",
+    "Bolivia": "🇧🇴", "Ecuador": "🇪🇨", "Costa Rica": "🇨🇷", "Cuba": "🇨🇺",
+    "Dominican Republic": "🇩🇴", "Puerto Rico": "🇵🇷",
+  };
+  
+  if (countryName && nameMap[countryName]) {
+    return nameMap[countryName];
+  }
+  
+  return "🌍"; // Default globe emoji if no flag found
+};
+
 const PhoneNumber = () => {
   const navigate = useNavigate();
   const [countries, setCountries] = useState([]);
@@ -41,7 +96,12 @@ const PhoneNumber = () => {
   const fetchCountries = async () => {
     try {
       const data = await getAllCountry();
-      setCountries(data.countries || []);
+      // Add flag property to each country
+      const countriesWithFlags = (data.countries || []).map((country) => ({
+        ...country,
+        flag: getCountryFlag(country.code, country.eng),
+      }));
+      setCountries(countriesWithFlags);
     } catch (error) {
       console.log(error);
       setError("Failed to load countries");
@@ -190,10 +250,10 @@ const PhoneNumber = () => {
                 onChange={(e) => setSelectedCountry(e.target.value)}
                 className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50 transition-all"
               >
-                <option value="" className="bg-black">Choose a country</option>
+                <option value="" className="bg-black">🌍 Choose a country</option>
                 {countries.map((item, index) => (
                   <option key={item.id || index} value={item.code || item.eng} className="bg-black">
-                    {item.eng} {item.flag || ""}
+                    {item.flag || "🌍"} {item.eng}
                   </option>
                 ))}
               </select>
@@ -209,7 +269,7 @@ const PhoneNumber = () => {
                 onChange={(e) => setSelectedService(e.target.value)}
                 className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50 transition-all"
               >
-                <option value="" className="bg-black">Choose a service</option>
+                <option value="" className="bg-black">🔧 Choose a service</option>
                 {services.map((item, index) => (
                   <option key={index} value={item.code} className="bg-black">
                     {item.name}
@@ -227,7 +287,7 @@ const PhoneNumber = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Country:</span>
                   <span className="text-white font-medium">
-                    {selectedCountryData?.eng || selectedCountry || "—"}
+                    {selectedCountryData?.flag || "🌍"} {selectedCountryData?.eng || selectedCountry || "—"}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm mt-1">

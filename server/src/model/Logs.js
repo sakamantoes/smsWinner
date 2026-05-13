@@ -27,6 +27,11 @@ const logSchema = new mongoose.Schema(
       default: false,
     },
 
+    category: {
+      type: String,
+      required: true,
+    },
+
     soldTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
