@@ -1,4 +1,7 @@
+import mongoose from "mongoose";
 import Log from "../model/Logs.js";
+import User from "../model/User.js";
+import Wallet from "../model/Wallet.js";
 import { maskEmail, maskPassword } from "../utils/maskDate.js";
 
 // create log
@@ -49,56 +52,91 @@ const getLogs = async (req, res, next) => {
 
 // buy log
 const buyLog = async (req, res, next) => {
+  const { id } = req.params;
+  const userId = req.user._id;
+  const session = await mongoose.startSession();
+  const recieptNo = recieptNumberGenerator();
   try {
-    const { id } = req.params;
+    let finalResult = null;
 
-    // Logged in user
-    const userId = req.user._id;
+    await session.withTransaction(async () => {
+      const isUser = await User.findById(userId).session(session);
 
-    const log = await Log.findById(id);
+      if (!isUser) {
+        res.statusCode = 401;
+        throw new Error("UnAuthorized Access");
+      }
 
-    if (!log) {
-      res.statusCode = 400;
-      throw new Error("Log not found");
-    }
+      const log = await Log.findById(id).session(session);
 
-    if (log.sold) {
-      res.statusCode = 400;
-      throw new Error("Log already sold");
-    }
+      if (!log) {
+        res.statusCode = 400;
+        throw new Error("Log not found");
+      }
+
+      if (log.sold) {
+        res.statusCode = 400;
+        throw new Error("Log already sold");
+      }
+
+      const userWallet = await Wallet.findOneAndUpdate(
+        {
+          userId: isUser._id,
+          balance: { $gte: log.price },
+        },
+        {
+          $inc: { balance: -log.price },
+        },
+        {
+          session,
+          new: true,
+        },
+      );
+
+      if (!userWallet) {
+        res.statusCode = 400;
+        throw new Error("Insufficient balance");
+      }
+
+      const [reciept] = await PurchaseReceipt.create(
+        [
+          {
+            userId: isUser._id,
+            purchaseType: "LOG",
+            itemId: log._id,
+            itemModel: "Log",
+            recieptNo: recieptNo,
+            amount: log.price,
+            balanceBefore: userWallet.balance + log.price,
+            balanceAfter: userWallet.balance,
+          },
+        ],
+        {
+          session,
+        },
+      );
+
+      log.sold = true;
+      log.soldTo = isUser._id;
+      log.purchasedAt = new Date();
+
+      await log.save({ session });
+
+      console.log("log purchase was successfull ");
+      finalResult = { log, reciept };
+    });
 
     //   mark as sold
-    log.sold = true;
-    log.soldTo = userId;
-    log.purchasedAt = new Date();
-
-    await log.save();
-
-    //    auto delete after 24 hours
-    setTimeout(
-      async () => {
-        try {
-          await Log.findByIdAndDelete(log._id);
-          console.log("Sold log auto deleted");
-        } catch (err) {
-          console.error("Error auto deleting log:", err.message);
-        }
-      },
-      24 * 60 * 60 * 1000,
-    );
 
     res.status(200).json({
       success: true,
       message: "Log purchased successfully",
-      log: {
-        email: log.email,
-        password: log.password,
-        price: log.price,
-        country: log.country,
-      },
+      data: finalResult,
     });
   } catch (error) {
     next(error);
+  } finally {
+    await session.endSession();
   }
 };
 

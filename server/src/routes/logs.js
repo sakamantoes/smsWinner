@@ -20,34 +20,21 @@ import authMiddleware, {
   validateUserRole,
 } from "../middleware/authMiddleware.js";
 
-
 // CREATE LOG
 router.post(
   "/create",
-  logSchema,
-  validateData,
   authMiddleware,
   validateAdminRole,
-  createLog
+  logSchema,
+  validateData,
+  createLog,
 );
-
 
 // GET ALL LOGS
-router.get(
-  "/",
-  authMiddleware,
-  getLogs
-);
-
+router.get("/", authMiddleware, getLogs);
 
 // BUY LOG
-router.post(
-  "/buy/:id",
-  authMiddleware,
-  validateUserRole,
-  buyLog
-);
-
+router.post("/buy/:id", authMiddleware, validateUserRole, buyLog);
 
 // UPDATE LOG
 router.put(
@@ -56,24 +43,13 @@ router.put(
   validateData,
   authMiddleware,
   validateAdminRole,
-  updateLog
+  updateLog,
 );
-
 
 // DELETE LOG
-router.delete(
-  "/delete/:id",
-  authMiddleware,
-  validateAdminRole,
-  deleteLog
-);
-
+router.delete("/delete/:id", authMiddleware, validateAdminRole, deleteLog);
 
 // USER PURCHASE HISTORY
-router.get(
-  "/my-logs",
-  authMiddleware,
-  myPurchasedLogs
-);
+router.get("/my-logs", authMiddleware, myPurchasedLogs);
 
 export default router;
