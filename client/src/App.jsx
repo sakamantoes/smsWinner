@@ -4,14 +4,25 @@ import Register from "./pages/Register.jsx";
 import Login from "./pages/Login.jsx";
 import PaymentStatus from "./pages/PaymentStatus.jsx";
 import Dashboard from "./pages/user/Dashboard.jsx";
+import UserDeposits from "./pages/user/UserDeposits.jsx";
 import FundAccount from "./pages/user/FundAccount.jsx";
 import PhoneNumber from "./pages/user/PhoneNumber.jsx";
+import Setting from "./pages/user/Setting.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import AdminLayout from "./layouts/AdminLayout.jsx";
 import UserLayout from "./layouts/UserLayout.jsx";
 import Logs from "./pages/user/Logs.jsx";
 import OtpBox from "./pages/user/OtpBox.jsx";
+import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
+import AdminLogs from "./pages/admin/AdminLogs.jsx";
+import AdminNumbers from "./pages/admin/AdminNumbers.jsx";
+import AdminSettings from "./pages/admin/AdminSettings.jsx";
+import Analytics from "./pages/admin/Analytics.jsx";
+import Reports from "./pages/admin/Reports.jsx";
+import Transactions from "./pages/admin/Transactions.jsx";
+import Users from "./pages/admin/Users.jsx";
 
 const App = () => {
   return (
@@ -37,7 +48,6 @@ const App = () => {
           <Route path="numbers" element={<PhoneNumber />} />
           <Route path="logs" element={<Logs />} />
           <Route path="otp-box" element={<OtpBox />} />
-          <Route path="wallet" element={<Wallet />} />
           <Route path="settings" element={<Setting />} />
           <Route path="deposits" element={<UserDeposits />} />
         </Route>
