@@ -55,6 +55,7 @@ const initialiseDeposit = async (req, res, next) => {
       type: "DEPOSIT",
       referenceId: value.transaction_ref,
       paymentMethod: "SQUAD",
+      depositorName: user.username,
     });
 
     res.status(201).json({
@@ -220,9 +221,49 @@ const webhookHandler = async (req, res, next) => {
   }
 };
 
+// manual payment
+
+const initializeManualPayment = async (req, res, next) => {
+  const { amount, transactionId, depositorName } = req.body;
+  const user = req.user;
+  try {
+    const transaction = await WalletTransaction.create({
+      userId: user._id,
+      amount: Number(amount),
+      type: "DEPOSIT",
+      referenceId: transactionId,
+      paymentMethod: "MANUAL_TRANSFER",
+      depositorName,
+    });
+
+    if (!transaction) {
+      res.statusCode = 400;
+      throw new Error("an error occured while updating payment");
+    }
+
+    res.status(201).json({
+      status: 200,
+      success: true,
+      message:
+        "your payment has been recieved, once payment is confirmed it will reflect in your balance",
+      data: transaction,
+    });
+  } catch (error) {
+    if (error?.code === 11000) {
+      res.statusCode = 400;
+      return next(
+        new Error("This transaction reference has already been submitted"),
+      );
+    }
+
+    next(error);
+  }
+};
+
 export {
   initialiseDeposit,
   webhookHandler,
   callbackUrlHandler,
   getPaymentStatus,
+  initializeManualPayment,
 };

@@ -12,3 +12,9 @@ export const getSquadPaymentStatus = async (data) => {
 
   return res.data;
 };
+
+export const manualBankPayment = async (data) => {
+  const res = await api.post("/api/payment/manual/initialize-deposit", data);
+
+  return res.data;
+};

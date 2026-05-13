@@ -4,11 +4,13 @@ import {
   initialiseDeposit,
   callbackUrlHandler,
   getPaymentStatus,
+  initializeManualPayment,
   webhookHandler,
 } from "../controller/payment.js";
 import {
   initialiseDepositValidator,
   callbackUrlValidator,
+  manuelPaymentValidator,
   paymentStatusValidator,
 } from "../validator/payment.validator.js";
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -26,18 +28,31 @@ router.post(
 );
 
 router.post(
+  "/manuel/initialize-deposit",
+  authMiddleware,
+  validateUserRole,
+  manuelPaymentValidator,
+  validateData,
+  initializeManualPayment,
+);
+
+router.post(
+  "/manual/initialize-deposit",
+  authMiddleware,
+  validateUserRole,
+  manuelPaymentValidator,
+  validateData,
+  initializeManualPayment,
+);
+
+router.post(
   "/callback",
   callbackUrlValidator,
   validateData,
   callbackUrlHandler,
 );
 
-router.post(
-  "/status",
-  paymentStatusValidator,
-  validateData,
-  getPaymentStatus,
-);
+router.post("/status", paymentStatusValidator, validateData, getPaymentStatus);
 
 router.post("/webhook", webhookHandler);
 
