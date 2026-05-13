@@ -44,7 +44,13 @@ const Login = () => {
       const response = await login(formData);
 
       if (response.status === 200 || response.status === 201) {
-        navigate("/f/dashboard", { replace: true });
+        const user = response.data?.data || response.data;
+
+        if (user.role === "admin") {
+          navigate("/a/dashboard", { replace: true });
+        } else {
+          navigate("/f/dashboard", { replace: true });
+        }
       } else {
         toast.error(response.data.message || "Invalid Credentials");
         setError(response.data.message || "Invalid Credentials");
