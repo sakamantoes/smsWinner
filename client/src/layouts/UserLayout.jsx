@@ -99,7 +99,7 @@ const UserLayout = () => {
                 aria-label={mobileOpen ? "Close menu" : "Open menu"}
                 aria-expanded={mobileOpen}
                 onClick={() => setMobileOpen((v) => !v)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-slate-800 border-white/30 transition-colors hover:bg-slate-100 lg:hidden"
+                className="flex h-10 w-10 shrink-0 items-center text-white justify-center rounded-lg border border-white/60 transition-colors hover:bg-slate-100 lg:hidden"
               >
                 {mobileOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
