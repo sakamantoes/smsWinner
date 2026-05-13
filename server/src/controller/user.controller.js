@@ -1,4 +1,5 @@
 import User from "../model/User.js";
+import PurchaseReceipt from "../model/PurchaseReceipt.js";
 import WalletTransaction from "../model/WalletTransactions.js";
 
 const getUserWalletBalance = async (req, res, next) => {
@@ -72,7 +73,7 @@ const getPurchaseHistory = async (req, res, next) => {
       userId: userExist._id,
     }).sort({ _id: -1 });
 
-    if (!walletTransaction || walletTransaction.length === 0) {
+    if (!receiptTransaction || receiptTransaction.length === 0) {
       return res.status(200).json({
         success: true,
         status: 200,
@@ -85,7 +86,7 @@ const getPurchaseHistory = async (req, res, next) => {
       success: true,
       status: 200,
       message: "request was successfull",
-      data: walletTransaction,
+      data: receiptTransaction,
     });
   } catch (error) {
     next(error);

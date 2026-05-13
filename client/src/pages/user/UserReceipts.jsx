@@ -3,34 +3,26 @@ import {
   CheckCircle2,
   Clock3,
   Copy,
-  CreditCard,
   FileText,
   Filter,
   Loader2,
+  ReceiptText,
   RefreshCw,
+  Search,
   Wallet,
   XCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { getAllUserDeposits } from "../../service/wallet.js";
+import { getAlluserPurchaseReceipt } from "../../service/payment.js";
+
 
 const formatCurrency = (value) =>
   `NGN ${new Intl.NumberFormat("en-NG", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Number(value || 0))}`;
-
-const formatMethod = (method) => {
-  const methodMap = {
-    MANUAL_TRANSFER: "Manual Transfer",
-    SQUAD: "Squad",
-    ALAT: "ALAT",
-  };
-
-  return methodMap[method] || method || "Unknown";
-};
-
+  
 const getObjectIdDate = (id) => {
   if (!id) {
     return null;
@@ -45,9 +37,9 @@ const getObjectIdDate = (id) => {
   return new Date(timestamp * 1000);
 };
 
-const formatDepositDate = (deposit) => {
+const formatReceiptDate = (receipt) => {
   const dateValue =
-    deposit.createdAt || deposit.updatedAt || getObjectIdDate(deposit._id);
+    receipt.createdAt || receipt.updatedAt || getObjectIdDate(receipt._id);
 
   if (!dateValue) {
     return "No timestamp";
@@ -60,6 +52,15 @@ const formatDepositDate = (deposit) => {
   }
 
   return date.toLocaleString();
+};
+
+const formatPurchaseType = (type) => {
+  const typeMap = {
+    LOG: "Log Purchase",
+    OTP: "OTP Purchase",
+  };
+
+  return typeMap[type] || type || "Purchase";
 };
 
 const getStatusBadge = (status) => {
@@ -86,68 +87,70 @@ const getStatusBadge = (status) => {
   }
 };
 
-export default function UserDeposits() {
-  const [deposits, setDeposits] = useState([]);
+export default function UserReceipts() {
+  const [receipts, setReceipts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [methodFilter, setMethodFilter] = useState("ALL");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("ALL");
 
-  const fetchDeposits = async () => {
+  const fetchReceipts = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await getAllUserDeposits();
-      setDeposits(response?.data || []);
+      const response = await getAlluserPurchaseReceipt();
+      setReceipts(response?.data || []);
     } catch (err) {
-      console.error("Failed to fetch deposits:", err);
-      setError(err?.response?.data?.message || "Failed to load deposit history");
+      console.error("Failed to fetch receipts:", err);
+      setError(err?.response?.data?.message || "Failed to load receipts");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDeposits();
+    fetchReceipts();
   }, []);
 
-  const successfulDeposits = deposits.filter(
-    (deposit) => deposit.status === "SUCCESS",
-  ).length;
-  const pendingDeposits = deposits.filter(
-    (deposit) => deposit.status === "PENDING",
-  ).length;
-  const failedDeposits = deposits.filter(
-    (deposit) => deposit.status === "FAILED",
-  ).length;
-  const totalDeposited = deposits
-    .filter((deposit) => deposit.status === "SUCCESS")
-    .reduce((sum, deposit) => sum + Number(deposit.amount || 0), 0);
+  const filteredReceipts = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
 
-  const filteredDeposits = deposits.filter((deposit) => {
-    const matchesStatus =
-      statusFilter === "ALL" || deposit.status === statusFilter;
-    const matchesMethod =
-      methodFilter === "ALL" || deposit.paymentMethod === methodFilter;
+    return receipts.filter((receipt) => {
+      const receiptNo = String(receipt.receiptNo || "").toLowerCase();
+      const matchesSearch =
+        normalizedSearch.length === 0 || receiptNo.includes(normalizedSearch);
+      const matchesType =
+        typeFilter === "ALL" || receipt.purchaseType === typeFilter;
 
-    return matchesStatus && matchesMethod;
-  });
+      return matchesSearch && matchesType;
+    });
+  }, [receipts, searchTerm, typeFilter]);
 
-  const handleCopyReference = async (referenceId) => {
+  const successfulReceipts = receipts.filter(
+    (receipt) => receipt.status === "SUCCESS",
+  ).length;
+  const pendingReceipts = receipts.filter(
+    (receipt) => receipt.status === "PENDING",
+  ).length;
+  const totalSpent = receipts
+    .filter((receipt) => receipt.status === "SUCCESS")
+    .reduce((sum, receipt) => sum + Number(receipt.amount || 0), 0);
+
+  const handleCopyReceipt = async (receiptNo) => {
     try {
-      await navigator.clipboard.writeText(referenceId);
-      toast.success("Reference copied");
+      await navigator.clipboard.writeText(receiptNo);
+      toast.success("Receipt ID copied");
     } catch (err) {
-      toast.error("Failed to copy reference");
+      toast.error("Failed to copy receipt ID");
     }
   };
 
   const stats = [
     {
-      label: "Total Deposits",
-      value: deposits.length,
-      change: "All requests",
+      label: "Total Receipts",
+      value: receipts.length,
+      change: "All purchases",
       icon: FileText,
       iconBg: "bg-red/15",
       iconColor: "text-red",
@@ -155,8 +158,8 @@ export default function UserDeposits() {
     },
     {
       label: "Successful",
-      value: successfulDeposits,
-      change: "Confirmed",
+      value: successfulReceipts,
+      change: "Completed",
       icon: CheckCircle2,
       iconBg: "bg-emerald-500/15",
       iconColor: "text-emerald-400",
@@ -164,17 +167,17 @@ export default function UserDeposits() {
     },
     {
       label: "Pending",
-      value: pendingDeposits,
-      change: "Awaiting review",
+      value: pendingReceipts,
+      change: "Processing",
       icon: Clock3,
       iconBg: "bg-amber-500/15",
       iconColor: "text-amber-400",
       changeBg: "bg-amber-500/10 text-amber-400 border-amber-500/20",
     },
     {
-      label: "Confirmed Value",
-      value: formatCurrency(totalDeposited),
-      change: `${failedDeposits} failed`,
+      label: "Total Spent",
+      value: formatCurrency(totalSpent),
+      change: "Confirmed",
       icon: Wallet,
       iconBg: "bg-blue-500/15",
       iconColor: "text-blue-400",
@@ -189,28 +192,28 @@ export default function UserDeposits() {
         <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-red-light/40 bg-red-light/10 px-3 py-1 text-xs font-semibold text-red-300">
-              <CreditCard size={13} />
-              Deposit History
+              <ReceiptText size={13} />
+              Purchase Receipts
             </div>
             <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-              Track every wallet funding request
-              <br className="hidden sm:block" /> in one place.
+              View every purchase receipt
+              <br className="hidden sm:block" /> tied to your account.
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-gray-400">
-              Review deposit type, payment method, approval status, and copy
-              each reference ID when you need to follow up.
+              Search by receipt ID, review purchase details, and copy receipt
+              numbers whenever you need proof of payment.
             </p>
           </div>
           <button
             type="button"
             onClick={() => {
-              void fetchDeposits();
+              void fetchReceipts();
             }}
             disabled={loading}
             className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-red-dark/40 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-light active:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-            Refresh History
+            Refresh Receipts
           </button>
         </div>
       </section>
@@ -248,37 +251,36 @@ export default function UserDeposits() {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400">
-              Filters
+              Find Receipt
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              Review deposits by payment status and method.
+              Search with a receipt ID or narrow the list by purchase type.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="relative">
-              <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-              <select
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
-                className="h-11 min-w-44 rounded-lg border border-white/10 bg-black/40 py-2 pl-10 pr-4 text-sm text-white focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50"
-              >
-                <option value="ALL">All Statuses</option>
-                <option value="SUCCESS">Success</option>
-                <option value="PENDING">Pending</option>
-                <option value="FAILED">Failed</option>
-              </select>
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search receipt ID"
+                className="h-11 w-full min-w-0 rounded-lg border border-white/10 bg-black/40 py-2 pl-10 pr-4 text-sm text-white placeholder:text-gray-600 focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50 sm:min-w-72"
+              />
             </div>
 
-            <select
-              value={methodFilter}
-              onChange={(event) => setMethodFilter(event.target.value)}
-              className="h-11 min-w-44 rounded-lg border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50"
-            >
-              <option value="ALL">All Methods</option>
-              <option value="MANUAL_TRANSFER">Manual Transfer</option>
-              <option value="SQUAD">Squad</option>
-              <option value="ALAT">ALAT</option>
-            </select>
+            <div className="relative">
+              <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+              <select
+                value={typeFilter}
+                onChange={(event) => setTypeFilter(event.target.value)}
+                className="h-11 min-w-44 rounded-lg border border-white/10 bg-black/40 py-2 pl-10 pr-4 text-sm text-white focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50"
+              >
+                <option value="ALL">All Types</option>
+                <option value="LOG">Log Purchase</option>
+                <option value="OTP">OTP Purchase</option>
+              </select>
+            </div>
           </div>
         </div>
       </section>
@@ -286,10 +288,10 @@ export default function UserDeposits() {
       <section className="rounded-xl border border-white/10 shadow-md bg-white/5 overflow-hidden">
         <div className="flex items-center justify-between border-b border-white/10 bg-black/20 px-5 py-4">
           <div>
-            <h2 className="font-semibold text-white">Deposit Records</h2>
+            <h2 className="font-semibold text-white">Receipt Records</h2>
             <p className="mt-0.5 text-xs text-gray-500">
-              {filteredDeposits.length} result
-              {filteredDeposits.length === 1 ? "" : "s"}
+              {filteredReceipts.length} result
+              {filteredReceipts.length === 1 ? "" : "s"}
             </p>
           </div>
         </div>
@@ -303,38 +305,35 @@ export default function UserDeposits() {
             <AlertCircle size={18} />
             <span>{error}</span>
           </div>
-        ) : filteredDeposits.length === 0 ? (
+        ) : filteredReceipts.length === 0 ? (
           <div className="px-5 py-14 text-center">
-            <CreditCard size={42} className="mx-auto text-gray-600" />
+            <ReceiptText size={42} className="mx-auto text-gray-600" />
             <h3 className="mt-4 text-lg font-semibold text-white">
-              No deposits found
+              No receipts found
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              There are no deposit records matching the current filters.
+              No receipt records match the current search or filter.
             </p>
           </div>
         ) : (
           <div className="divide-y divide-white/10">
-            {filteredDeposits.map((deposit) => {
-              const statusBadge = getStatusBadge(deposit.status);
+            {filteredReceipts.map((receipt) => {
+              const statusBadge = getStatusBadge(receipt.status);
               const StatusIcon = statusBadge.icon;
 
               return (
                 <div
-                  key={deposit._id}
+                  key={receipt._id}
                   className="px-5 py-4 transition-colors hover:bg-white/5"
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-lg font-semibold text-white">
-                          {formatCurrency(deposit.amount)}
+                          {formatCurrency(receipt.amount, receipt.currency)}
                         </span>
                         <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-medium text-gray-300">
-                          {deposit.type || "DEPOSIT"}
-                        </span>
-                        <span className="rounded-full border border-red-light/20 bg-red-light/10 px-2.5 py-0.5 text-xs font-medium text-red">
-                          {formatMethod(deposit.paymentMethod)}
+                          {formatPurchaseType(receipt.purchaseType)}
                         </span>
                         <span
                           className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadge.className}`}
@@ -346,41 +345,53 @@ export default function UserDeposits() {
 
                       <div className="mt-3 grid gap-2 text-sm text-gray-400 sm:grid-cols-2 xl:grid-cols-4">
                         <p>
-                          <span className="text-gray-500">Depositor:</span>{" "}
-                          <span className="text-gray-300">
-                            {deposit.depositorName || "N/A"}
-                          </span>
-                        </p>
-                        <p>
-                          <span className="text-gray-500">Reference:</span>{" "}
+                          <span className="text-gray-500">Receipt ID:</span>{" "}
                           <span className="font-mono text-gray-300">
-                            {deposit.referenceId || "N/A"}
+                            {receipt.receiptNo || "N/A"}
                           </span>
                         </p>
                         <p>
-                          <span className="text-gray-500">Order ID:</span>{" "}
+                          <span className="text-gray-500">Balance Before:</span>{" "}
                           <span className="text-gray-300">
-                            {deposit.orderId || "Not assigned"}
+                            {formatCurrency(
+                              receipt.balanceBefore,
+                              receipt.currency,
+                            )}
+                          </span>
+                        </p>
+                        <p>
+                          <span className="text-gray-500">Balance After:</span>{" "}
+                          <span className="text-gray-300">
+                            {formatCurrency(
+                              receipt.balanceAfter,
+                              receipt.currency,
+                            )}
                           </span>
                         </p>
                         <p>
                           <span className="text-gray-500">Date:</span>{" "}
                           <span className="text-gray-300">
-                            {formatDepositDate(deposit)}
+                            {formatReceiptDate(receipt)}
                           </span>
                         </p>
                       </div>
+
+                      {receipt.description ? (
+                        <p className="mt-3 text-sm text-gray-400">
+                          {receipt.description}
+                        </p>
+                      ) : null}
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => handleCopyReference(deposit.referenceId)}
-                        disabled={!deposit.referenceId}
+                        onClick={() => handleCopyReceipt(receipt.receiptNo)}
+                        disabled={!receipt.receiptNo}
                         className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:border-red-light/30 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <Copy size={14} />
-                        Copy Ref
+                        Copy ID
                       </button>
                     </div>
                   </div>

@@ -119,7 +119,6 @@ const buyLog = async (req, res, next) => {
       finalResult = { log, reciept };
     });
 
-    //   mark as sold
 
     res.status(200).json({
       success: true,

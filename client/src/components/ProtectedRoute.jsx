@@ -42,7 +42,9 @@ export default function ProtectedRoute({ role, children }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (role && user.role !== role) {
+  const authUser = user?.data || user;
+
+  if (role && authUser?.role !== role) {
     return <Navigate to="/login" replace />;
   }
 

@@ -9,6 +9,7 @@ import {
   Mail,
   Menu,
   Phone,
+  ReceiptText,
   Search,
   Settings,
   ShieldCheck,
@@ -24,6 +25,7 @@ const userNavItems = [
   { label: "Logs", to: "/f/logs", icon: Mail },
   { label: "OTP Inbox", to: "/f/otp-box", icon: Inbox },
   { label: "Deposits", to: "/f/deposits", icon: CreditCard },
+  { label: "Receipts", to: "/f/receipts", icon: ReceiptText },
   { label: "Settings", to: "/f/settings", icon: Settings },
 ];
 

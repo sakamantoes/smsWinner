@@ -18,3 +18,9 @@ export const manualBankPayment = async (data) => {
 
   return res.data;
 };
+
+export const getAlluserPurchaseReceipt = async () => {
+  const res = await api.get("/api/user/purchase/receipt");
+
+  return res.data;
+};

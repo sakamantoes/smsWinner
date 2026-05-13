@@ -1,6 +1,7 @@
 import axios from "axios";
 import { env } from "../config/constant.js";
 import WalletTransaction from "../model/WalletTransactions.js";
+import User from "../model/User.js";
 import crypto from "crypto";
 import mongoose from "mongoose";
 
@@ -49,7 +50,7 @@ const initialiseDeposit = async (req, res, next) => {
 
     const value = squad.data.data;
 
-    const transaction = await WalletTransaction.create({
+    await WalletTransaction.create({
       userId: user._id,
       amount: value.transaction_amount / 100,
       type: "DEPOSIT",
@@ -152,7 +153,6 @@ const webhookHandler = async (req, res, next) => {
       }).session(session);
 
       if (!transaction) {
-        res.statusCode = 404;
         throw new Error("Transaction not found");
       }
 
@@ -182,7 +182,6 @@ const webhookHandler = async (req, res, next) => {
       const webhookAmount = Number(event.Body?.amount) / 100;
 
       if (Number.isFinite(webhookAmount) && webhookAmount !== amountToCredit) {
-        res.statusCode = 400;
         throw new Error("Webhook amount does not match transaction amount");
       }
 
