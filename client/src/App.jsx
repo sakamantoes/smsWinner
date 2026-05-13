@@ -14,7 +14,6 @@ import Logs from "./pages/user/Logs.jsx";
 import OtpBox from "./pages/user/OtpBox.jsx";
 import Deposit from "./pages/user/Deposit.jsx";
 import Wallet from "./pages/user/Wallet.jsx";
-import Setting from "./pages/user/setting.jsx";
 import AdminLayout from "./layouts/AdminLayout.jsx";
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import Analytics from "./pages/Admin/Analytics.jsx";
@@ -24,6 +23,7 @@ import AdminNumbers from './pages/Admin/AdminNumbers.jsx'
 import AdminLogs from "./pages/Admin/AdminLogs.jsx"; 
 import Reports from "./pages/Admin/Reports.jsx";
 import AdminSettings from "./pages/Admin/AdminSettings.jsx";
+import Setting from "./pages/user/setting.jsx";
 
 const App = () => {
   return (
