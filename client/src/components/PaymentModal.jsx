@@ -141,24 +141,6 @@ export default function PaymentModal({
             })}
           </div>
 
-          {selectedMethod === "manual-transfer" && (
-            <div className="rounded-xl border border-white/10 bg-black/35 p-4 text-sm text-gray-300">
-              <div className="flex justify-between gap-4 py-1">
-                <span className="text-gray-500">Bank</span>
-                <span className="font-semibold text-white">Wema Bank</span>
-              </div>
-              <div className="flex justify-between gap-4 py-1">
-                <span className="text-gray-500">Account Name</span>
-                <span className="font-semibold text-white">SMS Winner</span>
-              </div>
-              <div className="flex justify-between gap-4 py-1">
-                <span className="text-gray-500">Account Number</span>
-                <span className="font-mono font-semibold text-white">
-                  0000000000
-                </span>
-              </div>
-            </div>
-          )}
 
           <button
             type="button"
