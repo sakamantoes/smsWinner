@@ -43,6 +43,11 @@ const initialiseDeposit = async (req, res, next) => {
       },
     );
 
+    if (!squad || squad.data.success === false || !squad.data.data) {
+      res.statusCode = 500;
+      throw new Error(squad.data.message || "Failed to initiate deposit");
+    }
+
     const value = squad.data.data;
 
     const transaction = await WalletTransaction.create({
@@ -208,7 +213,6 @@ const webhookHandler = async (req, res, next) => {
         balanceBefore: transaction.balanceBefore,
         balanceAfter: transaction.balanceAfter,
       };
-
     });
   } catch (error) {
     next(error);
