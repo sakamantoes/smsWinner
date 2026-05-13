@@ -2,7 +2,7 @@ import React from 'react'
 
 const OtpBox = () => {
   return (
-    <div>OtpBox</div>
+    <div className='text-white'>OtpBox</div>
   )
 }
 

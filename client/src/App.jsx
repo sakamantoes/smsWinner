@@ -12,6 +12,18 @@ import "react-toastify/dist/ReactToastify.css";
 import UserLayout from "./layouts/UserLayout.jsx";
 import Logs from "./pages/user/Logs.jsx";
 import OtpBox from "./pages/user/OtpBox.jsx";
+import Deposit from "./pages/user/Deposit.jsx";
+import Wallet from "./pages/user/Wallet.jsx";
+import Setting from "./pages/user/setting.jsx";
+import AdminLayout from "./layouts/AdminLayout.jsx";
+import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
+import Analytics from "./pages/Admin/Analytics.jsx";
+import Users from "./pages/Admin/Users.jsx";
+import Transactions from "./pages/Admin/Transactions.jsx";
+import AdminNumbers from './pages/Admin/AdminNumbers.jsx'
+import AdminLogs from "./pages/Admin/AdminLogs.jsx"; 
+import Reports from "./pages/Admin/Reports.jsx";
+import AdminSettings from "./pages/Admin/AdminSettings.jsx";
 
 const App = () => {
   return (
@@ -22,6 +34,7 @@ const App = () => {
         <Route path="/signup" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/payment/status" element={<PaymentStatus />} />
+
         <Route
           path="/f"
           element={
@@ -33,9 +46,31 @@ const App = () => {
           <Route index element={<Navigate to="/f/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="fund-account" element={<FundAccount />} />
-          <Route path="numbers" element={<PhoneNumber />} /> 
+          <Route path="numbers" element={<PhoneNumber />} />
           <Route path="logs" element={<Logs />} />
           <Route path="otp-box" element={<OtpBox />} />
+          <Route path="deposits" element={<Deposit />} />
+          <Route path="wallet" element={<Wallet />} />
+          <Route path="settings" element={<Setting />} />
+        </Route>
+
+        <Route
+          path="/a"
+          element={
+            <ProtectedRoute role="admin">
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/a/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="users" element={<Users />} />
+          <Route path="transactions" element={<Transactions />} />
+          <Route path="numbers" element={<AdminNumbers />} />
+          <Route path="logs" element={<AdminLogs />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Routes>
     </>
