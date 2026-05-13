@@ -167,7 +167,7 @@ const emailLogin = async (req, res, next) => {
 
 const getAllUser = async (req, res, next) => {
   try {
-      const users = await User.find({
+    const users = await User.find({
       role: "user",
     });
 
@@ -179,7 +179,7 @@ const getAllUser = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error); 
+    next(error);
   }
 };
 
@@ -190,7 +190,7 @@ const deactivateUser = async (req, res, next) => {
     const user = await User.findByIdAndUpdate(
       id,
       { isActive: false },
-      { new: true }
+      { new: true },
     );
 
     res.status(200).json({
@@ -210,7 +210,7 @@ const activateUser = async (req, res, next) => {
     const user = await User.findByIdAndUpdate(
       id,
       { isActive: true },
-      { new: true }
+      { new: true },
     );
 
     res.status(200).json({
@@ -223,4 +223,12 @@ const activateUser = async (req, res, next) => {
   }
 };
 
-export { googleSetup, getAuthUser, emailSignup, emailLogin, getAllUser, deactivateUser, activateUser };
+export {
+  googleSetup,
+  getAuthUser,
+  emailSignup,
+  emailLogin,
+  getAllUser,
+  deactivateUser,
+  activateUser,
+};
