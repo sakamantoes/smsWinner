@@ -9,7 +9,6 @@ import {
   XCircle,
   Loader2,
   Calendar,
-  DollarSign,
   Eye,
   RefreshCw,
   AlertCircle,
