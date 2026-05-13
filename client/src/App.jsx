@@ -12,7 +12,7 @@ import "react-toastify/dist/ReactToastify.css";
 import UserLayout from "./layouts/UserLayout.jsx";
 import Logs from "./pages/user/Logs.jsx";
 import OtpBox from "./pages/user/OtpBox.jsx";
-import Deposit from "./pages/user/Deposit.jsx";
+import UserDeposits from "./pages/user/UserDeposits.jsx";
 import AdminLayout from "./layouts/AdminLayout.jsx";
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import Analytics from "./pages/Admin/Analytics.jsx";
@@ -48,7 +48,7 @@ const App = () => {
           <Route path="numbers" element={<PhoneNumber />} />
           <Route path="logs" element={<Logs />} />
           <Route path="otp-box" element={<OtpBox />} />
-          <Route path="deposits" element={<Deposit />} />
+          <Route path="deposits" element={<UserDeposits />} />
           <Route path="settings" element={<Setting />} />
         </Route>
 
