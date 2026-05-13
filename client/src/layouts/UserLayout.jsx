@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import {
   Bell,
   CreditCard,
@@ -45,6 +45,8 @@ const UserLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, clearAuth } = useAuth();
   const profile = user?.data || user || userFallback;
+ const navigate = useNavigate();
+
 
   const initial = (profile.name || profile.email || "U")
     .slice(0, 1)
