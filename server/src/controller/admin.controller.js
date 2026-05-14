@@ -130,7 +130,7 @@ const priceSettingController = async (req, res, next) => {
       status: 200,
       success: true,
       message: " you have successfully updated product price",
-      data: priceSettings,
+      data: priceSetting,
     });
   } catch (error) {
     next(error);
