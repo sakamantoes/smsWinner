@@ -9,6 +9,7 @@ import otpRoutes from "./routes/otpRoutes.js";
 import notificationRoute from "./routes/notification.js"
 import userRoutes from "./routes/user.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import supportRoute from "./routes/supportRoutes.js"
 import cors from "cors";
 import cookieParser from "cookie-parser";
 const app = express();
@@ -34,8 +35,9 @@ app.use("/api/logs", logsRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/otp", otpRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/notification", notificationRoute)
-app.use("/api/admin", adminRoutes)
+app.use("/api/notification", notificationRoute);
+app.use("/api/admin", adminRoutes);
+app.use("/api/support", supportRoute)
 
 // database connection
 connectDB();
