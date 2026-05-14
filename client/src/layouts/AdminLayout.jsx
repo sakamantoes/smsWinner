@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import useAuth from "../store/useAuth";
+import { FaMoneyBill } from "react-icons/fa";
 
 const adminNavItems = [
   { label: "Dashboard", to: "/a/dashboard", icon: Gauge },
@@ -29,6 +30,7 @@ const adminNavItems = [
   { label: "Logs", to: "/a/logs", icon: Activity },
   { label: "Reports", to: "/a/reports", icon: Flag },
   { label: "Settings", to: "/a/settings", icon: Settings },
+ {label: "Price Set", to: "/a/price_set", icon: FaMoneyBill}
 ];
 
 const adminSidebarConfig = {

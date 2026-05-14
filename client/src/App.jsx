@@ -26,6 +26,7 @@ import AdminSettings from "./pages/Admin/AdminSettings.jsx";
 import Setting from "./pages/user/Setting.jsx";
 import UserSupport from "./pages/user/UserSupport.jsx";
 import AdminSupport from "./pages/Admin/AdminSupport.jsx";
+import PricingSettings from "./pages/Admin/PricingSettings.jsx";
 
 const App = () => {
   return (
@@ -76,6 +77,8 @@ const App = () => {
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="support" element={<AdminSupport />} />
+          <Route path="price_set" element={<PricingSettings />} />
+        
         </Route>
       </Routes>
     </>

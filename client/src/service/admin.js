@@ -13,3 +13,14 @@ export const updatePlatformDepositStatus = async (id, status) => {
 
   return res.data;
 };
+
+
+
+export const updatePricingSettings = async (data) => {
+  try {
+    const response = await api.port("/api/admin/pricing/setting", data);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+}; 
