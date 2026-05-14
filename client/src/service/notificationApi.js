@@ -9,27 +9,27 @@ export const GetAllNotifications = async (page = 1, limit = 20, unreadOnly = fal
     unreadOnly: unreadOnly.toString()
   });
   
-  const res = await api.get(`/api/notifications?${params}`);
+  const res = await api.get(`/api/notification?${params}`);
   return res.data;
 };
 
 export const GetUnreadCount = async () => {
-  const res = await api.get('/api/notifications/unread/count');
+  const res = await api.get('/api/notification/unread/count');
   return res.data;
 };
 
 export const MarkAsRead = async (notificationId) => {
-  const res = await api.put(`/api/notifications/${notificationId}/read`);
+  const res = await api.put(`/api/notification/${notificationId}/read`);
   return res.data;
 };
 
 export const MarkAllAsRead = async () => {
-  const res = await api.put('/api/notifications/mark-all-read');
+  const res = await api.put('/api/notification/mark-all-read');
   return res.data;
 };
 
 export const DeleteNotification = async (notificationId) => {
-  const res = await api.delete(`/api/notifications/${notificationId}`);
+  const res = await api.delete(`/api/notification/${notificationId}`);
   return res.data;
 };
 
