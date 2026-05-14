@@ -66,6 +66,10 @@ const Logs = () => {
       return;
     }
 
+    if(!id){
+      return toast.error("select a log first")
+    }
+
     try {
       setBuyingId(id);
       setError("");

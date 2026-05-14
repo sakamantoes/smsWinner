@@ -9,82 +9,17 @@ import {
   Loader2,
   RefreshCw,
   Wallet,
-  XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import StatCard from "../../components/ui/StatCard.jsx";
+import TransactionStatusBadge from "../../components/ui/TransactionStatusBadge.jsx";
 import { getAllUserDeposits } from "../../service/wallet.js";
-
-const formatCurrency = (value) =>
-  `NGN ${new Intl.NumberFormat("en-NG", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0))}`;
-
-const formatMethod = (method) => {
-  const methodMap = {
-    MANUAL_TRANSFER: "Manual Transfer",
-    SQUAD: "Squad",
-    ALAT: "ALAT",
-  };
-
-  return methodMap[method] || method || "Unknown";
-};
-
-const getObjectIdDate = (id) => {
-  if (!id) {
-    return null;
-  }
-
-  const timestamp = parseInt(String(id).slice(0, 8), 16);
-
-  if (Number.isNaN(timestamp)) {
-    return null;
-  }
-
-  return new Date(timestamp * 1000);
-};
-
-const formatDepositDate = (deposit) => {
-  const dateValue =
-    deposit.createdAt || deposit.updatedAt || getObjectIdDate(deposit._id);
-
-  if (!dateValue) {
-    return "No timestamp";
-  }
-
-  const date = new Date(dateValue);
-
-  if (Number.isNaN(date.getTime())) {
-    return "No timestamp";
-  }
-
-  return date.toLocaleString();
-};
-
-const getStatusBadge = (status) => {
-  switch (status) {
-    case "SUCCESS":
-      return {
-        label: "Success",
-        className:
-          "border-emerald-500/20 bg-emerald-500/15 text-emerald-400",
-        icon: CheckCircle2,
-      };
-    case "FAILED":
-      return {
-        label: "Failed",
-        className: "border-red-light/20 bg-red-light/15 text-red",
-        icon: XCircle,
-      };
-    default:
-      return {
-        label: "Pending",
-        className: "border-amber-500/20 bg-amber-500/15 text-amber-400",
-        icon: Clock3,
-      };
-  }
-};
+import {
+  formatCurrency,
+  formatPaymentMethod,
+  formatTransactionDate,
+} from "../../utils/transaction.js";
 
 export default function UserDeposits() {
   const [deposits, setDeposits] = useState([]);
@@ -109,7 +44,11 @@ export default function UserDeposits() {
   };
 
   useEffect(() => {
-    fetchDeposits();
+    const timeoutId = window.setTimeout(() => {
+      void fetchDeposits();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   const successfulDeposits = deposits.filter(
@@ -138,7 +77,7 @@ export default function UserDeposits() {
     try {
       await navigator.clipboard.writeText(referenceId);
       toast.success("Reference copied");
-    } catch (err) {
+    } catch {
       toast.error("Failed to copy reference");
     }
   };
@@ -218,29 +157,7 @@ export default function UserDeposits() {
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
 
         {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="group rounded-xl border border-white/10 shadow-md bg-white/5 p-5 transition-all transform hover:-translate-y-1 hover:border-red-light/40 hover:bg-white/5"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.iconBg} ${stat.iconColor}`}
-              >
-                <stat.icon size={19} />
-              </div>
-              <span
-                className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${stat.changeBg}`}
-              >
-                {stat.change}
-              </span>
-            </div>
-            <p className="mt-4 text-xs font-medium uppercase tracking-widest text-gray-500">
-              {stat.label}
-            </p>
-            <p className="mt-1 text-2xl font-bold tracking-tight text-white">
-              {stat.value}
-            </p>
-          </div>
+          <StatCard key={stat.label} {...stat} />
         ))}
       </section>
 
@@ -316,9 +233,6 @@ export default function UserDeposits() {
         ) : (
           <div className="divide-y divide-white/10">
             {filteredDeposits.map((deposit) => {
-              const statusBadge = getStatusBadge(deposit.status);
-              const StatusIcon = statusBadge.icon;
-
               return (
                 <div
                   key={deposit._id}
@@ -334,14 +248,9 @@ export default function UserDeposits() {
                           {deposit.type || "DEPOSIT"}
                         </span>
                         <span className="rounded-full border border-red-light/20 bg-red-light/10 px-2.5 py-0.5 text-xs font-medium text-red">
-                          {formatMethod(deposit.paymentMethod)}
+                          {formatPaymentMethod(deposit.paymentMethod)}
                         </span>
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadge.className}`}
-                        >
-                          <StatusIcon size={12} />
-                          {statusBadge.label}
-                        </span>
+                        <TransactionStatusBadge status={deposit.status} />
                       </div>
 
                       <div className="mt-3 grid gap-2 text-sm text-gray-400 sm:grid-cols-2 xl:grid-cols-4">
@@ -366,7 +275,7 @@ export default function UserDeposits() {
                         <p>
                           <span className="text-gray-500">Date:</span>{" "}
                           <span className="text-gray-300">
-                            {formatDepositDate(deposit)}
+                            {formatTransactionDate(deposit)}
                           </span>
                         </p>
                       </div>

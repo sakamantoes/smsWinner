@@ -10,7 +10,6 @@ export const initialiseDepositValidator = [
     .isIn(["SQUAD", "ALAT", "MANUAL_TRANSFER"])
     .withMessage("Payment method must be one of: SQUAD, ALAT, MANUAL_TRANSFER")
     .notEmpty(),
-  body(),
 ];
 
 export const callbackUrlValidator = [
