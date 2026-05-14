@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import useAuth from "../store/useAuth";
+import NotificationBell from "../components/NotificationBell";
 
 const userNavItems = [
   { label: "Dashboard", to: "/f/dashboard", icon: Gauge },
@@ -119,7 +120,7 @@ const UserLayout = () => {
 
             {/* Right: notifications + user + logout */}
             <div className="flex items-center gap-2 sm:gap-3">
-              <button
+              {/* <button
                 type="button"
                 aria-label="Notifications"
                 className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/30 text-slate-700 transition-colors hover:bg-slate-100"
@@ -129,7 +130,9 @@ const UserLayout = () => {
                   aria-label="Unread notifications"
                   className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-light"
                 />
-              </button>
+              </button> */}
+
+              <NotificationBell />
 
               <div className="hidden items-center gap-3 border-l border-white/30 pl-3 sm:flex">
                 <div

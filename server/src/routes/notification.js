@@ -1,6 +1,6 @@
 // routes/notificationRoutes.js
 import express from "express";
-import { authenticateUser } from "../middleware/auth.js"; // Adjust path as needed
+import authMiddleware from "../middleware/authMiddleware.js";
 import {
   getUserNotifications,
   markAsRead,
