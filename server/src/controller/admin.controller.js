@@ -111,12 +111,12 @@ const updateDepositsStatus = async (req, res, next) => {
 };
 
 const priceSettingController = async (req, res, next) => {
-  const { nariaRate, markupType, markupValue } = req.body;
+  const { nairaRate, markupType, markupValue } = req.body;
   try {
     const priceSetting = await PriceSetting.findOneAndUpdate(
       {},
       {
-        usdToNgnRate: nariaRate,
+        usdToNgnRate: nairaRate,
         globalMarkupType: markupType,
         globalMarkupValue: markupValue,
       },
@@ -130,7 +130,7 @@ const priceSettingController = async (req, res, next) => {
       status: 200,
       success: true,
       message: " you have successfully updated product price",
-    data: priceSetting,
+      data: priceSettings,
     });
   } catch (error) {
     next(error);
