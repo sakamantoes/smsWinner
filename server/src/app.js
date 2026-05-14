@@ -6,6 +6,7 @@ import authRoutes from "./routes/auth.js";
 import logsRoutes from "./routes/logs.js";
 import paymentRoutes from "./routes/payment.js";
 import otpRoutes from "./routes/otpRoutes.js";
+import notificationRoute from "./routes/notification.js"
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import userRoutes from "./routes/user.routes.js";
@@ -32,6 +33,7 @@ app.use("/api/logs", logsRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/otp", otpRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/notification", notificationRoute)
 
 // database connection
 connectDB();

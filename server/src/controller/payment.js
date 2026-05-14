@@ -4,6 +4,11 @@ import WalletTransaction from "../model/WalletTransactions.js";
 import User from "../model/User.js";
 import crypto from "crypto";
 import mongoose from "mongoose";
+import {
+  sendDepositSuccessNotification,
+  sendDepositFailedNotification,
+  sendPaymentReceivedNotification,
+} from "./notificationController.js";
 
 const normalizeSquadStatus = (status) => {
   const normalizedStatus = String(status || "").toLowerCase();
@@ -170,6 +175,14 @@ const webhookHandler = async (req, res, next) => {
         transaction.status = gatewayStatus;
         await transaction.save({ session });
 
+        // Send failure notification
+        await sendDepositFailedNotification(
+          transaction.userId,
+          transaction.amount,
+          referenceId,
+          event.Body?.failure_reason || "Payment processing failed",
+        );
+
         webhookResult = {
           referenceId,
           status: transaction.status,
@@ -205,6 +218,14 @@ const webhookHandler = async (req, res, next) => {
 
       await transaction.save({ session });
 
+      // Send success notification
+      await sendDepositSuccessNotification(
+        transaction.userId,
+        amountToCredit,
+        referenceId,
+        wallet.walletBalance,
+      );
+
       webhookResult = {
         referenceId,
         status: transaction.status,
@@ -221,7 +242,6 @@ const webhookHandler = async (req, res, next) => {
 };
 
 // manual payment
-
 const initializeManualPayment = async (req, res, next) => {
   const { amount, transactionId, depositorName } = req.body;
   const user = req.user;
@@ -234,6 +254,14 @@ const initializeManualPayment = async (req, res, next) => {
       paymentMethod: "MANUAL_TRANSFER",
       depositorName,
     });
+
+    // Send notification for manual payment received
+    await sendPaymentReceivedNotification(
+      user._id,
+      Number(amount),
+      transactionId,
+      depositorName,
+    );
 
     if (!transaction) {
       res.statusCode = 400;
