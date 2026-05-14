@@ -8,14 +8,21 @@ import recieptNumberGenerator from "../utils/recieptNo.generator.js";
 // create log
 const createLog = async (req, res, next) => {
   try {
+    // ✅ FIX: Added category to destructuring
     const { email, password, price, country, category } = req.body;
+
+    // ✅ FIX: Validate required fields
+    if (!email || !password || !price || !country || !category) {
+      res.statusCode = 400;
+      throw new Error("All fields (email, password, price, country, category) are required");
+    }
 
     const log = await Log.create({
       email,
       password,
       price,
       country,
-      category,
+      category  // ✅ Now category is defined
     });
 
     res.status(201).json({
@@ -39,6 +46,7 @@ const getLogs = async (req, res, next) => {
       password: maskPassword(log.password),
       price: log.price,
       country: log.country,
+      category: log.category,  // ✅ Added category to response
       sold: log.sold,
       createdAt: log.createdAt,
     }));
@@ -63,9 +71,9 @@ const buyLog = async (req, res, next) => {
 
     if (!id || id === undefined) {
       res.statusCode = 400;
-
       throw new Error("invalid id params");
     }
+    
     await session.withTransaction(async () => {
       const log = await Log.findById({ _id: id }).session(session);
 
@@ -78,6 +86,7 @@ const buyLog = async (req, res, next) => {
         res.statusCode = 400;
         throw new Error("Log already sold");
       }
+      
       const isUser = await User.findOneAndUpdate(
         {
           _id: userId._id,
@@ -131,7 +140,7 @@ const buyLog = async (req, res, next) => {
           session,
         },
       );
-      console.log("log purchase was successfull ");
+      console.log("log purchase was successful ");
       finalResult = { receipt };
     });
 
@@ -152,7 +161,8 @@ const updateLog = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const { email, password, price, country } = req.body;
+    // ✅ FIX: Added category to destructuring
+    const { email, password, price, country, category } = req.body;
 
     const log = await Log.findById(id);
 
@@ -161,10 +171,12 @@ const updateLog = async (req, res, next) => {
       throw new Error("Log not found");
     }
 
+    // ✅ FIX: Update all fields including category
     log.email = email || log.email;
     log.password = password || log.password;
     log.price = price || log.price;
     log.country = country || log.country;
+    log.category = category || log.category;  // ✅ Added category update
 
     await log.save();
 
