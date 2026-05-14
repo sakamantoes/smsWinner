@@ -15,7 +15,7 @@ import {
   Wallet,
   ChevronRight,
 } from "lucide-react";
-import { getLogs, buyLog, getUserPurchasedApi } from "../../service/logs";
+import { getLogs, buyLog, getUserPurchasedApi, getLogById } from "../../service/logs";
 import WalletBalanceCard from "../../components/WalletBalanceCard.jsx";
 
 const Logs = () => {
@@ -49,25 +49,24 @@ const Logs = () => {
   // ================= FETCH PURCHASE HISTORY =================
   const fetchPurchaseHistory = async () => {
     try {
-      setLoading(true);
       const data = await getUserPurchasedApi();
       console.log("Purchase history data:", data);
       setPurchaseHistory(data.purchases || data.data || []);
     } catch (error) {
       console.log(error);
-      // If endpoint doesn't exist yet, set empty array
       setPurchaseHistory([]);
     }
   };
 
   // ================= BUY LOG =================
   const handleBuyLog = async (id, price) => {
-    if (!window.confirm(`Are you sure you want to purchase this log for $${price}?`)) {
+    if (!window.confirm(`Are you sure you want to purchase this log for ₦${price}?`)) {
       return;
     }
 
-    if(!id){
-      return toast.error("select a log first")
+    if (!id) {
+      setError("Select a log first");
+      return;
     }
 
     try {
@@ -119,8 +118,8 @@ const Logs = () => {
   // Filter logs based on search and type
   const filteredLogs = logs.filter((log) => {
     const matchesSearch = searchTerm === "" || 
-      (log.title && log.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.description && log.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.email && log.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.country && log.country.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (log.category && log.category.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesFilter = filterType === "all" || log.type === filterType;
@@ -152,7 +151,7 @@ const Logs = () => {
     },
     {
       label: "Total Spent",
-      value: `NGN ${totalSpent.toFixed(2)}`,
+      value: `₦${totalSpent.toFixed(2)}`,
       change: "All time",
       icon: DollarSign,
       iconBg: "bg-blue-500/15",
@@ -264,7 +263,7 @@ const Logs = () => {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
             <input
               type="text"
-              placeholder="Search logs by title, description, or category..."
+              placeholder="Search logs by email, country, or category..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full rounded-lg border border-white/10 bg-black/40 py-2 pl-9 pr-4 text-sm text-white placeholder:text-gray-500 focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50"
@@ -339,7 +338,7 @@ const Logs = () => {
                         <FileText size={18} />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-white">{log.title || log.name}</h3>
+                        <h3 className="font-semibold text-white">{log.email || "No email"}</h3>
                         <p className="text-xs text-gray-500">{log.category || "General"}</p>
                       </div>
                     </div>
@@ -353,16 +352,15 @@ const Logs = () => {
                   </div>
                   
                   <p className="mt-3 text-sm text-gray-400 line-clamp-2">
-                    {log.description || "No description available"}
+                    Country: {log.country || "Not specified"}
                   </p>
                   
                   <div className="mt-4 flex items-center justify-between">
                     <div className="flex items-center gap-1">
-                      <p className="text-gray-500">#</p>
+                      <span className="text-gray-500">₦</span>
                       <span className="text-lg font-bold text-white">
                         {log.price || log.cost || "0.00"}
                       </span>
-                      <span className="text-xs text-gray-500">NGN</span>
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -423,19 +421,19 @@ const Logs = () => {
                   </thead>
                   <tbody className="divide-y divide-white/10">
                     {purchaseHistory.map((purchase) => (
-                      <tr key={purchaselog._id} className="hover:bg-white/5 transition-colors">
+                      <tr key={purchase._id || purchase.id} className="hover:bg-white/5 transition-colors">
                         <td className="px-4 py-3">
                           <div>
-                            <p className="text-sm font-medium text-white">{purchase.title || purchase.log_title}</p>
+                            <p className="text-sm font-medium text-white">{purchase.email || purchase.log_title || "Log"}</p>
                             <p className="text-xs text-gray-500">{purchase.category || "Log"}</p>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-400">
-                          {new Date(purchase.created_at || purchase.purchase_date).toLocaleDateString()}
+                          {new Date(purchase.createdAt || purchase.created_at || purchase.purchase_date).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-sm font-semibold text-emerald-400">
-                            ${purchase.price}
+                            ₦{purchase.price}
                           </span>
                         </td>
                         <td className="px-4 py-3">
@@ -446,13 +444,13 @@ const Logs = () => {
                         </td>
                         <td className="px-4 py-3">
                           <button
-                            onClick={() => handleViewDetails(purchase.log_id)}
+                            onClick={() => handleViewDetails(purchase.logId || purchase.itemId)}
                             className="rounded-lg border border-white/10 p-1.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
                           >
                             <Download size={14} />
                           </button>
                         </td>
-                      </tr>
+                       </tr>
                     ))}
                   </tbody>
                 </table>
@@ -482,65 +480,55 @@ const Logs = () => {
                   <FileText size={22} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white">{selectedLog.title || selectedLog.name}</h3>
+                  <h3 className="text-xl font-bold text-white">{selectedLog.email || selectedLog.title || "Log Details"}</h3>
                   <p className="text-sm text-gray-400">{selectedLog.category || "General"}</p>
                 </div>
               </div>
               
               <div className="rounded-lg border border-white/10 bg-black/30 p-4">
-                <p className="text-sm text-gray-300">{selectedLog.description || "No description available"}</p>
+                <p className="text-sm text-gray-300">
+                  <strong>Country:</strong> {selectedLog.country || "Not specified"}
+                </p>
+                <p className="text-sm text-gray-300 mt-2">
+                  <strong>Password:</strong> {selectedLog.password ? "••••••••" : "Not available"}
+                </p>
               </div>
               
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-lg border border-white/10 bg-black/30 p-3">
                   <p className="text-xs text-gray-500">Price</p>
                   <p className="text-lg font-bold text-white">
-                    ${selectedLog.price || selectedLog.cost}
+                    ₦{selectedLog.price || selectedLog.cost || "0.00"}
                   </p>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/30 p-3">
-                  <p className="text-xs text-gray-500">Type</p>
+                  <p className="text-xs text-gray-500">Status</p>
                   <p className="text-sm font-medium text-white capitalize">
-                    {selectedLog.type || "Standard"}
+                    {selectedLog.sold ? "Sold" : "Available"}
                   </p>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/30 p-3">
                   <p className="text-xs text-gray-500">Created</p>
                   <p className="text-sm font-medium text-white">
-                    {new Date(selectedLog.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-black/30 p-3">
-                  <p className="text-xs text-gray-500">Downloads</p>
-                  <p className="text-sm font-medium text-white">
-                    {selectedLog.downloads || 0}
+                    {new Date(selectedLog.createdAt || selectedLog.created_at).toLocaleDateString()}
                   </p>
                 </div>
               </div>
               
-              {selectedLog.data && (
-                <div className="rounded-lg border border-white/10 bg-black/30 p-4">
-                  <p className="text-xs font-semibold uppercase text-gray-500 mb-2">Log Data</p>
-                  <pre className="max-h-60 overflow-auto rounded bg-black/50 p-3 text-xs text-gray-300">
-                    {typeof selectedLog.data === 'object' 
-                      ? JSON.stringify(selectedLog.data, null, 2)
-                      : selectedLog.data}
-                  </pre>
-                </div>
-              )}
-              
               <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => handleBuyLog(selectedLoglog._id, selectedLog.price)}
-                  disabled={buyingId === selectedLoglog._id}
-                  className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-light disabled:opacity-50"
-                >
-                  {buyingId === selectedLoglog._id ? (
-                    <Loader2 size={16} className="mx-auto animate-spin" />
-                  ) : (
-                    `Purchase $${selectedLog.price}`
-                  )}
-                </button>
+                {!selectedLog.sold && (
+                  <button
+                    onClick={() => handleBuyLog(selectedLog._id, selectedLog.price)}
+                    disabled={buyingId === selectedLog._id}
+                    className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-light disabled:opacity-50"
+                  >
+                    {buyingId === selectedLog._id ? (
+                      <Loader2 size={16} className="mx-auto animate-spin" />
+                    ) : (
+                      `Purchase ₦${selectedLog.price}`
+                    )}
+                  </button>
+                )}
                 <button
                   onClick={() => setSelectedLog(null)}
                   className="rounded-lg border border-white/10 px-4 py-2.5 text-sm font-medium text-gray-400 transition-colors hover:bg-white/10"

@@ -9,6 +9,7 @@ import {
   updateLog,
   deleteLog,
   myPurchasedLogs,
+  getLogById,
 } from "../controller/logs.js";
 
 import { logSchema } from "../validator/auth.validator.js";
@@ -51,5 +52,6 @@ router.delete("/delete/:id", authMiddleware, validateAdminRole, deleteLog);
 
 // USER PURCHASE HISTORY
 router.get("/my-logs", authMiddleware, myPurchasedLogs);
+router.get("/:id",authMiddleware, getLogById);
 
 export default router;

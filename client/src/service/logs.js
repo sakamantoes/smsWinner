@@ -10,6 +10,11 @@ export const getLogs = async () => {
     return res.data;
 };
 
+export const getLogById = async (id) => {
+  const res = await api.get(`/api/logs/${id}`);
+    return res.data;
+};
+
 export const buyLog = async (id) => {
   const res = await api.post(`/api/logs/buy/${id}`);
     return res.data;
@@ -25,7 +30,7 @@ export const deleteLog = async (id) => {
     return res.data;
 }
 
-export const getUserPurchasedApi= async () => {
+export const getUserPurchasedApi = async () => {
     const res = await api.get(`/api/logs/my-logs`);    
     return res.data;
 }

@@ -230,4 +230,43 @@ const myPurchasedLogs = async (req, res, next) => {
   }
 };
 
-export { createLog, getLogs, buyLog, updateLog, deleteLog, myPurchasedLogs };
+// get log by id
+const getLogById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || id === undefined) {
+      res.statusCode = 400;
+      throw new Error("Invalid log ID");
+    }
+
+    const log = await Log.findById(id);
+
+    if (!log) {
+      res.statusCode = 404;
+      throw new Error("Log not found");
+    }
+
+    // Return the full log details (unmasked for admin/view)
+    res.status(200).json({
+      success: true,
+      data: {
+        _id: log._id,
+        email: log.email,
+        password: log.password,
+        price: log.price,
+        country: log.country,
+        category: log.category,
+        sold: log.sold,
+        soldTo: log.soldTo,
+        purchasedAt: log.purchasedAt,
+        createdAt: log.createdAt,
+        updatedAt: log.updatedAt,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { createLog, getLogs, buyLog, updateLog, deleteLog, myPurchasedLogs, getLogById };
