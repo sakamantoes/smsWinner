@@ -25,7 +25,7 @@ router.patch(
   validateData,
   updateDepositsStatus,
 );
-router.port(
+router.post(
   "/pricing/setting",
   priceSettingSchema,
   authMiddleware,
