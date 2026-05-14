@@ -8,3 +8,15 @@ export const updateDepositValidator = [
   ,
   check("id").isString().withMessage("id is missing in params").notEmpty(),
 ];
+
+export const priceSettingSchema = [
+  body("nariaRate").isString().withMessage("nariaRate is Required").notEmpty(),
+  body("markupType")
+    .isIn(["fixed", "percentage"])
+    .withMessage("should be either fixed or percentage")
+    .notEmpty(),
+  body("markupValue")
+    .isString()
+    .withMessage("markupValue is Required")
+    .notEmpty(),
+];
