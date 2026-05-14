@@ -15,6 +15,7 @@ const createLog = async (req, res, next) => {
       password,
       price,
       country,
+      category
     });
 
     res.status(201).json({
