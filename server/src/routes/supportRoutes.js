@@ -11,7 +11,7 @@ import {
   updateSupportStatus,
   deleteSupportMessage,
   getUnreadCount,
-} from "../controllers/supportController.js";
+} from "../controller/supportController.js";
 import authMiddleware, { validateAdminRole } from "../middleware/authMiddleware.js";
 
 
