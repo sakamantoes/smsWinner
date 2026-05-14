@@ -19,11 +19,13 @@ import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import Analytics from "./pages/Admin/Analytics.jsx";
 import Users from "./pages/Admin/Users.jsx";
 import Transactions from "./pages/Admin/Transactions.jsx";
-import AdminNumbers from './pages/Admin/AdminNumbers.jsx'
-import AdminLogs from "./pages/Admin/AdminLogs.jsx"; 
+import AdminNumbers from "./pages/Admin/AdminNumbers.jsx";
+import AdminLogs from "./pages/Admin/AdminLogs.jsx";
 import Reports from "./pages/Admin/Reports.jsx";
 import AdminSettings from "./pages/Admin/AdminSettings.jsx";
 import Setting from "./pages/user/Setting.jsx";
+import UserSupport from "./pages/user/UserSupport.jsx";
+import AdminSupport from "./pages/Admin/AdminSupport.jsx";
 
 const App = () => {
   return (
@@ -45,6 +47,7 @@ const App = () => {
         >
           <Route index element={<Navigate to="/f/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
+
           <Route path="fund-account" element={<FundAccount />} />
           <Route path="numbers" element={<PhoneNumber />} />
           <Route path="logs" element={<Logs />} />
@@ -52,6 +55,7 @@ const App = () => {
           <Route path="deposits" element={<UserDeposits />} />
           <Route path="receipts" element={<UserReceipts />} />
           <Route path="settings" element={<Setting />} />
+          <Route path="support" element={<UserSupport />} />
         </Route>
 
         <Route
@@ -71,6 +75,7 @@ const App = () => {
           <Route path="logs" element={<AdminLogs />} />
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="support" element={<AdminSupport />} />
         </Route>
       </Routes>
     </>

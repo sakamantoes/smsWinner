@@ -1,6 +1,8 @@
-import { NavLink } from "react-router-dom";
+// components/Sidebar.jsx - Make sure the support button is working correctly
+import { NavLink, useNavigate } from "react-router-dom";
 import { LifeBuoy, ShieldCheck } from "lucide-react";
 import imageObject from "../utils/image";
+import useAuth from "../store/useAuth";
 
 export default function Sidebar({
   navItems,
@@ -10,7 +12,29 @@ export default function Sidebar({
   statusDescription = "Manage your workspace and keep activity organized.",
   StatusIcon = ShieldCheck,
   supportLabel = "Support",
+  userRole = "user",
 }) {
+  const navigate = useNavigate();
+  const { user } = useAuth(); // Get user to check if authenticated
+
+  const handleSupportClick = (e) => {
+    e.preventDefault();
+    
+    // Check if user is authenticated
+    if (!user) {
+      // Redirect to login if not authenticated
+      navigate("/login");
+      return;
+    }
+    
+    // Navigate based on role
+    if (userRole === "admin" || user?.data?.role === "admin") {
+      navigate("/a/support");
+    } else {
+      navigate("/f/support");
+    }
+  };
+
   return (
     <aside className="flex h-full w-72 shrink flex-col border-r border-red-light/30 bg-gradient-to-br from-black via-gray-900 to-black backdrop-blur-xl">
       <div className="flex h-20 items-center gap-3 border-b border-red-light/30 px-5">
@@ -57,7 +81,10 @@ export default function Sidebar({
             {statusDescription}
           </p>
         </div>
-        <button className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-red-light/30 text-sm font-semibold text-gray-200 hover:bg-red-light/10">
+        <button
+          onClick={handleSupportClick}
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-red-light/30 text-sm font-semibold text-gray-200 transition-all hover:bg-red-light/10 hover:text-white active:scale-95"
+        >
           <LifeBuoy size={17} />
           {supportLabel}
         </button>
