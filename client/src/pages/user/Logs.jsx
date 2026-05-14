@@ -14,7 +14,12 @@ import {
   Wallet,
   ChevronRight,
 } from "lucide-react";
-import { getLogs, buyLog, getUserPurchasedApi, getLogById } from "../../service/logs";
+import {
+  getLogs,
+  buyLog,
+  getUserPurchasedApi,
+  getLogById,
+} from "../../service/logs";
 import WalletBalanceCard from "../../components/WalletBalanceCard.jsx";
 
 const Logs = () => {
@@ -29,6 +34,7 @@ const Logs = () => {
   const [activeTab, setActiveTab] = useState("available");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
+  const [showPassword, setShowPassword] = useState(false);
 
   // ================= FETCH LOGS =================
   const fetchLogs = async () => {
@@ -66,7 +72,11 @@ const Logs = () => {
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to purchase this log for ₦${price}?`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to purchase this log for ₦${price}?`,
+      )
+    ) {
       return;
     }
 
@@ -74,15 +84,15 @@ const Logs = () => {
       setBuyingId(id);
       setError("");
       setSuccess("");
-      
+
       const res = await buyLog(id);
       console.log("Purchase response:", res);
-      
+
       setSuccess("Log purchased successfully!");
-      
+
       await fetchLogs();
       await fetchPurchaseHistory();
-      
+
       setTimeout(() => {
         setSuccess("");
         setSelectedLog(null);
@@ -101,7 +111,7 @@ const Logs = () => {
       setError("Invalid log ID");
       return;
     }
-    
+
     try {
       setLoading(true);
       const data = await getLogById(id);
@@ -122,19 +132,26 @@ const Logs = () => {
 
   // Filter logs
   const filteredLogs = logs.filter((log) => {
-    const matchesSearch = searchTerm === "" || 
-      (log.email && log.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.country && log.country.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.category && log.category.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+    const matchesSearch =
+      searchTerm === "" ||
+      (log.email &&
+        log.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.country &&
+        log.country.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.category &&
+        log.category.toLowerCase().includes(searchTerm.toLowerCase()));
+
     const matchesFilter = filterType === "all" || log.type === filterType;
-    
+
     return matchesSearch && matchesFilter;
   });
 
   const totalLogs = logs.length;
   const purchasedCount = purchaseHistory.length;
-  const totalSpent = purchaseHistory.reduce((sum, item) => sum + (item.price || 0), 0);
+  const totalSpent = purchaseHistory.reduce(
+    (sum, item) => sum + (item.price || 0),
+    0,
+  );
 
   const stats = [
     {
@@ -179,12 +196,15 @@ const Logs = () => {
               <br className="hidden sm:block" /> premium logs & data.
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-gray-400">
-              Access verified logs, user data, and activity records. Purchase individual logs or buy in bulk for better rates.
+              Access verified logs, user data, and activity records. Purchase
+              individual logs or buy in bulk for better rates.
             </p>
           </div>
           <button
             type="button"
-            onClick={() => navigate("/f/fund-account", { state: { from: "/f/dashboard" } })}
+            onClick={() =>
+              navigate("/f/fund-account", { state: { from: "/f/dashboard" } })
+            }
             className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-red-dark/40 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-light active:bg-red-700"
           >
             <Wallet size={16} />
@@ -202,7 +222,9 @@ const Logs = () => {
             className="group rounded-xl border border-white/10 shadow-md bg-white/5 p-5 transition-all transform hover:-translate-y-1 hover:border-red-light/40"
           >
             <div className="flex items-start justify-between gap-3">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.iconBg} ${stat.iconColor}`}>
+              <div
+                className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.iconBg} ${stat.iconColor}`}
+              >
                 <stat.icon size={19} />
               </div>
               <span className="rounded-full border px-2.5 py-0.5 text-xs font-medium bg-white/8 text-gray-300 border-white/10">
@@ -231,7 +253,7 @@ const Logs = () => {
         >
           Available Logs
           {totalLogs > 0 && activeTab !== "available" && (
-            <span className="ml-2 rounded-full bg-red-light/20 px-1.5 py-0.5 text-xs text-red-400">
+            <span className="ml-2 rounded-full bg-red-light/20 px-1.5 py-0.5 text-xs text-red-light">
               {totalLogs}
             </span>
           )}
@@ -306,19 +328,23 @@ const Logs = () => {
         <div className="space-y-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-red-400" />
+              <Loader2 className="h-8 w-8 animate-spin text-red-light" />
             </div>
           ) : error ? (
-            <div className="flex items-center justify-center gap-2 rounded-lg bg-red-light/10 p-4 text-red-400">
+            <div className="flex items-center justify-center gap-2 rounded-lg bg-red-light/10 p-4 text-red-light">
               <AlertCircle size={20} />
               {error}
             </div>
           ) : filteredLogs.length === 0 ? (
             <div className="rounded-xl border border-white/10 bg-white/5 p-12 text-center">
               <FileText size={48} className="mx-auto text-gray-600 mb-4" />
-              <h3 className="text-lg font-semibold text-white">No logs available</h3>
+              <h3 className="text-lg font-semibold text-white">
+                No logs available
+              </h3>
               <p className="mt-1 text-sm text-gray-500">
-                {searchTerm ? "Try adjusting your search or filter" : "Check back later for new logs"}
+                {searchTerm
+                  ? "Try adjusting your search or filter"
+                  : "Check back later for new logs"}
               </p>
             </div>
           ) : (
@@ -330,20 +356,24 @@ const Logs = () => {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-light/10 text-red-400">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-light/10 text-red-light">
                         <FileText size={18} />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-white">{log.email || "No email"}</h3>
-                        <p className="text-xs text-gray-500">{log.category || "General"}</p>
+                        <h3 className="font-semibold text-white">
+                          {log.email || "No email"}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {log.category || "General"}
+                        </p>
                       </div>
                     </div>
                   </div>
-                  
+
                   <p className="mt-3 text-sm text-gray-400">
                     Country: {log.country || "Not specified"}
                   </p>
-                  
+
                   <div className="mt-4 flex items-center justify-between">
                     <div className="flex items-center gap-1">
                       <span className="text-gray-500">₦</span>
@@ -361,7 +391,7 @@ const Logs = () => {
                       <button
                         onClick={() => handleBuyLog(log._id, log.price)}
                         disabled={buyingId === log._id}
-                        className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-red-light disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-lg bg-red-dark px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-red-light disabled:opacity-50"
                       >
                         {buyingId === log._id ? (
                           <Loader2 size={12} className="animate-spin" />
@@ -385,11 +415,15 @@ const Logs = () => {
           {purchaseHistory.length === 0 ? (
             <div className="rounded-xl border border-white/10 bg-white/5 p-12 text-center">
               <ShoppingBag size={48} className="mx-auto text-gray-600 mb-4" />
-              <h3 className="text-lg font-semibold text-white">No purchase history</h3>
-              <p className="mt-1 text-sm text-gray-500">You haven't purchased any logs yet</p>
+              <h3 className="text-lg font-semibold text-white">
+                No purchase history
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                You haven't purchased any logs yet
+              </p>
               <button
                 onClick={() => setActiveTab("available")}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-light"
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-dark px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-light"
               >
                 Browse Logs
                 <ChevronRight size={16} />
@@ -401,27 +435,48 @@ const Logs = () => {
                 <table className="w-full">
                   <thead className="border-b border-white/10 bg-black/20">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Log</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Purchase Date</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Amount</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Actions</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                        Log
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                        Purchase Date
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                        Amount
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/10">
                     {purchaseHistory.map((purchase) => (
-                      <tr key={purchase._id} className="hover:bg-white/5 transition-colors">
+                      <tr
+                        key={purchase._id}
+                        className="hover:bg-white/5 transition-colors"
+                      >
                         <td className="px-4 py-3">
                           <div>
-                            <p className="text-sm font-medium text-white">{purchase.email || "Log"}</p>
-                            <p className="text-xs text-gray-500">{purchase.category || "Log"}</p>
+                            <p className="text-sm font-medium text-white">
+                              {purchase.email || "Log"}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {purchase.category || "Log"}
+                            </p>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-400">
-                          {new Date(purchase.createdAt || purchase.purchasedAt).toLocaleDateString()}
+                          {new Date(
+                            purchase.createdAt || purchase.purchasedAt,
+                          ).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-sm font-semibold text-emerald-400">₦{purchase.price}</span>
+                          <span className="text-sm font-semibold text-emerald-400">
+                            ₦{purchase.price}
+                          </span>
                         </td>
                         <td className="px-4 py-3">
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-400">
@@ -460,31 +515,126 @@ const Logs = () => {
                 <XCircle size={20} />
               </button>
             </div>
-            
+
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-light/10 text-red-400">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-light/10 text-red-light">
                   <FileText size={22} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white">{selectedLog.email || "Log Details"}</h3>
-                  <p className="text-sm text-gray-400">{selectedLog.category || "General"}</p>
+                  <h3 className="text-xl font-bold text-white">
+                    {selectedLog.email || "Log Details"}
+                  </h3>
+                  <p className="text-sm text-gray-400">
+                    {selectedLog.category || "General"}
+                  </p>
                 </div>
               </div>
-              
+
               <div className="rounded-lg border border-white/10 bg-black/30 p-4">
-                <p className="text-sm text-gray-300">
-                  <strong>Country:</strong> {selectedLog.country || "Not specified"}
-                </p>
-                <p className="text-sm text-gray-300 mt-2">
-                  <strong>Password:</strong> {selectedLog.password ? `${selectedLog.password}` : "Not available"}
-                </p>
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-gray-400">
+                    <strong className="text-white">Country:</strong>
+                  </p>
+                  <p className="text-sm text-white">
+                    {selectedLog.country || "Not specified"}
+                  </p>
+                </div>
+                <div className="flex justify-between items-center mt-3">
+                  <p className="text-sm text-gray-400">
+                    <strong className="text-white">Password:</strong>
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-mono">
+                      {showPassword ? (
+                        <span className="text-yellow-400">
+                          {selectedLog.password || "Not available"}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">••••••••</span>
+                      )}
+                    </p>
+                    <button
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                      title={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                          <line x1="2" y1="2" x2="22" y2="22"></line>
+                        </svg>
+                      ) : (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (selectedLog.password) {
+                          navigator.clipboard.writeText(selectedLog.password);
+                          setSuccess("Password copied to clipboard!");
+                          setTimeout(() => setSuccess(""), 2000);
+                        }
+                      }}
+                      className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                      title="Copy password"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect
+                          x="9"
+                          y="9"
+                          width="13"
+                          height="13"
+                          rx="2"
+                          ry="2"
+                        ></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
-              
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-lg border border-white/10 bg-black/30 p-3">
                   <p className="text-xs text-gray-500">Price</p>
-                  <p className="text-lg font-bold text-white">₦{selectedLog.price || "0.00"}</p>
+                  <p className="text-lg font-bold text-white">
+                    ₦{selectedLog.price || "0.00"}
+                  </p>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/30 p-3">
                   <p className="text-xs text-gray-500">Status</p>
@@ -499,7 +649,7 @@ const Logs = () => {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex gap-3 pt-4">
                 {!selectedLog.sold && (
                   <button
@@ -508,7 +658,7 @@ const Logs = () => {
                       setSelectedLog(null);
                     }}
                     disabled={buyingId === selectedLog._id}
-                    className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-light disabled:opacity-50"
+                    className="flex-1 rounded-lg bg-red-dark py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-light disabled:opacity-50"
                   >
                     {buyingId === selectedLog._id ? (
                       <Loader2 size={16} className="mx-auto animate-spin" />
@@ -536,7 +686,7 @@ const Logs = () => {
           {success}
         </div>
       )}
-      
+
       {error && (
         <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-lg bg-red-light/90 px-4 py-3 text-sm font-medium text-white shadow-lg animate-in slide-in-from-right-5">
           <AlertCircle size={16} />
