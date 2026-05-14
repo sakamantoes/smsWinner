@@ -27,9 +27,9 @@ router.patch(
 );
 router.post(
   "/pricing/setting",
-  priceSettingSchema,
   authMiddleware,
   validateAdminRole,
+  priceSettingSchema,
   priceSettingController,
 );
 
