@@ -7,6 +7,8 @@ import {
   getAllUser,
   getAuthUser,
   googleSetup,
+  updatePassword,
+  updateUsername,
 } from "../controller/auth.js";
 import authMiddleware, { validateAdminRole } from "../middleware/authMiddleware.js";
 import { validateData } from "../validator/validator.js";
@@ -23,7 +25,9 @@ router.post("/login", loginSchema, validateData, emailLogin);
 router.post("/google", googleSchema, validateData, googleSetup);
 router.get("/me", authMiddleware, getAuthUser);
 router.get("/allUsers", authMiddleware, validateAdminRole, getAllUser)
-router.put("/activate/:id", activateUser);
-router.put("/deactivate/:id", deactivateUser);
+router.put("/activate/:id", authMiddleware, validateAdminRole, activateUser);
+router.put("/deactivate/:id", authMiddleware, validateAdminRole, deactivateUser);
+router.put("/update-username", authMiddleware, updateUsername)
+router.put("/update-password", authMiddleware, updatePassword)
 
 export default router;

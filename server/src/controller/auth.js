@@ -223,6 +223,51 @@ const activateUser = async (req, res, next) => {
   }
 };
 
+// Update username
+const updateUsername = async (req, res, next) => {
+  const { username } = req.body;
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { username },
+      { new: true }
+    ).select("-password");
+
+    res.status(200).json({
+      success: true,
+      message: "Username updated successfully",
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Update password
+const updatePassword = async (req, res, next) => {
+  const { currentPassword, newPassword } = req.body;
+  try {
+    const user = await User.findById(req.user._id);
+    
+    const isMatch = await comparePassword(currentPassword, user.password);
+    if (!isMatch) {
+      res.statusCode = 400;
+      throw new Error("Current password is incorrect");
+    }
+    
+    const hashedPassword = await hashPassword(newPassword);
+    user.password = hashedPassword;
+    await user.save();
+    
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   googleSetup,
   getAuthUser,
@@ -231,4 +276,6 @@ export {
   getAllUser,
   deactivateUser,
   activateUser,
+  updatePassword,
+  updateUsername
 };

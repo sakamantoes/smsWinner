@@ -91,7 +91,7 @@ const PricingSettings = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 shadow-md bg-gradient-to-br from-red-950/40 via-black to-black p-6 text-white sm:p-8">
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 shadow-md bg-gradient-to-br from-red-dark/40 via-black to-black p-6 text-white sm:p-8">
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-red-dark/10 blur-3xl" />
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-red-light/40 bg-red-light/10 px-3 py-1 text-xs font-semibold text-red-300">
@@ -114,7 +114,7 @@ const PricingSettings = () => {
             <h2 className="text-lg font-semibold text-white">Pricing Configuration</h2>
             <button
               onClick={handleEdit}
-              className="inline-flex items-center gap-2 rounded-lg bg-red-light/10 px-4 py-2 text-sm font-semibold text-red-400 transition-colors hover:bg-red-light/20"
+              className="inline-flex items-center gap-2 rounded-lg bg-red-light/10 px-4 py-2 text-sm font-semibold text-red-light transition-colors hover:bg-red-light/20"
             >
               <Edit2 size={16} />
               Update Settings
