@@ -223,10 +223,21 @@ const activateUser = async (req, res, next) => {
   }
 };
 
-// Update username
+
 const updateUsername = async (req, res, next) => {
   const { username } = req.body;
   try {
+    // Check if username is already taken by another user
+    const existingUser = await User.findOne({ 
+      username: username,
+      _id: { $ne: req.user._id } // Exclude current user
+    });
+    
+    if (existingUser) {
+      res.statusCode = 400;
+      throw new Error("Username already taken");
+    }
+    
     const user = await User.findByIdAndUpdate(
       req.user._id,
       { username },
@@ -243,7 +254,7 @@ const updateUsername = async (req, res, next) => {
   }
 };
 
-// Update password
+
 const updatePassword = async (req, res, next) => {
   const { currentPassword, newPassword } = req.body;
   try {

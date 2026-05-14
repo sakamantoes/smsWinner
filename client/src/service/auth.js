@@ -47,3 +47,5 @@ export const deactivateUser = async (id) => {
 
   return res.data;
 };
+
+
