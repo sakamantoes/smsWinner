@@ -61,6 +61,10 @@ const UserLayout = () => {
     navigate("/login");
   };
 
+  const closeMobileNav = () => {
+    setMobileOpen(false);
+  };
+
   return (
     <div className="min-h-screen text-white">
       {/* Desktop sidebar */}
@@ -76,24 +80,26 @@ const UserLayout = () => {
       {/* Mobile sidebar overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Click outside to close */}
           <button
             aria-label="Close menu"
-            className="absolute inset-0 bg-black/70"
-            onClick={() => setMobileOpen(false)}
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-all duration-300"
+            onClick={closeMobileNav}
           />
-          <div className="relative h-full">
+          {/* Sidebar panel - clicking inside won't close */}
+          <div className="relative h-full w-72">
             <Sidebar
               {...userSidebarConfig}
               userRole="user"
               supportLabel="Support"
-              onNavigate={() => setMobileOpen(false)}
+              onNavigate={closeMobileNav} // Close when any nav item is clicked
             />
           </div>
         </div>
       )}
 
       <div className="relative min-h-screen lg:pl-72">
-        {/* ── Header ── */}
+        {/* Header */}
         <header className="sticky top-0 z-30 border-b border-white/30 bg-gradient-to-br from-black via-gray-900 to-black backdrop-blur-xl">
           <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
             {/* Left: mobile toggle + search */}

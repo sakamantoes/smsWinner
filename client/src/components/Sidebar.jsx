@@ -1,4 +1,4 @@
-// components/Sidebar.jsx - Make sure the support button is working correctly
+// components/Sidebar.jsx
 import { NavLink, useNavigate } from "react-router-dom";
 import { LifeBuoy, ShieldCheck } from "lucide-react";
 import imageObject from "../utils/image";
@@ -15,20 +15,26 @@ export default function Sidebar({
   userRole = "user",
 }) {
   const navigate = useNavigate();
-  const { user } = useAuth(); // Get user to check if authenticated
+  const { user } = useAuth();
 
   const handleSupportClick = (e) => {
     e.preventDefault();
     
-    // Check if user is authenticated
+    // If this is admin sidebar (passed as prop), go directly to admin support
+    if (userRole === "admin") {
+      navigate("/a/support");
+      return;
+    }
+    
+    // For non-admin, check if user is authenticated
     if (!user) {
-      // Redirect to login if not authenticated
       navigate("/login");
       return;
     }
     
-    // Navigate based on role
-    if (userRole === "admin" || user?.data?.role === "admin") {
+    // Navigate based on user role
+    const role = user?.data?.role || user?.role;
+    if (role === "admin") {
       navigate("/a/support");
     } else {
       navigate("/f/support");
