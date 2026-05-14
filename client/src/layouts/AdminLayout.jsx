@@ -25,7 +25,6 @@ const adminNavItems = [
   { label: "Analytics", to: "/a/analytics", icon: BarChart3 },
   { label: "Users", to: "/a/users", icon: Users },
   { label: "Deposits", to: "/a/deposits", icon: Wallet },
-  { label: "Transactions", to: "/a/transactions", icon: CreditCard },
   { label: "Numbers", to: "/a/numbers", icon: Phone },
   { label: "Logs", to: "/a/logs", icon: Activity },
   { label: "Reports", to: "/a/reports", icon: Flag },
