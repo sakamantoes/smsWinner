@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
 import Log from "../model/Logs.js";
 import User from "../model/User.js";
+import PurchaseReceipt from "../model/PurchaseReceipt.js";
 import { maskEmail, maskPassword } from "../utils/maskDate.js";
-import  recieptNumberGenerator  from "../utils/recieptNo.generator.js";
+import recieptNumberGenerator from "../utils/recieptNo.generator.js";
 
 // create log
 const createLog = async (req, res, next) => {
@@ -59,8 +60,13 @@ const buyLog = async (req, res, next) => {
   try {
     let finalResult = null;
 
+    if (!id || id === undefined) {
+      res.statusCode = 400;
+
+      throw new Error("invalid id params");
+    }
     await session.withTransaction(async () => {
-      const log = await Log.findById({_id: id}).session(session);
+      const log = await Log.findById({ _id: id }).session(session);
 
       if (!log) {
         res.statusCode = 400;
@@ -74,10 +80,10 @@ const buyLog = async (req, res, next) => {
       const isUser = await User.findOneAndUpdate(
         {
           _id: userId._id,
-          walletBalance: { $gte: log.price },
+          walletBalance: { $gte: Number(log.price) },
         },
         {
-          $inc: { walletBalance: -log.price },
+          $inc: { walletBalance: Number(-log.price) },
         },
         {
           session,
@@ -90,18 +96,18 @@ const buyLog = async (req, res, next) => {
         throw new Error("UnAuthorized Access");
       }
 
-      const [reciept] = await PurchaseReceipt.create(
+      const [receipt] = await PurchaseReceipt.create(
         [
           {
             userId: isUser._id,
             purchaseType: "LOG",
             itemId: log._id,
             itemModel: "Log",
-            recieptNo: recieptNo,
+            receiptNo: recieptNo,
             amount: log.price,
             description: "User log purchase",
-            balanceBefore: userWallet.balance + log.price,
-            balanceAfter: userWallet.balance,
+            balanceBefore: Number(isUser.walletBalance + log.price),
+            balanceAfter: Number(isUser.walletBalance),
           },
         ],
         {
@@ -109,16 +115,24 @@ const buyLog = async (req, res, next) => {
         },
       );
 
-      log.sold = true;
-      log.soldTo = isUser._id;
-      log.purchasedAt = new Date();
-
-      await log.save({ session });
-
+      await Log.findOneAndUpdate(
+        {
+          _id: log._id,
+        },
+        {
+          $set: {
+            sold: true,
+            soldTo: isUser._id,
+            purchasedAt: new Date(),
+          },
+        },
+        {
+          session,
+        },
+      );
       console.log("log purchase was successfull ");
-      finalResult = { log, reciept };
+      finalResult = {receipt };
     });
-
 
     res.status(200).json({
       success: true,
@@ -156,7 +170,6 @@ const updateLog = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Log updated successfully",
-      log,
     });
   } catch (error) {
     next(error);
@@ -178,6 +191,7 @@ const deleteLog = async (req, res, next) => {
     await log.deleteOne();
 
     res.status(200).json({
+      status: 200,
       success: true,
       message: "Log deleted successfully",
     });
@@ -194,8 +208,9 @@ const myPurchasedLogs = async (req, res, next) => {
     });
 
     res.status(200).json({
+      status: 200,
       success: true,
-      logs,
+      data: logs,
     });
   } catch (error) {
     next(error);

@@ -6,9 +6,10 @@ import authRoutes from "./routes/auth.js";
 import logsRoutes from "./routes/logs.js";
 import paymentRoutes from "./routes/payment.js";
 import otpRoutes from "./routes/otpRoutes.js";
+import userRoutes from "./routes/user.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import userRoutes from "./routes/user.routes.js";
 const app = express();
 
 app.use(morgan("dev"));
@@ -32,7 +33,7 @@ app.use("/api/logs", logsRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/otp", otpRoutes);
 app.use("/api/user", userRoutes);
-
+app.use("/api/admin", adminRoutes)
 // database connection
 connectDB();
 
