@@ -1,4 +1,7 @@
 import WalletTransaction from "../model/WalletTransactions.js";
+import mongoose from "mongoose";
+import User from "../model/User.js";
+import PriceSetting from "../model/PriceSetting.js";
 
 const getPlatformDeposits = async (req, res, next) => {
   try {
@@ -27,39 +30,111 @@ const getPlatformDeposits = async (req, res, next) => {
 const updateDepositsStatus = async (req, res, next) => {
   const { id } = req.params;
   const { status } = req.body;
+  const session = await mongoose.startSession();
+
+  let finalResult = null;
+
   try {
-    if (!id || id === undefined) {
+    if (!mongoose.Types.ObjectId.isValid(id) || id === undefined) {
       res.statusCode = 400;
-      throw new Error("missing parameters id");
+      throw new Error("Invalid transaction ID");
+    }
+
+    if (!status) {
+      res.statusCode = 400;
+      throw new Error("missing status");
     }
 
     const statusValue = status.toUpperCase();
 
-    const updateDeposit = await WalletTransaction.findOneAndUpdate(
-      {
-        _id: id,
-      },
-      {
-        $set: { status: statusValue },
-      },
-      {new: true}
-    );
+    await session.withTransaction(async () => {
+      const transaction = await WalletTransaction.findOneAndUpdate(
+        {
+          _id: id,
+          status: { $ne: "PENDING" },
+        },
+        {
+          $set: {
+            status: statusValue,
+          },
+        },
+        {
+          new: true,
+          session,
+        },
+      );
 
-    if(!updateDeposit) {
-        res.statusCode = 400
-        throw new Error ("somethibng went wrong updating deposit status")
-    }
+      if (!transaction) {
+        return;
+      }
+
+      if (statusValue !== "SUCCESS") {
+        finalResult = transaction;
+        return;
+      }
+
+      const user = await User.findOneAndUpdate(
+        {
+          _id: transaction.userId,
+        },
+        {
+          $inc: {
+            walletBalance: transaction.amount,
+          },
+        },
+        {
+          session,
+          new: true,
+        },
+      );
+
+      transaction.balanceBefore = user.walletBalance - transaction.amount;
+
+      transaction.balanceAfter = user.walletBalance;
+
+      await transaction.save({ session });
+
+      finalResult = { receipt: transaction, user };
+    });
 
     res.status(200).json({
-        status: 200,
-        success: true,
-        message: "your request is successful",
-        data: updateDeposit
-    })
+      status: 200,
+      success: true,
+      message: "your request is successful",
+      data: finalResult,
+    });
+  } catch (error) {
+    next(error);
+  } finally {
+    await session.endSession();
+  }
+};
+
+const priceSettingController = async (req, res, next) => {
+  const { nariaRate, markupType, markupValue } = req.body;
+  try {
+    const priceSetting = await PriceSetting.findOneAndUpdate(
+      {},
+      {
+        usdToNgnRate: naraiRate,
+        globalMarkupType: markupType,
+        globalMarkupValue: markupValue,
+      },
+      {
+        new: true,
+        upsert: true,
+      },
+    );
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: " you have successfully updated product price",
+      data: priceSettings,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-
-export {getPlatformDeposits, updateDepositsStatus }
+export { getPlatformDeposits, updateDepositsStatus, priceSettingController };

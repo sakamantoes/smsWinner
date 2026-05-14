@@ -1,12 +1,16 @@
 import { Router } from "express";
 import {
+  priceSettingController,
   getPlatformDeposits,
   updateDepositsStatus,
 } from "../controller/admin.controller.js";
 import authMiddleware, {
   validateAdminRole,
 } from "../middleware/authMiddleware.js";
-import { updateDepositValidator } from "../validator/admin.validator.js";
+import {
+  updateDepositValidator,
+  priceSettingSchema,
+} from "../validator/admin.validator.js";
 import { validateData } from "../validator/validator.js";
 
 const router = Router();
@@ -21,6 +25,12 @@ router.patch(
   validateData,
   updateDepositsStatus,
 );
+router.patch(
+  "/pricing/setting",
+  priceSettingSchema,
+  authMiddleware,
+  validateAdminRole,
+  priceSettingController,
+);
 
-
-export default router
+export default router;
