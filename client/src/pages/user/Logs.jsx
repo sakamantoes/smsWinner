@@ -5,7 +5,6 @@ import {
   ShoppingBag,
   Download,
   Eye,
-  Clock,
   CheckCircle2,
   XCircle,
   AlertCircle,
@@ -27,7 +26,7 @@ const Logs = () => {
   const [buyingId, setBuyingId] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [activeTab, setActiveTab] = useState("available"); // available, history
+  const [activeTab, setActiveTab] = useState("available");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
 
@@ -37,7 +36,9 @@ const Logs = () => {
       setLoading(true);
       const data = await getLogs();
       console.log("Logs data:", data);
-      setLogs(data.logs || data.data || []);
+      const logsArray = data.logs || data.data || [];
+      console.log("First log _id:", logsArray[0]?._id);
+      setLogs(logsArray);
     } catch (error) {
       console.log(error);
       setError("Failed to load logs");
@@ -51,7 +52,7 @@ const Logs = () => {
     try {
       const data = await getUserPurchasedApi();
       console.log("Purchase history data:", data);
-      setPurchaseHistory(data.purchases || data.data || []);
+      setPurchaseHistory(data.data || data.purchases || []);
     } catch (error) {
       console.log(error);
       setPurchaseHistory([]);
@@ -60,12 +61,12 @@ const Logs = () => {
 
   // ================= BUY LOG =================
   const handleBuyLog = async (id, price) => {
-    if (!window.confirm(`Are you sure you want to purchase this log for ₦${price}?`)) {
+    if (!id) {
+      setError("Invalid log selected");
       return;
     }
 
-    if (!id) {
-      setError("Select a log first");
+    if (!window.confirm(`Are you sure you want to purchase this log for ₦${price}?`)) {
       return;
     }
 
@@ -79,11 +80,9 @@ const Logs = () => {
       
       setSuccess("Log purchased successfully!");
       
-      // Refresh both lists
       await fetchLogs();
       await fetchPurchaseHistory();
       
-      // Close modal after 2 seconds
       setTimeout(() => {
         setSuccess("");
         setSelectedLog(null);
@@ -98,13 +97,19 @@ const Logs = () => {
 
   // ================= VIEW LOG DETAILS =================
   const handleViewDetails = async (id) => {
+    if (!id) {
+      setError("Invalid log ID");
+      return;
+    }
+    
     try {
       setLoading(true);
       const data = await getLogById(id);
-      setSelectedLog(data.log || data.data);
+      console.log("Log details:", data);
+      setSelectedLog(data.data || data.log);
     } catch (error) {
       console.log(error);
-      setError("Failed to load log details");
+      setError(error?.response?.data?.message || "Failed to load log details");
     } finally {
       setLoading(false);
     }
@@ -115,7 +120,7 @@ const Logs = () => {
     fetchPurchaseHistory();
   }, []);
 
-  // Filter logs based on search and type
+  // Filter logs
   const filteredLogs = logs.filter((log) => {
     const matchesSearch = searchTerm === "" || 
       (log.email && log.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -127,7 +132,6 @@ const Logs = () => {
     return matchesSearch && matchesFilter;
   });
 
-  // Stats calculation
   const totalLogs = logs.length;
   const purchasedCount = purchaseHistory.length;
   const totalSpent = purchaseHistory.reduce((sum, item) => sum + (item.price || 0), 0);
@@ -192,23 +196,16 @@ const Logs = () => {
       {/* Stats Cards */}
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <WalletBalanceCard statusText="Available" />
-
         {stats.map((stat) => (
           <div
             key={stat.label}
             className="group rounded-xl border border-white/10 shadow-md bg-white/5 p-5 transition-all transform hover:-translate-y-1 hover:border-red-light/40"
           >
             <div className="flex items-start justify-between gap-3">
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.iconBg} ${stat.iconColor}`}
-              >
+              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.iconBg} ${stat.iconColor}`}>
                 <stat.icon size={19} />
               </div>
-              <span
-                className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-                  stat.changeBg || "bg-white/8 text-gray-300 border-white/10"
-                }`}
-              >
+              <span className="rounded-full border px-2.5 py-0.5 text-xs font-medium bg-white/8 text-gray-300 border-white/10">
                 {stat.change}
               </span>
             </div>
@@ -256,7 +253,7 @@ const Logs = () => {
         </button>
       </div>
 
-      {/* Search and Filter Bar - Only show for available logs */}
+      {/* Search Bar */}
       {activeTab === "available" && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1 max-w-md">
@@ -304,9 +301,8 @@ const Logs = () => {
         </div>
       )}
 
-      {/* Main Content */}
-      {activeTab === "available" ? (
-        /* Available Logs Grid */
+      {/* Available Logs Grid */}
+      {activeTab === "available" && (
         <div className="space-y-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -342,16 +338,9 @@ const Logs = () => {
                         <p className="text-xs text-gray-500">{log.category || "General"}</p>
                       </div>
                     </div>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      log.type === "premium" 
-                        ? "bg-amber-500/20 text-amber-400 border border-amber-500/20"
-                        : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20"
-                    }`}>
-                      {log.type || "Standard"}
-                    </span>
                   </div>
                   
-                  <p className="mt-3 text-sm text-gray-400 line-clamp-2">
+                  <p className="mt-3 text-sm text-gray-400">
                     Country: {log.country || "Not specified"}
                   </p>
                   
@@ -359,7 +348,7 @@ const Logs = () => {
                     <div className="flex items-center gap-1">
                       <span className="text-gray-500">₦</span>
                       <span className="text-lg font-bold text-white">
-                        {log.price || log.cost || "0.00"}
+                        {log.price || "0.00"}
                       </span>
                     </div>
                     <div className="flex gap-2">
@@ -388,16 +377,16 @@ const Logs = () => {
             </div>
           )}
         </div>
-      ) : (
-        /* Purchase History */
+      )}
+
+      {/* Purchase History */}
+      {activeTab === "history" && (
         <div className="space-y-4">
           {purchaseHistory.length === 0 ? (
             <div className="rounded-xl border border-white/10 bg-white/5 p-12 text-center">
               <ShoppingBag size={48} className="mx-auto text-gray-600 mb-4" />
               <h3 className="text-lg font-semibold text-white">No purchase history</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                You haven't purchased any logs yet
-              </p>
+              <p className="mt-1 text-sm text-gray-500">You haven't purchased any logs yet</p>
               <button
                 onClick={() => setActiveTab("available")}
                 className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-light"
@@ -421,20 +410,18 @@ const Logs = () => {
                   </thead>
                   <tbody className="divide-y divide-white/10">
                     {purchaseHistory.map((purchase) => (
-                      <tr key={purchase._id || purchase.id} className="hover:bg-white/5 transition-colors">
+                      <tr key={purchase._id} className="hover:bg-white/5 transition-colors">
                         <td className="px-4 py-3">
                           <div>
-                            <p className="text-sm font-medium text-white">{purchase.email || purchase.log_title || "Log"}</p>
+                            <p className="text-sm font-medium text-white">{purchase.email || "Log"}</p>
                             <p className="text-xs text-gray-500">{purchase.category || "Log"}</p>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-400">
-                          {new Date(purchase.createdAt || purchase.created_at || purchase.purchase_date).toLocaleDateString()}
+                          {new Date(purchase.createdAt || purchase.purchasedAt).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-sm font-semibold text-emerald-400">
-                            ₦{purchase.price}
-                          </span>
+                          <span className="text-sm font-semibold text-emerald-400">₦{purchase.price}</span>
                         </td>
                         <td className="px-4 py-3">
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-400">
@@ -444,13 +431,13 @@ const Logs = () => {
                         </td>
                         <td className="px-4 py-3">
                           <button
-                            onClick={() => handleViewDetails(purchase.logId || purchase.itemId)}
+                            onClick={() => handleViewDetails(purchase._id)}
                             className="rounded-lg border border-white/10 p-1.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
                           >
                             <Download size={14} />
                           </button>
                         </td>
-                       </tr>
+                      </tr>
                     ))}
                   </tbody>
                 </table>
@@ -480,7 +467,7 @@ const Logs = () => {
                   <FileText size={22} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white">{selectedLog.email || selectedLog.title || "Log Details"}</h3>
+                  <h3 className="text-xl font-bold text-white">{selectedLog.email || "Log Details"}</h3>
                   <p className="text-sm text-gray-400">{selectedLog.category || "General"}</p>
                 </div>
               </div>
@@ -490,16 +477,14 @@ const Logs = () => {
                   <strong>Country:</strong> {selectedLog.country || "Not specified"}
                 </p>
                 <p className="text-sm text-gray-300 mt-2">
-                  <strong>Password:</strong> {selectedLog.password ? "••••••••" : "Not available"}
+                  <strong>Password:</strong> {selectedLog.password ? `${selectedLog.password}` : "Not available"}
                 </p>
               </div>
               
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-lg border border-white/10 bg-black/30 p-3">
                   <p className="text-xs text-gray-500">Price</p>
-                  <p className="text-lg font-bold text-white">
-                    ₦{selectedLog.price || selectedLog.cost || "0.00"}
-                  </p>
+                  <p className="text-lg font-bold text-white">₦{selectedLog.price || "0.00"}</p>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/30 p-3">
                   <p className="text-xs text-gray-500">Status</p>
@@ -510,7 +495,7 @@ const Logs = () => {
                 <div className="rounded-lg border border-white/10 bg-black/30 p-3">
                   <p className="text-xs text-gray-500">Created</p>
                   <p className="text-sm font-medium text-white">
-                    {new Date(selectedLog.createdAt || selectedLog.created_at).toLocaleDateString()}
+                    {new Date(selectedLog.createdAt).toLocaleDateString()}
                   </p>
                 </div>
               </div>
@@ -518,7 +503,10 @@ const Logs = () => {
               <div className="flex gap-3 pt-4">
                 {!selectedLog.sold && (
                   <button
-                    onClick={() => handleBuyLog(selectedLog._id, selectedLog.price)}
+                    onClick={() => {
+                      handleBuyLog(selectedLog._id, selectedLog.price);
+                      setSelectedLog(null);
+                    }}
                     disabled={buyingId === selectedLog._id}
                     className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-light disabled:opacity-50"
                   >
