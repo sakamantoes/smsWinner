@@ -8,14 +8,14 @@ import recieptNumberGenerator from "../utils/recieptNo.generator.js";
 // create log
 const createLog = async (req, res, next) => {
   try {
-    const { email, password, price, country } = req.body;
+    const { email, password, price, country, category } = req.body;
 
     const log = await Log.create({
       email,
       password,
       price,
       country,
-      category
+      category,
     });
 
     res.status(201).json({
@@ -132,7 +132,7 @@ const buyLog = async (req, res, next) => {
         },
       );
       console.log("log purchase was successfull ");
-      finalResult = {receipt };
+      finalResult = { receipt };
     });
 
     res.status(200).json({

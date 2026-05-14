@@ -33,10 +33,12 @@ export default function AdminLogs() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Updated form data to include category field
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     country: "",
+    category: "",
     price: "",
   });
 
@@ -47,7 +49,6 @@ export default function AdminLogs() {
       const data = await getLogs();
       console.log("Logs data response:", data);
       
-      // Fix: Access logs array correctly based on your response structure
       const logsArray = data?.logs || data?.data?.logs || [];
       console.log("Extracted logs array:", logsArray);
       setLogs(logsArray);
@@ -70,6 +71,10 @@ export default function AdminLogs() {
       setError("Please enter a password for the log");
       return;
     }
+    if (!formData.category) {
+      setError("Please enter a category for the log");
+      return;
+    }
     if (!formData.price) {
       setError("Please enter a price for the log");
       return;
@@ -84,6 +89,7 @@ export default function AdminLogs() {
         email: formData.email,
         password: formData.password,
         country: formData.country || "Unknown",
+        category: formData.category,
         price: parseFloat(formData.price) || 0,
       };
 
@@ -96,7 +102,6 @@ export default function AdminLogs() {
         setSuccess("Log created successfully!");
         resetForm();
         setIsModalOpen(false);
-        // Wait a bit before fetching to ensure database has updated
         setTimeout(() => {
           fetchLogs();
         }, 500);
@@ -133,6 +138,7 @@ export default function AdminLogs() {
         email: formData.email,
         password: formData.password,
         country: formData.country,
+        category: formData.category,
         price: parseFloat(formData.price) || 0,
       };
 
@@ -197,6 +203,7 @@ export default function AdminLogs() {
       email: log.email || "",
       password: log.password || "",
       country: log.country || "",
+      category: log.category || "",
       price: log.price || "",
     });
     setModalMode("edit");
@@ -214,6 +221,7 @@ export default function AdminLogs() {
       email: "",
       password: "",
       country: "",
+      category: "",
       price: "",
     });
   };
@@ -227,7 +235,9 @@ export default function AdminLogs() {
           (log.email &&
             log.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (log.country &&
-            log.country.toLowerCase().includes(searchTerm.toLowerCase()))
+            log.country.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (log.category &&
+            log.category.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -341,7 +351,7 @@ export default function AdminLogs() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
           <input
             type="text"
-            placeholder="Search logs by email or country..."
+            placeholder="Search logs by email, country, or category..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full rounded-lg border border-white/10 bg-black/40 py-2 pl-9 pr-4 text-sm text-white placeholder:text-gray-500 focus:border-red-bg-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-bg-red-light/50"
@@ -404,6 +414,9 @@ export default function AdminLogs() {
                     Password
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    Category
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
                     Country
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
@@ -445,6 +458,11 @@ export default function AdminLogs() {
                       <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-1 text-xs text-gray-300">
                         <Tag size={10} />
                         {log.password ? "••••••••" : "No password"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-1 text-xs text-gray-300">
+                        {log.category || "N/A"}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -528,7 +546,7 @@ export default function AdminLogs() {
         )}
       </div>
 
-      {/* Modal content remains the same */}
+      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
           <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-gradient-to-br from-gray-900 to-black shadow-2xl">
@@ -577,6 +595,12 @@ export default function AdminLogs() {
                       <p className="text-xs text-gray-500">Password</p>
                       <p className="text-sm text-white mt-1 font-mono">
                         {selectedLog.password || "N/A"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-black/30 p-3">
+                      <p className="text-xs text-gray-500">Category</p>
+                      <p className="text-sm text-white mt-1">
+                        {selectedLog.category || "N/A"}
                       </p>
                     </div>
                     <div className="rounded-lg border border-white/10 bg-black/30 p-3">
@@ -671,6 +695,28 @@ export default function AdminLogs() {
                         className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-red-bg-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-bg-red-light/50"
                         placeholder="Enter password"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                        Category *
+                      </label>
+                      <select
+                        value={formData.category}
+                        onChange={(e) =>
+                          setFormData({ ...formData, category: e.target.value })
+                        }
+                        className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-red-bg-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-bg-red-light/50"
+                      >
+                        <option value="">Select Category</option>
+                        <option value="Social Media">Social Media</option>
+                        <option value="Gaming">Gaming</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Email">Email</option>
+                        <option value="Messaging">Messaging</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Other">Other</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1.5">
