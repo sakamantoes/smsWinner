@@ -10,7 +10,7 @@ import {
   Edit2,
   X,
 } from "lucide-react";
-import { updatePricingSettings } from "../../service/payment";
+import { updatePricingSettings } from "../../service/admin.js";
 import { toast } from "react-toastify";
 
 const PricingSettings = () => {
