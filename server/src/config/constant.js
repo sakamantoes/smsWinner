@@ -13,4 +13,5 @@ export const env = {
   squad_api_secret: process.env.SQUAD_API_SECRET,
   smsBowerApiKey: process.env.SMSBOWER_API_KEY,
   smsBowerBaseUrl: process.env.SMSBOWER_BASE_URL,
+  sms_bower_api_key: process.env.SMS_BOWER_API_KEY,
 };
