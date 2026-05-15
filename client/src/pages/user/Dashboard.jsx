@@ -144,7 +144,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         <WalletBalanceCard />
 
         {stats.map((stat) => (
