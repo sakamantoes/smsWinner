@@ -24,45 +24,10 @@ import {
   CoinsIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { getAllUsers } from "../../service/auth";
+import { getPlatformDeposits } from "../../service/admin";
 
-const stats = [
-  {
-    label: "Total Users",
-    value: "2,847",
-    change: "+124 this month",
-    icon: Users,
-    iconBg: "bg-red/15",
-    iconColor: "text-red",
-    changeBg: "bg-red/10 text-red border-white/10 shadow-md",
-  },
-  {
-    label: "Active Sessions",
-    value: "1,293",
-    change: "86% utilization",
-    icon: Activity,
-    iconBg: "bg-gradient-to-br from-red/50 to-red/20",
-    iconColor: "text-white",
-    changeBg: "bg-red/10 text-red border-white/10 shadow-md",
-  },
-  {
-    label: "Total Revenue",
-    value: "NGN 2.4M",
-    change: "+18.2% vs last month",
-    icon: CoinsIcon,
-    iconBg: "bg-white/10",
-    iconColor: "text-gray-200",
-    changeBg: "bg-white/8 text-gray-300 border-white/10",
-  },
-  {
-    label: "System Health",
-    value: "99.97%",
-    change: "All systems operational",
-    icon: Server,
-    iconBg: "bg-red/15",
-    iconColor: "text-red/90",
-    changeBg: "bg-red/10 text-red border-white/10 shadow-md",
-  },
-];
 
 const activeSessions = [
   {
@@ -115,13 +80,7 @@ const serviceCards = [
     description: "Monitor virtual email inventory and bulk purchase orders.",
     meta: "3,421 emails in stock",
     icon: Mail,
-  },
-  {
-    title: "System Security",
-    description: "Monitor API keys, rate limits, and security protocols.",
-    meta: "All systems protected",
-    icon: ShieldCheck,
-  },
+  }
 ];
 
 const recentActivity = [
@@ -159,13 +118,106 @@ const recentActivity = [
 
 const quickActions = [
   { label: "Manage Users", icon: Users, path: "/a/users" },
-  { label: "View Reports", icon: BarChart3, path: "/a/reports" },
+  { label: "View Support", icon: BarChart3, path: "/a/support" },
   { label: "Add Numbers", icon: Phone, path: "/a/numbers" },
-  { label: "System Logs", icon: Activity, path: "/a/logs" },
+  { label: "Logs", icon: Activity, path: "/a/logs" },
 ];
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+
+  const stats = [
+  {
+    label: "Total Users",
+    value: "0",
+    change: "+124 this month",
+    icon: Users,
+    iconBg: "bg-red/15",
+    iconColor: "text-red",
+    changeBg: "bg-red/10 text-red border-white/10 shadow-md",
+  },
+  {
+    label: "Active Sessions",
+    value: "1,293",
+    change: "86% utilization",
+    icon: Activity,
+    iconBg: "bg-gradient-to-br from-red/50 to-red/20",
+    iconColor: "text-white",
+    changeBg: "bg-red/10 text-red border-white/10 shadow-md",
+  },
+  {
+    label: "Total Revenue",
+    value: `NGN ${totalRevenue.toLocaleString()}`,
+    change: "+18.2% vs last month",
+    icon: CoinsIcon,
+    iconBg: "bg-white/10",
+    iconColor: "text-gray-200",
+    changeBg: "bg-white/8 text-gray-300 border-white/10",
+  },
+  {
+    label: "System Health",
+    value: "99.97%",
+    change: "All systems operational",
+    icon: Server,
+    iconBg: "bg-red/15",
+    iconColor: "text-red/90",
+    changeBg: "bg-red/10 text-red border-white/10 shadow-md",
+  },
+];
+
+  useEffect(() => {
+    fetchTotalUsers();
+    fetchRevenue();
+  }, []);
+
+  const fetchTotalUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllUsers();
+      // Adjust based on your API response structure
+      const users = response.data?.users || response.users || response.data || [];
+      const userCount = Array.isArray(users) ? users.length : 0;
+      setTotalUsers(userCount);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      setTotalUsers(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRevenue = async () => {
+  try {
+    const response = await getPlatformDeposits();
+
+    const deposits = response?.data || [];
+
+    const revenue = deposits
+      .filter(
+        (deposit) =>
+          deposit.status?.toUpperCase() === "SUCCESS"
+      )
+      .reduce(
+        (sum, deposit) =>
+          sum + Number(deposit.amount || 0),
+        0
+      );
+
+    setTotalRevenue(revenue);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+  // Update the stats array with dynamic total users
+  const updatedStats = stats.map(stat => 
+    stat.label === "Total Users" 
+      ? { ...stat, value: loading ? "..." : totalUsers.toLocaleString() }
+      : stat
+  );
 
   return (
     <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6 px-3 sm:px-4 md:px-6">
@@ -212,7 +264,7 @@ export default function AdminDashboard() {
 
       {/* ── Stat cards ── */}
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
+        {updatedStats.map((stat) => (
           <div
             key={stat.label}
             className="group rounded-xl border border-white/10 shadow-md bg-white/5 p-4 sm:p-5 transition-all transform hover:-translate-y-1 hover:border-red-light/40 hover:bg-white/5"
