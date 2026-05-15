@@ -108,7 +108,12 @@ export default function Dashboard() {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "N/A";
 
-    return date.toLocaleString();
+    return date.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -174,13 +179,13 @@ export default function Dashboard() {
         ))}
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <section className="grid w-full min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-5">
-          <div className="rounded-xl border border-red-light/10 shadow-md bg-white/5 p-5">
+          <div className="overflow-hidden rounded-xl border border-red-light/10 shadow-md bg-white/5 p-5">
             <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400">
               Quick Actions
             </h2>
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
               {quickActions.map(({ label, icon: Icon, to }) => (
                 <button
                   key={label}
@@ -257,20 +262,22 @@ export default function Dashboard() {
                 recentNotifications.map((notification) => (
                   <div
                     key={notification._id}
-                    className="flex items-center border-b border-red-light/5 shadow-md gap-3 rounded-lg px-2 py-2.5 transform transition-all hover:-translate-y-1 hover:bg-white/5"
+                    className="flex flex-col border-b border-red-light/5 shadow-md gap-2 rounded-lg px-2 py-2.5 transform transition-all hover:-translate-y-1 hover:bg-white/5 sm:flex-row sm:items-center sm:gap-3"
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-light/10 text-red-light/80">
-                      <Bell size={15} />
+                    <div className="flex min-w-0 items-start gap-3 sm:flex-1 sm:items-center">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-light/10 text-red-light/80">
+                        <Bell size={15} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-white">
+                          {notification.title || "Notification"}
+                        </p>
+                        <p className="line-clamp-2 text-xs text-gray-500 sm:truncate">
+                          {notification.message || "No message"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-white">
-                        {notification.title || "Notification"}
-                      </p>
-                      <p className="truncate text-xs text-gray-500">
-                        {notification.message || "No message"}
-                      </p>
-                    </div>
-                    <p className="shrink-0 text-xs font-medium text-gray-500">
+                    <p className="pl-11 text-xs font-medium text-gray-500 sm:shrink-0 sm:pl-0">
                       {formatNotificationDate(notification.createdAt)}
                     </p>
                   </div>
