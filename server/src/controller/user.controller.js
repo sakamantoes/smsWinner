@@ -1,6 +1,10 @@
 import User from "../model/User.js";
 import PurchaseReceipt from "../model/PurchaseReceipt.js";
 import WalletTransaction from "../model/WalletTransactions.js";
+import PricingSetting from "../model/PriceSetting.js";
+import calculateSellingPrice from "../utils/calculateSellingPrice.js";
+import AvailableService from "../model/ServicesAvailable.js";
+import { services } from "../utils/neededCountries.js";
 
 const getUserWalletBalance = async (req, res, next) => {
   const user = req.user;
@@ -92,4 +96,53 @@ const getPurchaseHistory = async (req, res, next) => {
     next(error);
   }
 };
-export { getUserWalletBalance, getAllUserDeposit, getPurchaseHistory };
+
+const getPlatformServices = async (req, res, next) => {
+  try {
+    const priceSetting = await PricingSetting.findOne({});
+
+    if (!priceSetting) {
+      res.statusCode = 400;
+
+      throw new Error("error fetching price");
+    }
+
+    const availableServices = await AvailableService.find({
+      active: true,
+      stock: { $gt: 0 },
+    }).lean();
+
+    const finalProduct = availableServices.map((item) => {
+      const matchedService = services.find(
+        (i) => i.countryId === item.country && i.service === item.service,
+      );
+
+      return {
+        ...item,
+
+        countryName: matchedService?.country || "Unknown",
+
+        sellingPrice: calculateSellingPrice(
+          item.providerPrice,
+          priceSetting,
+        ),
+      };
+    });
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: "list of all available pricing",
+      data: finalProduct,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export {
+  getUserWalletBalance,
+  getAllUserDeposit,
+  getPurchaseHistory,
+  getPlatformServices,
+};

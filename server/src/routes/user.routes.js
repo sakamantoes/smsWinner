@@ -6,6 +6,7 @@ import {
   getAllUserDeposit,
   getPurchaseHistory,
   getUserWalletBalance,
+  getPlatformServices,
 } from "../controller/user.controller.js";
 
 const router = Router();
@@ -31,4 +32,5 @@ router.get(
   getPurchaseHistory,
 );
 
+router.get("/platform/services", authMiddleware, getPlatformServices);
 export default router;

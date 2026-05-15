@@ -1,228 +1,297 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Smartphone,
-  RefreshCw,
-  Copy,
-  CheckCircle2,
   AlertCircle,
-  Loader2,
-  Globe,
-  Server,
-  DollarSign,
+  CheckCircle2,
   Clock,
-  ShieldCheck,
-  Wallet,
+  Copy,
   CreditCard,
+  Loader2,
+  RefreshCw,
+  Search,
+  Server,
+  ShieldCheck,
+  Smartphone,
+  Wallet,
 } from "lucide-react";
 import WalletBalanceCard from "../../components/WalletBalanceCard.jsx";
-
+import StatCard from "../../components/ui/StatCard.jsx";
 import {
   buyNumber,
   checkOtpStatus,
-  getAllCountry,
   getAvailableServices,
 } from "../../service/number";
+import { formatCurrency } from "../../utils/transaction.js";
+import { toast } from "react-toastify";
 
-// Helper function to get flag emoji from country code
-const getCountryFlag = (countryCode, countryName) => {
-  const flags = {
-    // Common country codes
-    NG: "🇳🇬", US: "🇺🇸", GB: "🇬🇧", CA: "🇨🇦", AU: "🇦🇺", 
-    DE: "🇩🇪", FR: "🇫🇷", ES: "🇪🇸", IT: "🇮🇹", PT: "🇵🇹",
-    NL: "🇳🇱", BE: "🇧🇪", CH: "🇨🇭", AT: "🇦🇹", SE: "🇸🇪",
-    NO: "🇳🇴", DK: "🇩🇰", FI: "🇫🇮", PL: "🇵🇱", RU: "🇷🇺",
-    UA: "🇺🇦", TR: "🇹🇷", AE: "🇦🇪", SA: "🇸🇦", QA: "🇶🇦",
-    KW: "🇰🇼", BH: "🇧🇭", OM: "🇴🇲", JO: "🇯🇴", IL: "🇮🇱",
-    EG: "🇪🇬", MA: "🇲🇦", DZ: "🇩🇿", TN: "🇹🇳", LY: "🇱🇾",
-    ZA: "🇿🇦", KE: "🇰🇪", GH: "🇬🇭", SN: "🇸🇳", CI: "🇨🇮",
-    IN: "🇮🇳", PK: "🇵🇰", BD: "🇧🇩", LK: "🇱🇰", NP: "🇳🇵",
-    CN: "🇨🇳", JP: "🇯🇵", KR: "🇰🇷", ID: "🇮🇩", MY: "🇲🇾",
-    SG: "🇸🇬", PH: "🇵🇭", TH: "🇹🇭", VN: "🇻🇳", KH: "🇰🇭",
-    BR: "🇧🇷", AR: "🇦🇷", MX: "🇲🇽", CO: "🇨🇴", CL: "🇨🇱",
-    PE: "🇵🇪", VE: "🇻🇪", UY: "🇺🇾", PY: "🇵🇾", BO: "🇧🇴",
-    EC: "🇪🇨", CR: "🇨🇷", CU: "🇨🇺", DO: "🇩🇴", PR: "🇵🇷",
-  };
-  
-  // Try to match by country code first
-  if (countryCode && flags[countryCode.toUpperCase()]) {
-    return flags[countryCode.toUpperCase()];
-  }
-  
-  // Try to match by country name
-  const nameMap = {
-    "Nigeria": "🇳🇬", "United States": "🇺🇸", "USA": "🇺🇸", "America": "🇺🇸",
-    "United Kingdom": "🇬🇧", "UK": "🇬🇧", "Britain": "🇬🇧", "England": "🇬🇧",
-    "Canada": "🇨🇦", "Australia": "🇦🇺", "Germany": "🇩🇪", "France": "🇫🇷",
-    "Spain": "🇪🇸", "Italy": "🇮🇹", "Portugal": "🇵🇹", "Netherlands": "🇳🇱",
-    "Belgium": "🇧🇪", "Switzerland": "🇨🇭", "Austria": "🇦🇹", "Sweden": "🇸🇪",
-    "Norway": "🇳🇴", "Denmark": "🇩🇰", "Finland": "🇫🇮", "Poland": "🇵🇱",
-    "Russia": "🇷🇺", "Ukraine": "🇺🇦", "Turkey": "🇹🇷", "UAE": "🇦🇪",
-    "Saudi Arabia": "🇸🇦", "Qatar": "🇶🇦", "Kuwait": "🇰🇼", "Bahrain": "🇧🇭",
-    "Oman": "🇴🇲", "Jordan": "🇯🇴", "Israel": "🇮🇱", "Egypt": "🇪🇬",
-    "Morocco": "🇲🇦", "Algeria": "🇩🇿", "Tunisia": "🇹🇳", "Libya": "🇱🇾",
-    "South Africa": "🇿🇦", "Kenya": "🇰🇪", "Ghana": "🇬🇭", "Senegal": "🇸🇳",
-    "India": "🇮🇳", "Pakistan": "🇵🇰", "Bangladesh": "🇧🇩", "Sri Lanka": "🇱🇰",
-    "Nepal": "🇳🇵", "China": "🇨🇳", "Japan": "🇯🇵", "South Korea": "🇰🇷",
-    "Indonesia": "🇮🇩", "Malaysia": "🇲🇾", "Singapore": "🇸🇬", "Philippines": "🇵🇭",
-    "Thailand": "🇹🇭", "Vietnam": "🇻🇳", "Cambodia": "🇰🇭", "Brazil": "🇧🇷",
-    "Argentina": "🇦🇷", "Mexico": "🇲🇽", "Colombia": "🇨🇴", "Chile": "🇨🇱",
-    "Peru": "🇵🇪", "Venezuela": "🇻🇪", "Uruguay": "🇺🇾", "Paraguay": "🇵🇾",
-    "Bolivia": "🇧🇴", "Ecuador": "🇪🇨", "Costa Rica": "🇨🇷", "Cuba": "🇨🇺",
-    "Dominican Republic": "🇩🇴", "Puerto Rico": "🇵🇷",
-  };
-  
-  if (countryName && nameMap[countryName]) {
-    return nameMap[countryName];
-  }
-  
-  return "🌍"; // Default globe emoji if no flag found
+const serviceNames = {
+  go: "Google / Gmail",
+  ig: "Instagram",
+  wa: "WhatsApp",
+};
+
+const formatServiceName = (code) =>
+  serviceNames[String(code || "").toLowerCase()] ||
+  String(code || "Unknown").toUpperCase();
+
+const normalizeCatalog = (response) => {
+  const services = Array.isArray(response?.data) ? response.data : [];
+
+  return services
+    .filter((item) => item?.service && item?.country)
+    .map((item) => ({
+      id: item._id || `${item.provider}-${item.country}-${item.service}`,
+      service: item.service,
+      serviceName: formatServiceName(item.service),
+      country: item.country,
+      countryName: item.countryName || `Country ${item.country}`,
+      provider: item.provider || "Auto",
+      stock: Number(item.stock || 0),
+      price: Number(item.sellingPrice || 0),
+      updatedAt: item.lastFetchedAt || item.updatedAt,
+    }))
+    .sort((a, b) => {
+      const serviceSort = a.serviceName.localeCompare(b.serviceName);
+      if (serviceSort !== 0) return serviceSort;
+      return a.countryName.localeCompare(b.countryName);
+    });
 };
 
 const PhoneNumber = () => {
   const navigate = useNavigate();
-  const [countries, setCountries] = useState([]);
-  const [services, setServices] = useState([]);
+  const pollingRef = useRef(null);
 
-  const [selectedCountry, setSelectedCountry] = useState("");
+  const [catalog, setCatalog] = useState([]);
   const [selectedService, setSelectedService] = useState("");
-
-  const [loading, setLoading] = useState(false);
+  const [selectedListingId, setSelectedListingId] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loadingCatalog, setLoadingCatalog] = useState(true);
+  const [buying, setBuying] = useState(false);
   const [purchaseData, setPurchaseData] = useState(null);
   const [otp, setOtp] = useState("");
   const [pollingActive, setPollingActive] = useState(false);
   const [error, setError] = useState("");
 
-  // ================= FETCH COUNTRIES =================
-  const fetchCountries = async () => {
-    try {
-      const data = await getAllCountry();
-      // Add flag property to each country
-      const countriesWithFlags = (data.countries || []).map((country) => ({
-        ...country,
-        flag: getCountryFlag(country.code, country.eng),
-      }));
-      setCountries(countriesWithFlags);
-    } catch (error) {
-      console.log(error);
-      setError("Failed to load countries");
-    }
-  };
-
-  // ================= FETCH SERVICES =================
   const fetchServices = async () => {
     try {
-      const data = await getAvailableServices();
-      
-      console.log("Full API response:", data);
-      
-      // FIX: The services are nested in data.services.services
-      const servicesArray = data.services?.services || [];
-      
-      const formattedServices = servicesArray.map((item) => ({
-        code: item.code,
-        name: item.name,
-      }));
-      
-      console.log("Formatted services:", formattedServices);
-      setServices(formattedServices);
-    } catch (error) {
-      console.log(error);
-      setError("Failed to load services");
-    }
-  };
-
-  // ================= BUY NUMBER =================
-  const handleBuyNumber = async () => {
-    if (!selectedCountry || !selectedService) {
-      setError("Please select both country and service");
-      return;
-    }
-
-    try {
+      setLoadingCatalog(true);
       setError("");
-      setLoading(true);
-      setPurchaseData(null);
-      setOtp("");
 
-      const payload = {
-        country: selectedCountry,
-        service: selectedService,
-      };
+      const response = await getAvailableServices();
+      const nextCatalog = normalizeCatalog(response);
+      setCatalog(nextCatalog);
 
-      const res = await buyNumber(payload);
-      setPurchaseData(res.data);
-      startPolling(res.data.orderId);
-    } catch (error) {
-      console.log(error);
-      setError(error?.response?.data?.message || "Failed to purchase number");
+      if (!nextCatalog.length) {
+        setSelectedService("");
+        setSelectedListingId("");
+      }
+    } catch (err) {
+      console.error("Failed to fetch services:", err);
+      setError(err?.response?.data?.message || "Failed to load services");
     } finally {
-      setLoading(false);
+      setLoadingCatalog(false);
     }
   };
 
-  // ================= CHECK OTP =================
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void fetchServices();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+
+      if (pollingRef.current) {
+        window.clearInterval(pollingRef.current);
+      }
+    };
+  }, []);
+
+  const serviceOptions = useMemo(() => {
+    const services = new Map();
+    catalog.forEach((item) => {
+      if (!services.has(item.service)) {
+        services.set(item.service, {
+          code: item.service,
+          name: item.serviceName,
+          stock: 0,
+          countries: new Set(),
+        });
+      }
+
+      const service = services.get(item.service);
+      service.stock += item.stock;
+      service.countries.add(item.country);
+    });
+
+    return Array.from(services.values()).map((item) => ({
+      ...item,
+      countries: item.countries.size,
+    }));
+  }, [catalog]);
+
+  const filteredListings = useMemo(() => {
+    const search = searchTerm.trim().toLowerCase();
+
+    return catalog.filter((item) => {
+      const matchesService =
+        !selectedService || item.service === selectedService;
+      const matchesSearch =
+        !search ||
+        item.countryName.toLowerCase().includes(search) ||
+        item.provider.toLowerCase().includes(search);
+
+      return matchesService && matchesSearch;
+    });
+  }, [catalog, searchTerm, selectedService]);
+
+  const selectedListing = useMemo(
+    () => catalog.find((item) => item.id === selectedListingId),
+    [catalog, selectedListingId],
+  );
+
+  const lowestPrice = catalog.reduce(
+    (lowest, item) =>
+      lowest === null || item.price < lowest ? item.price : lowest,
+    null,
+  );
+
+  const totalStock = catalog.reduce((sum, item) => sum + item.stock, 0);
+  const activeCountries = new Set(catalog.map((item) => item.country)).size;
+
+  const stats = [
+    {
+      label: "Available Services",
+      value: serviceOptions.length,
+      change: "Admin listed",
+      icon: Server,
+      iconBg: "bg-red/15",
+      iconColor: "text-red",
+    },
+    {
+      label: "Active Countries",
+      value: activeCountries,
+      change: `${totalStock} numbers`,
+      icon: ShieldCheck,
+      iconBg: "bg-emerald-500/15",
+      iconColor: "text-emerald-400",
+      changeBg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    },
+    {
+      label: "Starting Price",
+      value: lowestPrice === null ? "N/A" : formatCurrency(lowestPrice),
+      change: "Live pricing",
+      icon: CreditCard,
+      iconBg: "bg-blue-500/15",
+      iconColor: "text-blue-400",
+    },
+  ];
+
+  const stopPolling = () => {
+    if (pollingRef.current) {
+      window.clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+
+    setPollingActive(false);
+  };
+
   const startPolling = (orderId) => {
+    stopPolling();
     setPollingActive(true);
-    const interval = setInterval(async () => {
+
+    pollingRef.current = window.setInterval(async () => {
       try {
-        const res = await checkOtpStatus(orderId);
-        if (res.otpCode) {
-          setOtp(res.otpCode);
-          clearInterval(interval);
-          setPollingActive(false);
+        const response = await checkOtpStatus(orderId);
+
+        if (response?.otpCode) {
+          setOtp(response.otpCode);
+          stopPolling();
+        } else if (response?.status === "CANCELLED") {
+          stopPolling();
         }
-      } catch (error) {
-        console.log(error);
+      } catch (err) {
+        console.error("Failed to check OTP status:", err);
       }
     }, 5000);
   };
 
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      setPollingActive(false);
-    };
-  }, []);
+  const handleServiceChange = (event) => {
+    setSelectedService(event.target.value);
+    setSelectedListingId("");
+  };
 
-  useEffect(() => {
-    fetchCountries();
-    fetchServices();
-  }, []);
+  const handleBuyNumber = async () => {
+    if (!selectedListing) {
+      setError("Please choose one available service and country");
+      return;
+    }
+    return toast.success(
+      "we are still working on this feature.Be Patient! Thank You!",
+    );
 
-  const handleCopyNumber = () => {
-    if (purchaseData?.phone) {
-      navigator.clipboard.writeText(purchaseData.phone);
+    // try {
+    //   setError("");
+    //   setBuying(true);
+    //   setPurchaseData(null);
+    //   setOtp("");
+    //   stopPolling();
+
+    //   const response = await buyNumber({
+    //     country: selectedListing.country,
+    //     service: selectedListing.service,
+    //   });
+
+    //   setPurchaseData(response?.data);
+
+    //   if (response?.data?.orderId) {
+    //     startPolling(response.data.orderId);
+    //   }
+    // } catch (err) {
+    //   console.error("Failed to purchase number:", err);
+    //   setError(err?.response?.data?.message || "Failed to purchase number");
+    // } finally {
+    //   setBuying(false);
+    // }
+  };
+
+  const handleCopy = async (value, fallbackMessage) => {
+    if (!value) return;
+
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      setError(fallbackMessage);
     }
   };
 
-  const selectedCountryData = countries.find(
-    (c) => c.code === selectedCountry || c.eng === selectedCountry
-  );
-  const selectedServiceData = services.find((s) => s.code === selectedService);
-
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-2xl border border-white/10 shadow-md bg-gradient-to-br from-red-950/40 via-black to-black p-6 text-white sm:p-8">
+      <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-red-950/40 via-black to-black p-6 text-white shadow-md sm:p-8">
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-red-dark/10 blur-3xl" />
         <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-red-light/40 bg-red-light/10 px-3 py-1 text-xs font-semibold text-red-light mb-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-red-light/40 bg-red-light/10 px-3 py-1 text-xs font-semibold text-red-light">
               <Smartphone size={13} />
               Virtual Numbers
             </div>
             <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-              Buy SMS-capable numbers
-              <br className="hidden sm:block" /> for instant verification.
+              Buy from live admin-listed numbers
+              <br className="hidden sm:block" /> and wait for OTP in one flow.
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-gray-400">
-              Choose a country and service, purchase a virtual number, and receive OTP codes instantly. All numbers are admin-listed and ready for use.
+              Pick a service, choose an available country from the current
+              stock, purchase the number, then keep this page open while the OTP
+              arrives.
             </p>
           </div>
           <button
             type="button"
-            onClick={() => navigate("/f/fund-account", { state: { from: "/f/dashboard" } })}
+            onClick={() =>
+              navigate("/f/fund-account", {
+                state: { from: "/f/phone-number" },
+              })
+            }
             className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-red-dark/40 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-light active:bg-red-700"
           >
             <Wallet size={16} />
@@ -231,92 +300,119 @@ const PhoneNumber = () => {
         </div>
       </section>
 
-      {/* Main Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Purchase Form - Left Column */}
-        <div className="lg:col-span-1 space-y-6">
+      <section className="grid gap-3 md:grid-cols-3">
+        {stats.map((stat) => (
+          <StatCard key={stat.label} {...stat} />
+        ))}
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+        <div className="space-y-6">
           <WalletBalanceCard />
 
-          <div className="rounded-xl border border-white/10 shadow-md bg-white/5 p-5">
-            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-gray-400">
-              <Globe size={14} />
-              Purchase Details
-            </h2>
-
-            {/* Country Selection */}
-            <div className="mt-4">
-              <label className="block text-xs font-medium text-gray-500 mb-1.5">
-                Select Country
-              </label>
-              <select
-                value={selectedCountry}
-                onChange={(e) => setSelectedCountry(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50 transition-all"
-              >
-                <option value="" className="bg-black">🌍 Choose a country</option>
-                {countries.map((item, index) => (
-                  <option key={item.id || index} value={item.code || item.eng} className="bg-black">
-                    {item.flag || "🌍"} {item.eng}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Service Selection */}
-            <div className="mt-4">
-              <label className="block text-xs font-medium text-gray-500 mb-1.5">
-                Select Service
-              </label>
-              <select
-                value={selectedService}
-                onChange={(e) => setSelectedService(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50 transition-all"
-              >
-                <option value="" className="bg-black">🔧 Choose a service</option>
-                {services.map((item, index) => (
-                  <option key={index} value={item.code} className="bg-black">
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Selected Summary */}
-            {(selectedCountryData || selectedServiceData) && (
-              <div className="mt-4 rounded-lg border border-red-light/10 bg-red-light/5 p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-2">
-                  Selection Summary
+          <section className="rounded-xl border border-white/10 bg-white/5 p-5 shadow-md">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400">
+                  Purchase Setup
+                </h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  Countries come from the service stock list.
                 </p>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Country:</span>
-                  <span className="text-white font-medium">
-                    {selectedCountryData?.flag || "🌍"} {selectedCountryData?.eng || selectedCountry || "—"}
-                  </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  void fetchServices();
+                }}
+                disabled={loadingCatalog}
+                className="rounded-lg border border-white/10 p-2 text-gray-400 transition-colors hover:border-red-light/30 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label="Refresh available services"
+              >
+                <RefreshCw
+                  size={16}
+                  className={loadingCatalog ? "animate-spin" : ""}
+                />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-medium text-gray-500">
+                  Service
+                </span>
+                <select
+                  value={selectedService}
+                  onChange={handleServiceChange}
+                  className="h-11 w-full rounded-lg border border-white/10 bg-black/40 px-4 text-sm text-white transition-all focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50"
+                >
+                  <option value="">All services</option>
+                  {serviceOptions.map((service) => (
+                    <option key={service.code} value={service.code}>
+                      {service.name} - {service.countries} countries
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-medium text-gray-500">
+                  Search country or provider
+                </span>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                  <input
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Search available stock"
+                    className="h-11 w-full rounded-lg border border-white/10 bg-black/40 py-2 pl-10 pr-4 text-sm text-white transition-all placeholder:text-gray-600 focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50"
+                  />
                 </div>
-                <div className="flex justify-between text-sm mt-1">
-                  <span className="text-gray-400">Service:</span>
-                  <span className="text-white font-medium">
-                    {selectedServiceData?.name || selectedService || "—"}
-                  </span>
+              </label>
+            </div>
+
+            {selectedListing && (
+              <div className="mt-5 rounded-lg border border-red-light/10 bg-red-light/5 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                  Selected Number Stock
+                </p>
+                <div className="mt-3 space-y-2 text-sm">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-gray-400">Service</span>
+                    <span className="text-right font-medium text-white">
+                      {selectedListing.serviceName}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-gray-400">Country</span>
+                    <span className="text-right font-medium text-white">
+                      {selectedListing.countryName}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-gray-400">Price</span>
+                    <span className="text-right font-semibold text-white">
+                      {formatCurrency(selectedListing.price)}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Error Message */}
             {error && (
-              <div className="mt-4 flex items-center gap-2 rounded-lg bg-red-light/10 p-3 text-sm text-red-light border border-red-light/20">
-                <AlertCircle size={16} />
-                {error}
+              <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-light/20 bg-red-light/10 p-3 text-sm text-red-light">
+                <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                <span>{error}</span>
               </div>
             )}
 
-            {/* Buy Button */}
             <button
+              type="button"
               onClick={handleBuyNumber}
-              disabled={loading || !selectedCountry || !selectedService}
-              className="mt-5 w-full flex items-center justify-center gap-2 rounded-xl bg-red-dark py-3 text-sm font-semibold text-white transition-all hover:bg-red-light disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+              disabled={buying || !selectedListing}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-red-dark py-3 text-sm font-semibold text-white transition-all hover:bg-red-light active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? (
+              {buying ? (
                 <>
                   <Loader2 size={18} className="animate-spin" />
                   Processing...
@@ -329,142 +425,219 @@ const PhoneNumber = () => {
               )}
             </button>
 
-            {/* Info Note */}
             <p className="mt-4 text-center text-[11px] text-gray-600">
-              Numbers are valid for 20 minutes. OTP will auto-refresh.
+              Keep this tab open after purchase while OTP status refreshes.
             </p>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="rounded-xl border border-white/10 shadow-md bg-white/5 p-5">
-            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-gray-400">
-              <ShieldCheck size={14} />
-              Why Choose Us
-            </h2>
-            <div className="mt-4 space-y-3">
-              {[
-                { label: "Active Countries", value: countries.length, icon: Globe },
-                { label: "Available Services", value: services.length, icon: Server },
-                { label: "Success Rate", value: "98.7%", icon: CheckCircle2 },
-              ].map((stat) => (
-                <div key={stat.label} className="flex items-center justify-between border-b border-white/5 pb-2">
-                  <div className="flex items-center gap-2">
-                    <stat.icon size={14} className="text-gray-500" />
-                    <span className="text-xs text-gray-400">{stat.label}</span>
-                  </div>
-                  <span className="text-sm font-semibold text-white">{stat.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          </section>
         </div>
 
-        {/* Right Column - Purchase Status & OTP */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Purchase Status Card */}
-          {purchaseData && (
-            <div className="rounded-xl border border-emerald-500/20 shadow-md bg-gradient-to-br from-emerald-950/20 via-black to-black p-5 transform transition-all animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20">
-                    <CheckCircle2 size={16} className="text-emerald-400" />
-                  </div>
-                  <h2 className="font-semibold text-white">Number Purchased Successfully</h2>
-                </div>
-                {pollingActive && (
-                  <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs text-amber-400 border border-amber-500/20">
-                    <Loader2 size={12} className="animate-spin" />
-                    Waiting for OTP...
-                  </div>
-                )}
+        <div className="space-y-6">
+          <section className="rounded-xl border border-white/10 bg-white/5 shadow-md">
+            <div className="flex items-center justify-between border-b border-white/10 bg-black/20 px-5 py-4">
+              <div>
+                <h2 className="font-semibold text-white">Available Stock</h2>
+                <p className="mt-0.5 text-xs text-gray-500">
+                  {filteredListings.length} result
+                  {filteredListings.length === 1 ? "" : "s"}
+                </p>
               </div>
+              {loadingCatalog && (
+                <Loader2 size={18} className="animate-spin text-red-light" />
+              )}
+            </div>
 
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-lg border border-white/10 bg-black/30 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Phone Number</p>
-                  <div className="mt-1 flex items-center justify-between">
-                    <p className="font-mono text-lg font-bold text-white">{purchaseData.phone}</p>
-                    <button
-                      onClick={handleCopyNumber}
-                      className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-white/10 hover:text-white"
-                    >
-                      <Copy size={14} />
-                    </button>
-                  </div>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-black/30 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Provider</p>
-                  <p className="mt-1 text-sm font-medium text-white">{purchaseData.provider || "Standard"}</p>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-black/30 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Status</p>
-                  <div className="mt-1 flex items-center gap-1.5">
-                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <p className="text-sm font-medium text-emerald-400">{purchaseData.status || "Active"}</p>
-                  </div>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-black/30 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Price</p>
-                  <p className="mt-1 flex items-center gap-1 text-sm font-bold text-white">
-                    <DollarSign size={14} />
-                    {purchaseData.cost} NGN
-                  </p>
-                </div>
+            {loadingCatalog ? (
+              <div className="flex items-center justify-center py-16 text-gray-400">
+                <Loader2 className="h-8 w-8 animate-spin text-red-light" />
               </div>
-            </div>
-          )}
+            ) : filteredListings.length === 0 ? (
+              <div className="px-5 py-14 text-center">
+                <Server size={42} className="mx-auto text-gray-600" />
+                <h3 className="mt-4 text-lg font-semibold text-white">
+                  No matching stock
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Try another service or clear the search field.
+                </p>
+              </div>
+            ) : (
+              <div className="max-h-[30rem] overflow-y-auto p-3">
+                <div className="grid gap-3 md:grid-cols-2">
+                  {filteredListings.map((item) => {
+                    const isSelected = item.id === selectedListingId;
 
-          {/* OTP Display Card */}
-          {otp ? (
-            <div className="rounded-xl border border-red-light/20 shadow-md bg-gradient-to-br from-red-950/30 via-black to-black p-6 text-center transform transition-all animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <div className="inline-flex items-center gap-2 rounded-full border border-red-light/20 bg-red-light/10 px-3 py-1 text-xs font-semibold text-red-400 mb-4">
-                <RefreshCw size={12} />
-                OTP Received
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setSelectedListingId(item.id)}
+                        className={`rounded-xl border p-4 text-left transition-all ${
+                          isSelected
+                            ? "border-red-light/50 bg-red-light/10"
+                            : "border-white/10 bg-black/20 hover:border-red-light/30 hover:bg-white/8"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-white">
+                              {item.countryName}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-500">
+                              {item.serviceName} via {item.provider}
+                            </p>
+                          </div>
+                          {isSelected && (
+                            <CheckCircle2
+                              size={18}
+                              className="shrink-0 text-red-light"
+                            />
+                          )}
+                        </div>
+                        <div className="mt-4 flex items-center justify-between gap-3">
+                          <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-gray-300">
+                            {item.stock} in stock
+                          </span>
+                          <span className="text-sm font-bold text-white">
+                            {formatCurrency(item.price)}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <p className="text-5xl font-bold tracking-wider text-white font-mono">{otp}</p>
-              <p className="mt-4 text-sm text-gray-400">
-                Use this code for verification. It expires in 5 minutes.
-              </p>
-              <button
-                onClick={() => navigator.clipboard.writeText(otp)}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-white/10"
-              >
-                <Copy size={14} />
-                Copy Code
-              </button>
-            </div>
-          ) : purchaseData && !pollingActive && !otp ? (
-            <div className="rounded-xl border border-yellow-500/20 shadow-md bg-gradient-to-br from-yellow-950/20 via-black to-black p-6 text-center">
-              <div className="inline-flex items-center gap-2 rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-1 text-xs font-semibold text-yellow-400 mb-4">
-                <Clock size={12} />
-                Timeout
+            )}
+          </section>
+
+          <section className="rounded-xl border border-white/10 bg-white/5 p-5 shadow-md">
+            {purchaseData ? (
+              <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400">
+                      <CheckCircle2 size={18} />
+                    </div>
+                    <div>
+                      <h2 className="font-semibold text-white">
+                        Number Purchased
+                      </h2>
+                      <p className="text-xs text-gray-500">
+                        {purchaseData.status || "Waiting for SMS"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {pollingActive && (
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-400">
+                      <Loader2 size={12} className="animate-spin" />
+                      Waiting for OTP
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border border-white/10 bg-black/30 p-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                      Phone Number
+                    </p>
+                    <div className="mt-1 flex items-center justify-between gap-3">
+                      <p className="break-all font-mono text-lg font-bold text-white">
+                        {purchaseData.phone}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void handleCopy(
+                            purchaseData.phone,
+                            "Failed to copy phone number",
+                          )
+                        }
+                        className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-white/10 hover:text-white"
+                        aria-label="Copy phone number"
+                      >
+                        <Copy size={14} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-black/30 p-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                      Cost
+                    </p>
+                    <p className="mt-1 text-lg font-bold text-white">
+                      {formatCurrency(purchaseData.cost)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-black/30 p-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                      Provider
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-white">
+                      {purchaseData.provider || "Auto"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-black/30 p-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                      Country
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-white">
+                      {selectedListing?.countryName || purchaseData.country}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-xl border border-red-light/20 bg-black/30 p-5 text-center">
+                  {otp ? (
+                    <>
+                      <div className="inline-flex items-center gap-2 rounded-full border border-red-light/20 bg-red-light/10 px-3 py-1 text-xs font-semibold text-red-400">
+                        <RefreshCw size={12} />
+                        OTP Received
+                      </div>
+                      <p className="mt-4 break-all font-mono text-4xl font-bold tracking-wider text-white sm:text-5xl">
+                        {otp}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void handleCopy(otp, "Failed to copy OTP code")
+                        }
+                        className="mt-4 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-white/10"
+                      >
+                        <Copy size={14} />
+                        Copy Code
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Clock size={32} className="mx-auto text-amber-400" />
+                      <h3 className="mt-3 font-semibold text-white">
+                        Waiting for OTP
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        The page checks every 5 seconds after purchase.
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
-              <p className="text-gray-400">No OTP received within the time limit.</p>
-              <button
-                onClick={handleBuyNumber}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-light"
-              >
-                <RefreshCw size={14} />
-                Try Again
-              </button>
-            </div>
-          ) : (
-            <div className="rounded-xl border border-white/10 shadow-md bg-white/5 p-8 text-center">
-              <div className="flex flex-col items-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/5 mb-4">
+            ) : (
+              <div className="px-5 py-12 text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/5">
                   <Smartphone size={28} className="text-gray-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-white">No Active Session</h3>
-                <p className="mt-1 text-sm text-gray-500 max-w-sm">
-                  Select a country and service above, then click "Buy Number" to start receiving OTP codes.
+                <h3 className="mt-4 text-lg font-semibold text-white">
+                  No Active Session
+                </h3>
+                <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">
+                  Select a listed service and country, then buy a number to
+                  start receiving OTP codes.
                 </p>
-                <div className="mt-6 flex items-center gap-2 text-xs text-gray-600">
+                <div className="mt-6 flex items-center justify-center gap-2 text-xs text-gray-600">
                   <CreditCard size={12} />
-                  <span>Cost deducted from wallet balance</span>
+                  <span>Cost is deducted from wallet balance</span>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </section>
         </div>
       </div>
     </div>

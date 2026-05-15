@@ -10,7 +10,7 @@ export const getAllCountry = async () => {
 
 // ================= SERVICES =================
 export const getAvailableServices = async () => {
-  const res = await api.get("/api/otp/available-services");
+  const res = await api.get("/api/user/platform/services");
   return res.data;
 };
 

@@ -7,7 +7,6 @@ const AvailableServiceSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-
     country: {
       type: String,
       required: true,

@@ -51,7 +51,7 @@ const updateDepositsStatus = async (req, res, next) => {
       const transaction = await WalletTransaction.findOneAndUpdate(
         {
           _id: id,
-          status: { $ne: "PENDING" },
+          status: { $in: ["PENDING", "FAILED"] },
         },
         {
           $set: {
@@ -65,7 +65,9 @@ const updateDepositsStatus = async (req, res, next) => {
       );
 
       if (!transaction) {
-        return;
+        res.statusCode = 400;
+
+        throw new Error("you can only update pending or failed transaction");
       }
 
       if (statusValue !== "SUCCESS") {
@@ -129,7 +131,7 @@ const priceSettingController = async (req, res, next) => {
     res.status(200).json({
       status: 200,
       success: true,
-      message: " you have successfully updated product price",
+      message: "you have successfully updated product price",
       data: priceSetting,
     });
   } catch (error) {
