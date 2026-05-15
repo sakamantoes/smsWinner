@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AlertCircle,
   CheckCircle2,
-  Clock,
   Copy,
   CreditCard,
   Loader2,
@@ -16,11 +15,7 @@ import {
 } from "lucide-react";
 import WalletBalanceCard from "../../components/WalletBalanceCard.jsx";
 import StatCard from "../../components/ui/StatCard.jsx";
-import {
-  buyNumber,
-  checkOtpStatus,
-  getAvailableServices,
-} from "../../service/number";
+import { buyNumber, getAvailableServices } from "../../service/number";
 import { formatCurrency } from "../../utils/transaction.js";
 import { toast } from "react-toastify";
 
@@ -59,7 +54,6 @@ const normalizeCatalog = (response) => {
 
 const PhoneNumber = () => {
   const navigate = useNavigate();
-  const pollingRef = useRef(null);
 
   const [catalog, setCatalog] = useState([]);
   const [selectedService, setSelectedService] = useState("");
@@ -68,8 +62,6 @@ const PhoneNumber = () => {
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [buying, setBuying] = useState(false);
   const [purchaseData, setPurchaseData] = useState(null);
-  const [otp, setOtp] = useState("");
-  const [pollingActive, setPollingActive] = useState(false);
   const [error, setError] = useState("");
 
   const fetchServices = async () => {
@@ -100,10 +92,6 @@ const PhoneNumber = () => {
 
     return () => {
       window.clearTimeout(timeoutId);
-
-      if (pollingRef.current) {
-        window.clearInterval(pollingRef.current);
-      }
     };
   }, []);
 
@@ -187,35 +175,6 @@ const PhoneNumber = () => {
     },
   ];
 
-  const stopPolling = () => {
-    if (pollingRef.current) {
-      window.clearInterval(pollingRef.current);
-      pollingRef.current = null;
-    }
-
-    setPollingActive(false);
-  };
-
-  const startPolling = (orderId) => {
-    stopPolling();
-    setPollingActive(true);
-
-    pollingRef.current = window.setInterval(async () => {
-      try {
-        const response = await checkOtpStatus(orderId);
-
-        if (response?.otpCode) {
-          setOtp(response.otpCode);
-          stopPolling();
-        } else if (response?.status === "CANCELLED") {
-          stopPolling();
-        }
-      } catch (err) {
-        console.error("Failed to check OTP status:", err);
-      }
-    }, 5000);
-  };
-
   const handleServiceChange = (event) => {
     setSelectedService(event.target.value);
     setSelectedListingId("");
@@ -226,33 +185,33 @@ const PhoneNumber = () => {
       setError("Please choose one available service and country");
       return;
     }
-    return toast.success(
-      "we are still working on this feature.Be Patient! Thank You!",
-    );
 
-    // try {
-    //   setError("");
-    //   setBuying(true);
-    //   setPurchaseData(null);
-    //   setOtp("");
-    //   stopPolling();
+    try {
+      setError("");
+      setBuying(true);
+      setPurchaseData(null);
 
-    //   const response = await buyNumber({
-    //     country: selectedListing.country,
-    //     service: selectedListing.service,
-    //   });
+      const response = await buyNumber({
+        country: selectedListing.country,
+        service: selectedListing.service,
+      });
 
-    //   setPurchaseData(response?.data);
+      const otpOrder = response?.data?.otpOrder || response?.data;
+      const nextPurchaseData = {
+        ...otpOrder,
+        orderId: otpOrder?._id,
+        phone: otpOrder?.phoneNumber,
+        cost: otpOrder?.sellingPrice,
+      };
 
-    //   if (response?.data?.orderId) {
-    //     startPolling(response.data.orderId);
-    //   }
-    // } catch (err) {
-    //   console.error("Failed to purchase number:", err);
-    //   setError(err?.response?.data?.message || "Failed to purchase number");
-    // } finally {
-    //   setBuying(false);
-    // }
+      setPurchaseData(nextPurchaseData);
+      toast.success(response?.message || "Number purchased successfully");
+    } catch (err) {
+      console.error("Failed to purchase number:", err);
+      setError(err?.response?.data?.message || "Failed to purchase number");
+    } finally {
+      setBuying(false);
+    }
   };
 
   const handleCopy = async (value, fallbackMessage) => {
@@ -277,12 +236,12 @@ const PhoneNumber = () => {
             </div>
             <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
               Buy from live admin-listed numbers
-              <br className="hidden sm:block" /> and wait for OTP in one flow.
+              <br className="hidden sm:block" /> then request OTP from your inbox.
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-gray-400">
               Pick a service, choose an available country from the current
-              stock, purchase the number, then keep this page open while the OTP
-              arrives.
+              stock, purchase the number, then open OTP Box to request the OTP
+              for that purchased number.
             </p>
           </div>
           <button
@@ -426,7 +385,7 @@ const PhoneNumber = () => {
             </button>
 
             <p className="mt-4 text-center text-[11px] text-gray-600">
-              Keep this tab open after purchase while OTP status refreshes.
+              After purchase, go to OTP Box and request the code for the number.
             </p>
           </section>
         </div>
@@ -527,12 +486,13 @@ const PhoneNumber = () => {
                     </div>
                   </div>
 
-                  {pollingActive && (
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-400">
-                      <Loader2 size={12} className="animate-spin" />
-                      Waiting for OTP
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => navigate("/f/otp-box")}
+                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-light/20 bg-red-light/10 px-3 text-xs font-semibold text-red-300 transition-colors hover:bg-red-light/20 hover:text-white"
+                  >
+                    Request OTP
+                  </button>
                 </div>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -586,37 +546,21 @@ const PhoneNumber = () => {
                 </div>
 
                 <div className="mt-5 rounded-xl border border-red-light/20 bg-black/30 p-5 text-center">
-                  {otp ? (
-                    <>
-                      <div className="inline-flex items-center gap-2 rounded-full border border-red-light/20 bg-red-light/10 px-3 py-1 text-xs font-semibold text-red-400">
-                        <RefreshCw size={12} />
-                        OTP Received
-                      </div>
-                      <p className="mt-4 break-all font-mono text-4xl font-bold tracking-wider text-white sm:text-5xl">
-                        {otp}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void handleCopy(otp, "Failed to copy OTP code")
-                        }
-                        className="mt-4 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-white/10"
-                      >
-                        <Copy size={14} />
-                        Copy Code
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <Clock size={32} className="mx-auto text-amber-400" />
-                      <h3 className="mt-3 font-semibold text-white">
-                        Waiting for OTP
-                      </h3>
-                      <p className="mt-1 text-sm text-gray-500">
-                        The page checks every 5 seconds after purchase.
-                      </p>
-                    </>
-                  )}
+                  <CheckCircle2 size={32} className="mx-auto text-emerald-400" />
+                  <h3 className="mt-3 font-semibold text-white">
+                    Purchase successful
+                  </h3>
+                  <p className="mx-auto mt-1 max-w-md text-sm text-gray-500">
+                    Go to your OTP Box and click Get OTP on this purchased
+                    number when you are ready to request the code.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/f/otp-box")}
+                    className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-dark px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-light"
+                  >
+                    Open OTP Box
+                  </button>
                 </div>
               </div>
             ) : (

@@ -1,6 +1,6 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PaymentModal from "../../components/PaymentModal.jsx";
-import AlatPayment from "../../components/payment/AlatPayment.jsx";
+// import AlatPayment from "../../components/payment/AlatPayment.jsx";
 import ManualTransferPayment from "../../components/payment/ManualTransferPayment.jsx";
 import SquadPayment from "../../components/payment/SquadPayment.jsx";
 
@@ -28,14 +28,14 @@ export default function FundAccount() {
 
 
 
-  if (paymentMethod === "alat") {
-    return (
-      <AlatPayment
-        amount={amount}
-        onBack={handleBackToMethods}
-      />
-    );
-  }
+  // if (paymentMethod === "alat") {
+  //   return (
+  //     <AlatPayment
+  //       amount={amount}
+  //       onBack={handleBackToMethods}
+  //     />
+  //   );
+  // }
 
   if (paymentMethod === "squad") {
     return (

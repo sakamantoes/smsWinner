@@ -4,54 +4,37 @@ const otpOrderSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-
       ref: "User",
-
       required: true,
     },
 
     provider: {
       type: String,
-
-      enum: ["nodeotp", "smsactivate"],
-
-      required: true,
-    },
-
-    orderId: {
-      type: String,
-
-      required: true,
-    },
-
-    phone: {
-      type: String,
-
+      enum: ["nodeotp", "smsactivate", "smsbower"],
+      default: "smsbower",
       required: true,
     },
 
     service: {
       type: String,
-
       required: true,
     },
 
     country: {
       type: String,
-
       required: true,
     },
 
-    operator: {
+    phoneNumber: {
       type: String,
-
-      default: "any",
+      required: true,
     },
 
-    otpCode: {
+    activationId: {
       type: String,
-
-      default: null,
+      required: true,
+      unique: true,
+      index: true,
     },
 
     status: {
@@ -69,37 +52,40 @@ const otpOrderSchema = new mongoose.Schema(
       default: "PENDING",
     },
 
-    cost: {
-      type: Number,
+    otpCode: {
+      type: String,
+    },
 
+    otpMessage: {
+      type: String,
+    },
+
+    sellingPrice: {
+      type: Number,
       default: 0,
     },
 
-    providerCost: {
+    providerPrice: {
       type: Number,
-
       default: 0,
     },
-
-    profit: {
-      type: Number,
-
-      default: 0,
+    activationOperator: {
+      type: String,
     },
-
-    profitDetails: {
-      type: Object,
-      default: null,
-      description: "Detailed profit calculation from interceptor",
+    canGetAnotherSms: {
+      type: Boolean,
     },
+    expiresAt: Date,
 
-    rawResponse: {
-      type: Object,
+    completedAt: Date,
 
-      default: {},
+    cancelReason: String,
+
+    purchasedAt: {
+      type: Date,
+      default: Date.now,
     },
   },
-
   {
     timestamps: true,
   },

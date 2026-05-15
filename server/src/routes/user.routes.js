@@ -5,9 +5,14 @@ import authMiddleware, {
 import {
   getAllUserDeposit,
   getPurchaseHistory,
+  getUserOtpOrders,
+  checkUserOtpOrderStatus,
   getUserWalletBalance,
   getPlatformServices,
+  buyNumberService,
 } from "../controller/user.controller.js";
+import { buyNumberServiceSchema } from "../validator/user.validator.js";
+import { validateData } from "../validator/validator.js";
 
 const router = Router();
 
@@ -30,6 +35,29 @@ router.get(
   authMiddleware,
   validateUserRole,
   getPurchaseHistory,
+);
+
+router.get(
+  "/otp/orders",
+  authMiddleware,
+  validateUserRole,
+  getUserOtpOrders,
+);
+
+router.get(
+  "/otp/status/:orderId",
+  authMiddleware,
+  validateUserRole,
+  checkUserOtpOrderStatus,
+);
+
+router.post(
+  "/buy/services",
+  authMiddleware,
+  validateUserRole,
+  buyNumberServiceSchema,
+  validateData,
+  buyNumberService,
 );
 
 router.get("/platform/services", authMiddleware, getPlatformServices);
