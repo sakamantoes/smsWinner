@@ -56,9 +56,57 @@ const UserLayout = () => {
   const displayName = profile.username || profile.name || userFallback.name;
   const displayEmail = profile.email || userFallback.email;
 
+  const clearAllTokensAndCookies = () => {
+    // Clear all cookies
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i];
+      const eqPos = cookie.indexOf("=");
+      const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+    }
+    
+    // Clear specific auth tokens
+    document.cookie = "smsWinnerToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    
+    // Clear localStorage
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("smsWinnerToken");
+    localStorage.removeItem("persist:root");
+    localStorage.clear();
+    
+    // Clear sessionStorage
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("authToken");
+    sessionStorage.clear();
+    
+    // Clear any cached data
+    if (window.caches) {
+      caches.keys().then(names => {
+        names.forEach(name => caches.delete(name));
+      });
+    }
+  };
+
   const handleLogout = () => {
+    // Clear all tokens and cookies
+    clearAllTokensAndCookies();
+    
+    // Clear auth state from Zustand
     clearAuth();
-    navigate("/login");
+    
+    // Force hard reload to login page
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 50);
   };
 
   const closeMobileNav = () => {

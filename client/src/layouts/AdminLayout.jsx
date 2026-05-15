@@ -30,7 +30,7 @@ const adminNavItems = [
   { label: "Logs", to: "/a/logs", icon: Activity },
   { label: "Reports", to: "/a/reports", icon: Flag },
   { label: "Settings", to: "/a/settings", icon: Settings },
- {label: "Price Set", to: "/a/price_set", icon: FaMoneyBill}
+  { label: "Price Set", to: "/a/price_set", icon: FaMoneyBill }
 ];
 
 const adminSidebarConfig = {
@@ -60,9 +60,54 @@ const AdminLayout = () => {
   const displayName = profile.username || profile.name || adminFallback.name;
   const displayEmail = profile.email || adminFallback.email;
 
+  const clearAllTokensAndCookies = () => {
+    // Clear all auth cookies
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i];
+      const eqPos = cookie.indexOf("=");
+      const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+    }
+    
+    // Clear specific auth tokens
+    document.cookie = "smsWinnerToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    
+    // Clear localStorage
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("smsWinnerToken");
+    localStorage.clear();
+    
+    // Clear sessionStorage
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("token");
+    sessionStorage.clear();
+    
+    // Clear any cached data
+    if (window.caches) {
+      caches.keys().then(names => {
+        names.forEach(name => caches.delete(name));
+      });
+    }
+  };
+
   const handleLogout = () => {
+    // Clear all tokens and cookies
+    clearAllTokensAndCookies();
+    
+    // Clear auth state
     clearAuth();
-    navigate("/login");
+    
+    // Small delay to ensure everything is cleared
+    setTimeout(() => {
+      // Force hard reload to clear any cached state
+      window.location.href = "/login";
+    }, 50);
   };
 
   const closeMobileNav = () => {
