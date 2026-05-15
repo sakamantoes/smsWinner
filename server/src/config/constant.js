@@ -14,4 +14,5 @@ export const env = {
   smsBowerApiKey: process.env.SMSBOWER_API_KEY,
   smsBowerBaseUrl: process.env.SMSBOWER_BASE_URL,
   sms_bower_api_key: process.env.SMS_BOWER_API_KEY,
+  sms_bower_user_id: process.env.SMS_BOWER_USER_ID
 };
