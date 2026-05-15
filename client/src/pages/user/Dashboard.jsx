@@ -71,7 +71,7 @@ const serviceCards = [
 
 const quickActions = [
   { label: "Fund Account", icon: CreditCard, to: "/f/fund-account" },
-  { label: "Buy Number", icon: Phone, to: "/f/phone-number" },
+  { label: "Buy Number", icon: Phone, to: "/f/numbers" },
   { label: "Buy Logs", icon: Mail, to: "/f/logs" },
 ];
 
