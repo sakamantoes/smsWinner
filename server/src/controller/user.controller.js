@@ -4,7 +4,7 @@ import WalletTransaction from "../model/WalletTransactions.js";
 import PricingSetting from "../model/PriceSetting.js";
 import calculateSellingPrice from "../utils/calculateSellingPrice.js";
 import AvailableService from "../model/ServicesAvailable.js";
-import { services } from "../utils/neededCountries.js";
+import { countries, services } from "../utils/neededCountries.js";
 
 const getUserWalletBalance = async (req, res, next) => {
   const user = req.user;
@@ -113,8 +113,8 @@ const getPlatformServices = async (req, res, next) => {
     }).lean();
 
     const finalProduct = availableServices.map((item) => {
-      const matchedService = services.find(
-        (i) => i.countryId === item.country && i.service === item.service,
+      const matchedService = countries.find(
+        (i) => i.countryId === Number(item.country),
       );
 
       return {
@@ -122,10 +122,7 @@ const getPlatformServices = async (req, res, next) => {
 
         countryName: matchedService?.country || "Unknown",
 
-        sellingPrice: calculateSellingPrice(
-          item.providerPrice,
-          priceSetting,
-        ),
+        sellingPrice: calculateSellingPrice(item.providerPrice, priceSetting),
       };
     });
 

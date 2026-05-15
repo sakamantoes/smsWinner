@@ -483,7 +483,7 @@ const PhoneNumber = () => {
                               {item.countryName}
                             </p>
                             <p className="mt-1 text-xs text-gray-500">
-                              {item.serviceName} via {item.provider}
+                              {item.serviceName}
                             </p>
                           </div>
                           {isSelected && (
