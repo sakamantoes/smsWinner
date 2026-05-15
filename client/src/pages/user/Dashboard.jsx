@@ -1,20 +1,19 @@
 import {
-  ArrowDownRight,
-  ArrowUpRight,
-  CheckCircle2,
-  Clock3,
-  Copy,
+  AlertCircle,
+  Bell,
   CreditCard,
+  Loader2,
   Mail,
   MessageSquareText,
   Phone,
-  RefreshCw,
   ShieldCheck,
   Smartphone,
   Wallet,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import WalletBalanceCard from "../../components/WalletBalanceCard.jsx";
+import { GetAllNotifications } from "../../service/notificationApi.js";
 
 const stats = [
   {
@@ -46,87 +45,71 @@ const stats = [
   },
 ];
 
-const activeSessions = [
-  {
-    service: "WhatsApp",
-    country: "United States",
-    number: "+1 415 982 1044",
-    status: "Waiting for OTP",
-    code: "08:42",
-    received: false,
-  },
-  {
-    service: "Telegram",
-    country: "United Kingdom",
-    number: "+44 7403 931 225",
-    status: "Code received",
-    code: "452981",
-    received: true,
-  },
-  {
-    service: "Google",
-    country: "Canada",
-    number: "+1 647 812 5590",
-    status: "Pending activation",
-    code: "11:07",
-    received: false,
-  },
-];
-
 const serviceCards = [
   {
     title: "Available Phone Numbers",
     description:
       "Buy SMS-capable numbers listed by admin for app verification.",
-    meta: "86 countries in stock",
+    meta: "More 86 countries in stock",
     icon: Smartphone,
   },
   {
     title: "Virtual Email Accounts",
     description:
       "Purchase fresh inboxes for signup, confirmation, and recovery links.",
-    meta: "Bulk purchase ready",
+    meta: "Logs purchase ready",
     icon: Mail,
   },
   {
     title: "OTP Inbox",
     description:
       "Receive codes from purchased numbers and track completed orders.",
-    meta: "Auto-refresh enabled",
+    meta: "Request your OTP at your convenience",
     icon: ShieldCheck,
   },
 ];
 
-const recentActivity = [
-  {
-    title: "Received OTP for Telegram",
-    detail: "UK number ending in 1225",
-    amount: "-NGN 420",
-    direction: "down",
-  },
-  {
-    title: "Wallet funded",
-    detail: "Card payment completed",
-    amount: "+NGN 15,000",
-    direction: "up",
-  },
-  {
-    title: "Virtual email created",
-    detail: "inbox-7284@smswinners.mail",
-    amount: "-NGN 85",
-    direction: "down",
-  },
-];
-
 const quickActions = [
-  { label: "Fund Account", icon: CreditCard },
-  { label: "Buy Number", icon: Phone },
-  { label: "Buy Email", icon: Mail },
-  { label: "Refresh OTP", icon: RefreshCw },
+  { label: "Fund Account", icon: CreditCard, to: "/f/fund-account" },
+  { label: "Buy Number", icon: Phone, to: "/f/phone-number" },
+  { label: "Buy Logs", icon: Mail, to: "/f/logs" },
 ];
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [recentNotifications, setRecentNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
+  const [notificationError, setNotificationError] = useState("");
+
+  useEffect(() => {
+    const fetchRecentNotifications = async () => {
+      try {
+        setLoadingNotifications(true);
+        setNotificationError("");
+
+        const response = await GetAllNotifications(1, 5, false);
+        setRecentNotifications(response?.data?.notifications || []);
+      } catch (err) {
+        console.error("Failed to fetch recent notifications:", err);
+        setNotificationError(
+          err?.response?.data?.message || "Failed to load notifications",
+        );
+      } finally {
+        setLoadingNotifications(false);
+      }
+    };
+
+    void fetchRecentNotifications();
+  }, []);
+
+  const formatNotificationDate = (value) => {
+    if (!value) return "N/A";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "N/A";
+
+    return date.toLocaleString();
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -197,16 +180,18 @@ export default function Dashboard() {
             <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400">
               Quick Actions
             </h2>
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {quickActions.map(({ label, icon: Icon }) => (
+            <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-3">
+              {quickActions.map(({ label, icon: Icon, to }) => (
                 <button
                   key={label}
                   type="button"
                   onClick={() => {
-                    if (label === "Fund Account") {
-                      navigate("/f/fund-account", {
+                    if (to === "/f/fund-account") {
+                      navigate(to, {
                         state: { from: "/f/dashboard" },
                       });
+                    } else {
+                      navigate(to);
                     }
                   }}
                   className="flex flex-col items-center justify-center gap-2 rounded-xl border border-red-light/10 shadow-md bg-black/20 py-5 text-center transition-all hover:border-red-light/30 hover:bg-red-light/10 active:scale-105"
@@ -216,71 +201,6 @@ export default function Dashboard() {
                     {label}
                   </span>
                 </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-xl border border-red-light/10 shadow-md bg-white/5">
-            <div className="flex items-center justify-between border-b border-red-light/10 shadow-md px-5 py-4">
-              <div>
-                <h2 className="font-semibold text-white">
-                  Active OTP Sessions
-                </h2>
-                <p className="mt-0.5 text-xs text-gray-500">
-                  Purchased numbers waiting for codes
-                </p>
-              </div>
-              <button className="flex items-center gap-1.5 rounded-lg border border-white/10 shadow-md px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors hover:border-red-light/30 hover:bg-red-light/8">
-                <RefreshCw size={13} />
-                Refresh
-              </button>
-            </div>
-
-            <div className="divide-y divide-red-light/10">
-              {activeSessions.map((session) => (
-                <div
-                  key={session.number}
-                  className="flex flex-col gap-3 px-5 py-4 hover:bg-white/5 sm:flex-row sm:items-center sm:gap-4 transform transition-all hover:-translate-y-1"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-white">
-                        {session.service}
-                      </span>
-                      <span className="rounded-full border border-white/10 shadow-md bg-red-light/10 px-2 py-0.5 text-[11px] font-medium text-red">
-                        {session.country}
-                      </span>
-                    </div>
-                    <div className="mt-1 flex items-center gap-1.5 text-sm text-gray-500">
-                      {session.number}
-                      <button
-                        aria-label="Copy number"
-                        className="rounded p-0.5 text-gray-600 transition-colors hover:text-gray-300"
-                      >
-                        <Copy size={13} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 text-xs font-medium">
-                    {session.received ? (
-                      <CheckCircle2 size={14} className="text-emerald-500" />
-                    ) : (
-                      <Clock3 size={14} className="text-amber-500" />
-                    )}
-                    <span
-                      className={
-                        session.received ? "text-emerald-400" : "text-gray-400"
-                      }
-                    >
-                      {session.status}
-                    </span>
-                  </div>
-
-                  <div className="w-24 shrink-0 rounded-lg border border-red-light/10 shadow-md bg-black/40 px-3 py-2 text-center font-mono text-sm font-bold tracking-widest text-white">
-                    {session.code}
-                  </div>
-                </div>
               ))}
             </div>
           </div>
@@ -317,43 +237,45 @@ export default function Dashboard() {
           <div className="rounded-xl border border-red-light/10 shadow-md bg-white/5 p-5">
             <h2 className="font-semibold text-white">Recent Activity</h2>
             <div className="mt-4 space-y-1">
-              {recentActivity.map((item) => (
-                <div
-                  key={item.title}
-                  className="flex items-center border-b border-red-light/5 shadow-md gap-3 rounded-lg px-2 py-2.5 transform transition-all hover:-translate-y-1 hover:bg-white/5"
-                >
-                  <div
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                      item.direction === "up"
-                        ? "bg-emerald-500/10 text-emerald-400"
-                        : "bg-red-light/10 text-red-light/80"
-                    }`}
-                  >
-                    {item.direction === "up" ? (
-                      <ArrowUpRight size={15} />
-                    ) : (
-                      <ArrowDownRight size={15} />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-white">
-                      {item.title}
-                    </p>
-                    <p className="truncate text-xs text-gray-500">
-                      {item.detail}
-                    </p>
-                  </div>
-                  <p
-                    className={`shrink-0 text-sm font-semibold tabular-nums ${
-                      item.direction === "up"
-                        ? "text-emerald-400"
-                        : "text-gray-300"
-                    }`}
-                  >
-                    {item.amount}
+              {loadingNotifications ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 size={22} className="animate-spin text-red-light" />
+                </div>
+              ) : notificationError ? (
+                <div className="flex items-center gap-2 rounded-lg border border-red-light/10 bg-red-light/5 px-3 py-4 text-sm text-red-300">
+                  <AlertCircle size={16} className="shrink-0" />
+                  <span>{notificationError}</span>
+                </div>
+              ) : recentNotifications.length === 0 ? (
+                <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-6 text-center">
+                  <Bell size={24} className="mx-auto text-gray-600" />
+                  <p className="mt-2 text-sm text-gray-500">
+                    No recent notifications
                   </p>
                 </div>
-              ))}
+              ) : (
+                recentNotifications.map((notification) => (
+                  <div
+                    key={notification._id}
+                    className="flex items-center border-b border-red-light/5 shadow-md gap-3 rounded-lg px-2 py-2.5 transform transition-all hover:-translate-y-1 hover:bg-white/5"
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-light/10 text-red-light/80">
+                      <Bell size={15} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-white">
+                        {notification.title || "Notification"}
+                      </p>
+                      <p className="truncate text-xs text-gray-500">
+                        {notification.message || "No message"}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-xs font-medium text-gray-500">
+                      {formatNotificationDate(notification.createdAt)}
+                    </p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
