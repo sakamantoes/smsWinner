@@ -144,7 +144,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <WalletBalanceCard />
 
         {stats.map((stat) => (
@@ -180,7 +180,7 @@ export default function Dashboard() {
             <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400">
               Quick Actions
             </h2>
-            <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-3">
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {quickActions.map(({ label, icon: Icon, to }) => (
                 <button
                   key={label}
