@@ -13,6 +13,7 @@ import {
   nodeOtpWebhook,
   smsActivateWebhook,
   getSmsBowerCountries,
+  getSmsBowerBalance,
 } from "../controller/otpController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { validateAdminRole } from "../middleware/authMiddleware.js";
@@ -30,7 +31,7 @@ router.get("/countrys", authMiddleware, getSmsBowerCountries);
 
 // admin routes
 router.get("/company-stats", authMiddleware, validateAdminRole, getCompanyStats);
-router.get("/sms-balance", authMiddleware, validateAdminRole, getSmsActivateBalance);
+router.get("/sms-balance", authMiddleware, validateAdminRole, getSmsBowerBalance);
 router.get("/available-services", authMiddleware, validateAdminRole, getAvailableServices);
 router.put("/admin-update-markup", authMiddleware,validateAdminRole, updateMarkup);
 
