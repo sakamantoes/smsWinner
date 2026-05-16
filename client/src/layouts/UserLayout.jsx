@@ -22,11 +22,11 @@ import NotificationBell from "../components/NotificationBell";
 
 const userNavItems = [
   { label: "Dashboard", to: "/f/dashboard", icon: Gauge },
-  { label: "Numbers", to: "/f/numbers", icon: Phone },
-  { label: "Logs", to: "/f/logs", icon: Mail },
+  { label: "Numbers and Services", to: "/f/numbers", icon: Phone },
+  { label: "Available Logs", to: "/f/logs", icon: Mail },
   { label: "OTP Inbox", to: "/f/otp-box", icon: Inbox },
-  { label: "Deposits", to: "/f/deposits", icon: CreditCard },
-  { label: "Receipts", to: "/f/receipts", icon: ReceiptText },
+  { label: "Deposits History", to: "/f/deposits", icon: CreditCard },
+  { label: "View Receipts", to: "/f/receipts", icon: ReceiptText },
   { label: "Settings", to: "/f/settings", icon: Settings },
 ];
 

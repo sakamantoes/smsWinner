@@ -411,8 +411,6 @@ export default function Setting() {
         )}
       </section>
 
-     
-
       {/* Quick Links */}
       <section className="rounded-xl border border-white/10 bg-white/5 p-6 shadow-md">
         <h2 className="font-semibold text-white">Quick Links</h2>
