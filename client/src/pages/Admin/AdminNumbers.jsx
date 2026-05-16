@@ -320,7 +320,7 @@ export default function AdminNumbers() {
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <DollarSign size={12} className="text-blue-400" />
+                     
                       <span className="text-sm font-bold text-white">
                         {formatCurrency(item.price)}
                       </span>
