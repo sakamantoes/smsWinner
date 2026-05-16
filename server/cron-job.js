@@ -61,9 +61,7 @@ const CronJob = async () => {
     );
   } catch (err) {
     console.error("node cron: ", err);
-    process.exit(1);
   } finally {
-    await mongoose.disconnect();
     console.log(`mongodb connection closed`);
   }
 };
