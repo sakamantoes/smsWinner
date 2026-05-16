@@ -34,11 +34,11 @@ const initialiseDeposit = async (req, res, next) => {
       amount: Number(amount * 100),
       currency: "NGN",
       initiate_type: "inline",
-      callback_url: "http://localhost:5173/payment/status",
+      callback_url: "https://smswinners.online/payment/status",
     };
 
     const squad = await axios.post(
-      " https://api-d.squadco.com/transaction/initiate",
+      "https://api-d.squadco.com/transaction/initiate",
       data,
       {
         headers: {
