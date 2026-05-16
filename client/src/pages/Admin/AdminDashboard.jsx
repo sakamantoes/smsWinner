@@ -27,7 +27,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getAllUsers } from "../../service/auth";
 import { getPlatformDeposits } from "../../service/admin";
-
+import { getSmsBowerBalance } from "../../service/number";
 
 const activeSessions = [
   {
@@ -128,56 +128,58 @@ export default function AdminDashboard() {
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [totalRevenue, setTotalRevenue] = useState(0);
+  const [smsBowerBalance, setSmsBowerBalance] = useState(0);
+  const [loadingBalance, setLoadingBalance] = useState(true);
 
   const stats = [
-  {
-    label: "Total Users",
-    value: "0",
-    change: "+124 this month",
-    icon: Users,
-    iconBg: "bg-red/15",
-    iconColor: "text-red",
-    changeBg: "bg-red/10 text-red border-white/10 shadow-md",
-  },
-  {
-    label: "Active Sessions",
-    value: "1,293",
-    change: "86% utilization",
-    icon: Activity,
-    iconBg: "bg-gradient-to-br from-red/50 to-red/20",
-    iconColor: "text-white",
-    changeBg: "bg-red/10 text-red border-white/10 shadow-md",
-  },
-  {
-    label: "Total Revenue",
-    value: `NGN ${totalRevenue.toLocaleString()}`,
-    change: "+18.2% vs last month",
-    icon: CoinsIcon,
-    iconBg: "bg-white/10",
-    iconColor: "text-gray-200",
-    changeBg: "bg-white/8 text-gray-300 border-white/10",
-  },
-  {
-    label: "System Health",
-    value: "99.97%",
-    change: "All systems operational",
-    icon: Server,
-    iconBg: "bg-red/15",
-    iconColor: "text-red/90",
-    changeBg: "bg-red/10 text-red border-white/10 shadow-md",
-  },
-];
+    {
+      label: "Total Users",
+      value: "0",
+      change: "+124 this month",
+      icon: Users,
+      iconBg: "bg-red/15",
+      iconColor: "text-red",
+      changeBg: "bg-red/10 text-red border-white/10 shadow-md",
+    },
+    {
+      label: "Active Sessions",
+      value: "1,293",
+      change: "86% utilization",
+      icon: Activity,
+      iconBg: "bg-gradient-to-br from-red/50 to-red/20",
+      iconColor: "text-white",
+      changeBg: "bg-red/10 text-red border-white/10 shadow-md",
+    },
+    {
+      label: "Total Revenue",
+      value: `NGN ${totalRevenue.toLocaleString()}`,
+      change: "+18.2% vs last month",
+      icon: CoinsIcon,
+      iconBg: "bg-white/10",
+      iconColor: "text-gray-200",
+      changeBg: "bg-white/8 text-gray-300 border-white/10",
+    },
+    {
+      label: "System Health",
+      value: "99.97%",
+      change: "All systems operational",
+      icon: Server,
+      iconBg: "bg-red/15",
+      iconColor: "text-red/90",
+      changeBg: "bg-red/10 text-red border-white/10 shadow-md",
+    },
+  ];
 
   useEffect(() => {
     fetchTotalUsers();
     fetchRevenue();
+    fetchSmsBowerBalance();
   }, []);
 
   const fetchTotalUsers = async () => {
     try {
       setLoading(true);
       const response = await getAllUsers();
-      // Adjust based on your API response structure
       const users = response.data?.users || response.users || response.data || [];
       const userCount = Array.isArray(users) ? users.length : 0;
       setTotalUsers(userCount);
@@ -190,27 +192,37 @@ export default function AdminDashboard() {
   };
 
   const fetchRevenue = async () => {
-  try {
-    const response = await getPlatformDeposits();
+    try {
+      const response = await getPlatformDeposits();
+      const deposits = response?.data || [];
+      const revenue = deposits
+        .filter((deposit) => deposit.status?.toUpperCase() === "SUCCESS")
+        .reduce((sum, deposit) => sum + Number(deposit.amount || 0), 0);
+      setTotalRevenue(revenue);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
-    const deposits = response?.data || [];
-
-    const revenue = deposits
-      .filter(
-        (deposit) =>
-          deposit.status?.toUpperCase() === "SUCCESS"
-      )
-      .reduce(
-        (sum, deposit) =>
-          sum + Number(deposit.amount || 0),
-        0
-      );
-
-    setTotalRevenue(revenue);
-  } catch (error) {
-    console.error(error);
-  }
-};
+  const fetchSmsBowerBalance = async () => {
+    try {
+      setLoadingBalance(true);
+      const response = await getSmsBowerBalance();
+      
+      // Extract balance from nested object structure
+      // Response: { success: true, balance: { balance: "0.00", currency: "USD", success: true } }
+      const balanceValue = response?.balance?.balance 
+        ? parseFloat(response.balance.balance) 
+        : 0;
+      
+      setSmsBowerBalance(balanceValue);
+    } catch (error) {
+      console.error("Error fetching SMS Bower balance:", error);
+      setSmsBowerBalance(0);
+    } finally {
+      setLoadingBalance(false);
+    }
+  };
 
   // Update the stats array with dynamic total users
   const updatedStats = stats.map(stat => 
@@ -259,6 +271,56 @@ export default function AdminDashboard() {
               <span className="xs:hidden">Reports</span>
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* ── SMS Bower Balance Card - Prominent Display ── */}
+      <section className="relative overflow-hidden rounded-xl sm:rounded-2xl border-2 border-red-light/30 shadow-lg bg-gradient-to-r from-red-950/60 via-red-900/40 to-black p-4 sm:p-6">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-red-light/20 blur-3xl" />
+        <div className="relative flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-red-light/20 border-2 border-red-light/40">
+              <Wallet size={24} className="sm:w-8 sm:h-8 text-red-light" />
+            </div>
+            <div>
+              <p className="text-[7px] sm:text-sm font-semibold uppercase  text-gray-400">
+                Track SMS Bower Funding Balance
+              </p>
+              <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-red-light">
+                SMS BOWER FUNDING BALANCE
+              </p>
+              <h2 className="text-lg sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
+                {loadingBalance ? (
+                  <span className="inline-flex items-center gap-2">
+                    <RefreshCw size={24} className="animate-spin" />
+                    Loading...
+                  </span>
+                ) : (
+                  `$${smsBowerBalance.toFixed(2)}`
+                )}
+              </h2>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={fetchSmsBowerBalance}
+              disabled={loadingBalance}
+              className="inline-flex items-center gap-2 rounded-lg border border-red-light/30 bg-red-light/10 px-4 py-2 text-sm font-semibold text-red-light transition-colors hover:bg-red-light/20 disabled:opacity-50"
+            >
+              <RefreshCw size={14} className={loadingBalance ? "animate-spin" : ""} />
+              Refresh Balance
+            </button>
+            <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400">
+                Available for Number Purchases
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 flex items-center justify-between text-xs text-gray-500 border-t border-red-light/20 pt-3">
+          <span>Last updated: {new Date().toLocaleString()}</span>
+          <span className="text-emerald-400">● Active</span>
         </div>
       </section>
 
