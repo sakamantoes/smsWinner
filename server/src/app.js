@@ -21,7 +21,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://sms-winner.vercel.app"],
+    origin: ["http://localhost:5173", "https://sms-winner.vercel.app", "https://www.smswinners.online"],
     credentials: true,
   }),
 );
