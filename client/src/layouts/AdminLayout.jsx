@@ -28,9 +28,7 @@ const adminNavItems = [
   { label: "Deposits", to: "/a/deposits", icon: Wallet },
   { label: "Numbers", to: "/a/numbers", icon: Phone },
   { label: "Logs", to: "/a/logs", icon: Activity },
-  { label: "Reports", to: "/a/reports", icon: Flag },
-  { label: "Settings", to: "/a/settings", icon: Settings },
-  { label: "Price Set", to: "/a/price_set", icon: FaMoneyBill }
+  { label: "Price Settings", to: "/a/price_set", icon: FaMoneyBill }
 ];
 
 const adminSidebarConfig = {
