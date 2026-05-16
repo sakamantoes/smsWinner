@@ -61,9 +61,7 @@ const CronJob = async () => {
     );
   } catch (err) {
     console.error("node cron: ", err);
-  } finally {
-    console.log(`mongodb connection closed`);
-  }
+  } git
 };
 
 export default CronJob;
