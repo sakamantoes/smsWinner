@@ -113,7 +113,7 @@ export default function Users() {
     if (searchTerm) {
       filtered = filtered.filter(
         (user) =>
-          (user.name && user.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (user.phone && user.phone.includes(searchTerm))
       );
@@ -329,10 +329,10 @@ export default function Users() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-light font-semibold">
-                          {user.name ? user.name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || "U"}
+                          {user.username ? user.username.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || "U"}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-white">{user.name || "N/A"}</p>
+                          <p className="text-sm font-medium text-white">{user.username || "N/A"}</p>
                           <p className="text-xs text-gray-500">ID: {user._id?.slice(-8)}</p>
                         </div>
                       </div>
@@ -454,10 +454,10 @@ export default function Users() {
               {/* User Header */}
               <div className="flex items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-light text-2xl font-bold">
-                  {selectedUser.name ? selectedUser.name.charAt(0).toUpperCase() : selectedUser.email?.charAt(0).toUpperCase() || "U"}
+                  {selectedUser.username ? selectedUser.username.charAt(0).toUpperCase() : selectedUser.email?.charAt(0).toUpperCase() || "U"}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white">{selectedUser.name || "N/A"}</h3>
+                  <h3 className="text-xl font-bold text-white">{selectedUser.username || "N/A"}</h3>
                   <p className="text-sm text-gray-400">ID: {selectedUser._id}</p>
                 </div>
               </div>
