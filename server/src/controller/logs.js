@@ -14,7 +14,9 @@ const createLog = async (req, res, next) => {
     // ✅ FIX: Validate required fields
     if (!email || !password || !price || !country || !category) {
       res.statusCode = 400;
-      throw new Error("All fields (email, password, price, country, category) are required");
+      throw new Error(
+        "All fields (email, password, price, country, category) are required",
+      );
     }
 
     const log = await Log.create({
@@ -22,7 +24,7 @@ const createLog = async (req, res, next) => {
       password,
       price,
       country,
-      category  // ✅ Now category is defined
+      category, // ✅ Now category is defined
     });
 
     res.status(201).json({
@@ -46,7 +48,7 @@ const getLogs = async (req, res, next) => {
       password: maskPassword(log.password),
       price: log.price,
       country: log.country,
-      category: log.category,  // ✅ Added category to response
+      category: log.category, // ✅ Added category to response
       sold: log.sold,
       createdAt: log.createdAt,
     }));
@@ -69,11 +71,11 @@ const buyLog = async (req, res, next) => {
   try {
     let finalResult = null;
 
-    if (!id || id === undefined) {
+    if (!id || mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
       throw new Error("invalid id params");
     }
-    
+
     await session.withTransaction(async () => {
       const log = await Log.findById({ _id: id }).session(session);
 
@@ -86,7 +88,7 @@ const buyLog = async (req, res, next) => {
         res.statusCode = 400;
         throw new Error("Log already sold");
       }
-      
+
       const isUser = await User.findOneAndUpdate(
         {
           _id: userId._id,
@@ -164,6 +166,11 @@ const updateLog = async (req, res, next) => {
     // ✅ FIX: Added category to destructuring
     const { email, password, price, country, category } = req.body;
 
+    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+      res.statusCode = 400;
+      throw new Error("invalid id params");
+    }
+
     const log = await Log.findById(id);
 
     if (!log) {
@@ -171,12 +178,17 @@ const updateLog = async (req, res, next) => {
       throw new Error("Log not found");
     }
 
+    if (log.sold) {
+      res.statusCode = 400;
+      throw new Error("you cannot delete sold logs");
+    }
+
     // ✅ FIX: Update all fields including category
     log.email = email || log.email;
     log.password = password || log.password;
     log.price = price || log.price;
     log.country = country || log.country;
-    log.category = category || log.category;  // ✅ Added category update
+    log.category = category || log.category; // ✅ Added category update
 
     await log.save();
 
@@ -194,11 +206,21 @@ const deleteLog = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+      res.statusCode = 400;
+      throw new Error("invalid id params");
+    }
+
     const log = await Log.findById(id);
 
     if (!log) {
       res.statusCode = 400;
       throw new Error("Log not found");
+    }
+
+    if (log.sold) {
+      res.statusCode = 400;
+      throw new Error("you cannot delete sold logs");
     }
 
     await log.deleteOne();
@@ -232,12 +254,13 @@ const myPurchasedLogs = async (req, res, next) => {
 
 // get log by id
 const getLogById = async (req, res, next) => {
+  const user = req.user;
   try {
     const { id } = req.params;
 
-    if (!id || id === undefined) {
+    if (!id || mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
-      throw new Error("Invalid log ID");
+      throw new Error("invalid id params");
     }
 
     const log = await Log.findById(id);
@@ -247,13 +270,51 @@ const getLogById = async (req, res, next) => {
       throw new Error("Log not found");
     }
 
+    if (!log.sold && user.role === "admin") {
+      return res.status(200).json({
+        success: true,
+        data: {
+          _id: log._id,
+          email: log.email,
+          password: log.password,
+          price: log.price,
+          country: log.country,
+          category: log.category,
+          sold: log.sold,
+          soldTo: log.soldTo,
+          purchasedAt: log.purchasedAt,
+          createdAt: log.createdAt,
+          updatedAt: log.updatedAt,
+        },
+      });
+    }
+
+    if (log.sold && log.soldTo === user._id) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          _id: log._id,
+          email: log.email,
+          password: log.password,
+          price: log.price,
+          country: log.country,
+          category: log.category,
+          sold: log.sold,
+          soldTo: log.soldTo,
+          purchasedAt: log.purchasedAt,
+          createdAt: log.createdAt,
+          updatedAt: log.updatedAt,
+        },
+      });
+    }
+
     // Return the full log details (unmasked for admin/view)
     res.status(200).json({
       success: true,
       data: {
         _id: log._id,
-        email: log.email,
-        password: log.password,
+        email: maskEmail(log.email),
+        password: maskPassword(log.password),
         price: log.price,
         country: log.country,
         category: log.category,
@@ -269,4 +330,12 @@ const getLogById = async (req, res, next) => {
   }
 };
 
-export { createLog, getLogs, buyLog, updateLog, deleteLog, myPurchasedLogs, getLogById };
+export {
+  createLog,
+  getLogs,
+  buyLog,
+  updateLog,
+  deleteLog,
+  myPurchasedLogs,
+  getLogById,
+};

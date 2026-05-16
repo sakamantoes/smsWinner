@@ -64,7 +64,7 @@ const serviceCards = [
     title: "OTP Inbox",
     description:
       "Receive codes from purchased numbers and track completed orders.",
-    meta: "Request your OTP at your convenience",
+    meta: "Request your OTP codes",
     icon: ShieldCheck,
   },
 ];

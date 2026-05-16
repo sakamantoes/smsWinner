@@ -4,7 +4,7 @@ import axios from "axios";
 import { services } from "./src/utils/neededCountries.js";
 import AvailableService from "./src/model/ServicesAvailable.js";
 
-const connectDB = async () => {
+const CronJob = async () => {
   console.log("Starting up Node-Crun");
   try {
     console.log("connecting to mongoDb.....");
@@ -65,8 +65,7 @@ const connectDB = async () => {
   } finally {
     await mongoose.disconnect();
     console.log(`mongodb connection closed`);
-    process.exit(0);
   }
 };
 
-connectDB();
+export default CronJob;

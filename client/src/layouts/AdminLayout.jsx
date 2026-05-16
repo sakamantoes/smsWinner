@@ -23,14 +23,12 @@ import { FaMoneyBill } from "react-icons/fa";
 
 const adminNavItems = [
   { label: "Dashboard", to: "/a/dashboard", icon: Gauge },
-  { label: "Analytics", to: "/a/analytics", icon: BarChart3 },
-  { label: "Users", to: "/a/users", icon: Users },
-  { label: "Deposits", to: "/a/deposits", icon: Wallet },
+  { label: "Price Set", to: "/a/price_set", icon: FaMoneyBill },
   { label: "Numbers", to: "/a/numbers", icon: Phone },
   { label: "Logs", to: "/a/logs", icon: Activity },
-  { label: "Reports", to: "/a/reports", icon: Flag },
-  { label: "Settings", to: "/a/settings", icon: Settings },
-  { label: "Price Set", to: "/a/price_set", icon: FaMoneyBill }
+  { label: "Users", to: "/a/users", icon: Users },
+  { label: "Deposits", to: "/a/deposits", icon: Wallet },
+  { label: "Analytics", to: "/a/analytics", icon: BarChart3 },
 ];
 
 const adminSidebarConfig = {
@@ -51,7 +49,7 @@ const AdminLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, clearAuth } = useAuth();
   const navigate = useNavigate();
-  
+
   const profile = user?.data || user || adminFallback;
 
   const initial = (profile.name || profile.email || "A")
@@ -69,29 +67,31 @@ const AdminLayout = () => {
       const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
       document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
     }
-    
+
     // Clear specific auth tokens
-    document.cookie = "smsWinnerToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "smsWinnerToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    
+
     // Clear localStorage
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     localStorage.removeItem("authToken");
     localStorage.removeItem("smsWinnerToken");
     localStorage.clear();
-    
+
     // Clear sessionStorage
     sessionStorage.removeItem("user");
     sessionStorage.removeItem("token");
     sessionStorage.clear();
-    
+
     // Clear any cached data
     if (window.caches) {
-      caches.keys().then(names => {
-        names.forEach(name => caches.delete(name));
+      caches.keys().then((names) => {
+        names.forEach((name) => caches.delete(name));
       });
     }
   };
@@ -99,10 +99,10 @@ const AdminLayout = () => {
   const handleLogout = () => {
     // Clear all tokens and cookies
     clearAllTokensAndCookies();
-    
+
     // Clear auth state
     clearAuth();
-    
+
     // Small delay to ensure everything is cleared
     setTimeout(() => {
       // Force hard reload to clear any cached state

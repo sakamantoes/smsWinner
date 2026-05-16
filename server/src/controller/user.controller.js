@@ -133,6 +133,11 @@ const checkUserOtpOrderStatus = async (req, res, next) => {
   const { orderId } = req.params;
 
   try {
+    if (!orderId || mongoose.Types.ObjectId.isValid(orderId)) {
+      res.statusCode = 400;
+      throw new Error("invalid id params");
+    }
+
     const otpOrder = await OtpOrder.findById(orderId);
 
     if (!otpOrder) {
@@ -145,7 +150,11 @@ const checkUserOtpOrderStatus = async (req, res, next) => {
       throw new Error("You are not authorized to access this resource");
     }
 
-    if (["OTP_RECEIVED", "COMPLETED", "CANCELLED", "FAILED"].includes(otpOrder.status)) {
+    if (
+      ["OTP_RECEIVED", "COMPLETED", "CANCELLED", "FAILED"].includes(
+        otpOrder.status,
+      )
+    ) {
       return res.status(200).json({
         success: true,
         status: 200,
@@ -185,11 +194,18 @@ const checkUserOtpOrderStatus = async (req, res, next) => {
         status = "CANCELLED";
       }
 
-      if (response === "STATUS_WAIT_CODE" || response.startsWith("STATUS_WAIT_RETRY")) {
+      if (
+        response === "STATUS_WAIT_CODE" ||
+        response.startsWith("STATUS_WAIT_RETRY")
+      ) {
         status = "WAITING_FOR_SMS";
       }
     } else if (response && typeof response === "object") {
-      otpMessage = response.text || response.smsText || response.message || JSON.stringify(response);
+      otpMessage =
+        response.text ||
+        response.smsText ||
+        response.message ||
+        JSON.stringify(response);
       otpCode = response.code || response.smsCode || otpCode;
 
       if (otpCode) {

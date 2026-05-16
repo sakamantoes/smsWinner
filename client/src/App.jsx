@@ -21,7 +21,6 @@ import Users from "./pages/Admin/Users.jsx";
 import Transactions from "./pages/Admin/Transactions.jsx";
 import AdminNumbers from "./pages/Admin/AdminNumbers.jsx";
 import AdminLogs from "./pages/Admin/AdminLogs.jsx";
-import Reports from "./pages/Admin/Reports.jsx";
 import AdminSettings from "./pages/Admin/AdminSettings.jsx";
 import Setting from "./pages/user/Setting.jsx";
 import UserSupport from "./pages/user/UserSupport.jsx";
@@ -74,7 +73,6 @@ const App = () => {
           <Route path="deposits" element={<Transactions />} />
           <Route path="numbers" element={<AdminNumbers />} />
           <Route path="logs" element={<AdminLogs />} />
-          <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="support" element={<AdminSupport />} />
           <Route path="price_set" element={<PricingSettings />} />

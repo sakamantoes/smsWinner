@@ -12,6 +12,8 @@ import adminRoutes from "./routes/admin.routes.js";
 import supportRoute from "./routes/supportRoutes.js"
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import CronJob from "../cron-job.js"
+
 const app = express();
 
 app.use(morgan("dev"));
@@ -38,6 +40,11 @@ app.use("/api/user", userRoutes);
 app.use("/api/notification", notificationRoute);
 app.use("/api/admin", adminRoutes);
 app.use("/api/support", supportRoute)
+
+app.get("/cron-jobs", (req, res)=>{
+  CronJob();
+  res.status(200).send("Cron Job Ran")
+})
 
 // database connection
 connectDB();

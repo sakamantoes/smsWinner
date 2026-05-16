@@ -1,5 +1,5 @@
 // src/pages/Register.jsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   User,
@@ -12,10 +12,10 @@ import {
   XCircle,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaGoogle } from "react-icons/fa";
 import imageObject from "../utils/image";
 import { signup } from "../service/auth";
 import GoogleButton from "../components/GoogleButton";
+import { toast } from "react-toastify";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -38,6 +38,12 @@ const Register = () => {
     hasSpecial: false,
     minLength: false,
   });
+
+  const getErrorMessage = (err) =>
+    err?.response?.data?.message ||
+    err?.response?.data?.error ||
+    err?.message ||
+    "Something went wrong";
 
   // Password strength checker
   const checkPasswordStrength = (password) => {
@@ -128,19 +134,14 @@ const Register = () => {
       }
     } catch (error) {
       console.error("registration erorr: ", error);
-      toast.error(error.data.message || "Something Went Wrong");
+      const message = getErrorMessage(error);
+      toast.error(message);
       setErrors({
-        submit: error.data.message || "Network error. Please try again.",
+        submit: message,
       });
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGoogleAuth = async () => {
-    setLoading(true);
-    // Redirect to Google OAuth endpoint
-    window.location.href = "YOUR_API_URL/auth/google";
   };
 
   return (

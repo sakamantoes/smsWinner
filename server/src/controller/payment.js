@@ -38,7 +38,7 @@ const initialiseDeposit = async (req, res, next) => {
     };
 
     const squad = await axios.post(
-      "https://sandbox-api-d.squadco.com/transaction/initiate",
+      " https://api-d.squadco.com/transaction/initiate",
       data,
       {
         headers: {
@@ -195,6 +195,13 @@ const webhookHandler = async (req, res, next) => {
       const webhookAmount = Number(event.Body?.amount) / 100;
 
       if (Number.isFinite(webhookAmount) && webhookAmount !== amountToCredit) {
+         await sendDepositFailedNotification(
+           transaction.userId,
+           transaction.amount,
+           referenceId,
+           event.Body?.failure_reason ||
+             "Payment processing failed because amount does not match transaction amount. contact support.. if payment went through",
+         );
         throw new Error("Webhook amount does not match transaction amount");
       }
 

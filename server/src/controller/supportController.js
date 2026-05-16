@@ -1,6 +1,6 @@
 import Support from "../model/Support.js";
 import User from "../model/User.js";
-
+import mongoose from "mongoose";
 // ================= USER CONTROLLERS =================
 
 // Create new support message
@@ -51,7 +51,7 @@ export const getUserSupportMessages = async (req, res, next) => {
     // Mark messages as read by user
     await Support.updateMany(
       { userId, isReadByUser: false },
-      { $set: { isReadByUser: true } }
+      { $set: { isReadByUser: true } },
     );
 
     res.status(200).json({
@@ -69,6 +69,11 @@ export const getSupportMessageById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user._id;
+
+    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+      res.statusCode = 400;
+      throw new Error("invalid id params");
+    }
 
     const message = await Support.findOne({ _id: id, userId });
 
@@ -99,6 +104,11 @@ export const addUserReply = async (req, res, next) => {
     const { message } = req.body;
     const userId = req.user._id;
 
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      res.statusCode = 400;
+      throw new Error("invalid id");
+    }
+    
     if (!message) {
       res.statusCode = 400;
       throw new Error("Reply message is required");
@@ -113,12 +123,12 @@ export const addUserReply = async (req, res, next) => {
 
     // Append new message to existing conversation
     const updatedMessage = `${supportMessage.message}\n\n[User Reply]: ${message}`;
-    
+
     supportMessage.message = updatedMessage;
     supportMessage.status = "pending";
     supportMessage.isReadByAdmin = false;
     supportMessage.isReadByUser = true;
-    
+
     await supportMessage.save();
 
     res.status(200).json({
@@ -136,6 +146,11 @@ export const deleteUserSupportMessage = async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user._id;
+
+    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+      res.statusCode = 400;
+      throw new Error("invalid id params");
+    }
 
     const message = await Support.findOneAndDelete({ _id: id, userId });
 
@@ -159,7 +174,7 @@ export const deleteUserSupportMessage = async (req, res, next) => {
 export const getAllSupportMessages = async (req, res, next) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
-    
+
     let query = {};
     if (status && status !== "all") {
       query.status = status;
@@ -192,7 +207,10 @@ export const getAdminSupportMessageById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const message = await Support.findById(id).populate("userId", "name email walletBalance");
+    const message = await Support.findById(id).populate(
+      "userId",
+      "name email walletBalance",
+    );
 
     if (!message) {
       res.statusCode = 404;
@@ -220,6 +238,11 @@ export const adminReply = async (req, res, next) => {
     const { id } = req.params;
     const { reply } = req.body;
 
+    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+      res.statusCode = 400;
+      throw new Error("invalid id params");
+    }
+
     if (!reply) {
       res.statusCode = 400;
       throw new Error("Reply message is required");
@@ -235,7 +258,7 @@ export const adminReply = async (req, res, next) => {
     message.adminReply = reply;
     message.status = "replied";
     message.isReadByUser = false;
-    
+
     await message.save();
 
     res.status(200).json({
@@ -253,6 +276,11 @@ export const updateSupportStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
+
+    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+      res.statusCode = 400;
+      throw new Error("invalid id params");
+    }
 
     if (!["pending", "replied", "resolved"].includes(status)) {
       res.statusCode = 400;
@@ -284,6 +312,11 @@ export const deleteSupportMessage = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+      res.statusCode = 400;
+      throw new Error("invalid id params");
+    }
+
     const message = await Support.findByIdAndDelete(id);
 
     if (!message) {
@@ -303,11 +336,11 @@ export const deleteSupportMessage = async (req, res, next) => {
 // Get unread count for admin dashboard
 export const getUnreadCount = async (req, res, next) => {
   try {
-    const unreadCount = await Support.countDocuments({ 
+    const unreadCount = await Support.countDocuments({
       isReadByAdmin: false,
-      status: { $ne: "resolved" }
+      status: { $ne: "resolved" },
     });
-    
+
     const pendingCount = await Support.countDocuments({ status: "pending" });
 
     res.status(200).json({

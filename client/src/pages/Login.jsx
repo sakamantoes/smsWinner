@@ -1,5 +1,5 @@
 // src/pages/Login.jsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -18,6 +18,12 @@ const Login = () => {
     rememberMe: false,
   });
   const [error, setError] = useState("");
+
+  const getErrorMessage = (err) =>
+    err?.response?.data?.message ||
+    err?.response?.data?.error ||
+    err?.message ||
+    "Something went wrong";
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -57,8 +63,9 @@ const Login = () => {
       }
     } catch (error) {
       console.error("login error: ", error);
-      toast.error(error.data.message || "Something Went Wrong");
-      setError(error.data.message || "Network error. Please try again.");
+      const message = getErrorMessage(error);
+      toast.error(message);
+      setError(message);
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,7 @@ import { generateToken } from "../utils/jwttoken.js";
 import { comparePassword, hashPassword } from "../utils/bycrpt.js";
 import { setAuthCookie } from "../utils/setCookie.js";
 import { env } from "../config/constant.js";
+import mongoose from "mongoose";
 
 const googleSetup = async (req, res, next) => {
   const { token } = req.body;
@@ -187,6 +188,11 @@ const deactivateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+      res.statusCode = 400;
+      throw new Error("invalid id params");
+    }
+
     const user = await User.findByIdAndUpdate(
       id,
       { isActive: false },
@@ -207,6 +213,11 @@ const activateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+      res.statusCode = 400;
+      throw new Error("invalid id params");
+    }
+
     const user = await User.findByIdAndUpdate(
       id,
       { isActive: true },
@@ -223,25 +234,24 @@ const activateUser = async (req, res, next) => {
   }
 };
 
-
 const updateUsername = async (req, res, next) => {
   const { username } = req.body;
   try {
     // Check if username is already taken by another user
-    const existingUser = await User.findOne({ 
+    const existingUser = await User.findOne({
       username: username,
-      _id: { $ne: req.user._id } // Exclude current user
+      _id: { $ne: req.user._id }, // Exclude current user
     });
-    
+
     if (existingUser) {
       res.statusCode = 400;
       throw new Error("Username already taken");
     }
-    
+
     const user = await User.findByIdAndUpdate(
       req.user._id,
       { username },
-      { new: true }
+      { new: true },
     ).select("-password");
 
     res.status(200).json({
@@ -254,22 +264,21 @@ const updateUsername = async (req, res, next) => {
   }
 };
 
-
 const updatePassword = async (req, res, next) => {
   const { currentPassword, newPassword } = req.body;
   try {
     const user = await User.findById(req.user._id);
-    
+
     const isMatch = await comparePassword(currentPassword, user.password);
     if (!isMatch) {
       res.statusCode = 400;
       throw new Error("Current password is incorrect");
     }
-    
+
     const hashedPassword = await hashPassword(newPassword);
     user.password = hashedPassword;
     await user.save();
-    
+
     res.status(200).json({
       success: true,
       message: "Password updated successfully",
@@ -288,5 +297,5 @@ export {
   deactivateUser,
   activateUser,
   updatePassword,
-  updateUsername
+  updateUsername,
 };

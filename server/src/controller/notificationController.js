@@ -1,10 +1,16 @@
 // controllers/notificationController.js
 import Notification from "../model/Notification.js";
 import User from "../model/User.js";
-
+import mongoose from "mongoose";
 
 // Create a notification for a user
-const createNotification = async (userId, type, title, message, metadata = {}) => {
+const createNotification = async (
+  userId,
+  type,
+  title,
+  message,
+  metadata = {},
+) => {
   try {
     const notification = await Notification.create({
       userId,
@@ -13,9 +19,9 @@ const createNotification = async (userId, type, title, message, metadata = {}) =
       message,
       metadata,
       read: false,
-      createdAt: new Date()
+      createdAt: new Date(),
     });
-    
+
     return notification;
   } catch (error) {
     console.error("Error creating notification:", error);
@@ -28,24 +34,24 @@ const getUserNotifications = async (req, res, next) => {
   try {
     const { page = 1, limit = 20, unreadOnly = false } = req.query;
     const userId = req.user._id;
-    
+
     const query = { userId };
-    if (unreadOnly === 'true') {
+    if (unreadOnly === "true") {
       query.read = false;
     }
-    
+
     const notifications = await Notification.find(query)
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .lean();
-    
+
     const total = await Notification.countDocuments(query);
-    const unreadCount = await Notification.countDocuments({ 
-      userId, 
-      read: false 
+    const unreadCount = await Notification.countDocuments({
+      userId,
+      read: false,
     });
-    
+
     res.status(200).json({
       success: true,
       data: {
@@ -53,8 +59,8 @@ const getUserNotifications = async (req, res, next) => {
         unreadCount,
         currentPage: page,
         totalPages: Math.ceil(total / limit),
-        total
-      }
+        total,
+      },
     });
   } catch (error) {
     next(error);
@@ -65,23 +71,23 @@ const getUserNotifications = async (req, res, next) => {
 const markAsRead = async (req, res, next) => {
   const { notificationId } = req.params;
   const userId = req.user._id;
-  
+
   try {
     const notification = await Notification.findOneAndUpdate(
       { _id: notificationId, userId },
       { read: true, readAt: new Date() },
-      { new: true }
+      { new: true },
     );
-    
+
     if (!notification) {
       res.statusCode = 404;
       throw new Error("Notification not found");
     }
-    
+
     res.status(200).json({
       success: true,
       message: "Notification marked as read",
-      data: notification
+      data: notification,
     });
   } catch (error) {
     next(error);
@@ -91,16 +97,16 @@ const markAsRead = async (req, res, next) => {
 // Mark all notifications as read
 const markAllAsRead = async (req, res, next) => {
   const userId = req.user._id;
-  
+
   try {
     await Notification.updateMany(
       { userId, read: false },
-      { read: true, readAt: new Date() }
+      { read: true, readAt: new Date() },
     );
-    
+
     res.status(200).json({
       success: true,
-      message: "All notifications marked as read"
+      message: "All notifications marked as read",
     });
   } catch (error) {
     next(error);
@@ -111,21 +117,26 @@ const markAllAsRead = async (req, res, next) => {
 const deleteNotification = async (req, res, next) => {
   const { notificationId } = req.params;
   const userId = req.user._id;
-  
+
   try {
+    if (!notificationId || mongoose.Types.ObjectId.isValid(notificationId)) {
+      res.statusCode = 400;
+      throw new Error("invalid id params");
+    }
+
     const notification = await Notification.findOneAndDelete({
       _id: notificationId,
-      userId
+      userId,
     });
-    
+
     if (!notification) {
       res.statusCode = 404;
       throw new Error("Notification not found");
     }
-    
+
     res.status(200).json({
       success: true,
-      message: "Notification deleted successfully"
+      message: "Notification deleted successfully",
     });
   } catch (error) {
     next(error);
@@ -136,15 +147,15 @@ const deleteNotification = async (req, res, next) => {
 const getUnreadCount = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    
+
     const unreadCount = await Notification.countDocuments({
       userId,
-      read: false
+      read: false,
     });
-    
+
     res.status(200).json({
       success: true,
-      data: { unreadCount }
+      data: { unreadCount },
     });
   } catch (error) {
     next(error);
@@ -152,15 +163,20 @@ const getUnreadCount = async (req, res, next) => {
 };
 
 // Helper function to send deposit success notification
-const sendDepositSuccessNotification = async (userId, amount, referenceId, balanceAfter) => {
+const sendDepositSuccessNotification = async (
+  userId,
+  amount,
+  referenceId,
+  balanceAfter,
+) => {
   const title = "Deposit Successful";
   const message = `Your deposit of ₦${amount.toLocaleString()} has been successfully credited to your wallet.`;
-  
+
   return await createNotification(userId, "DEPOSIT_SUCCESS", title, message, {
     amount,
     referenceId,
     balanceAfter,
-    type: "deposit"
+    type: "deposit",
   });
 };
 
@@ -168,54 +184,69 @@ const sendDepositSuccessNotification = async (userId, amount, referenceId, balan
 const sendDepositPendingNotification = async (userId, amount, referenceId) => {
   const title = "Deposit Pending";
   const message = `Your deposit of ₦${amount.toLocaleString()} is pending confirmation. You'll be notified once it's processed.`;
-  
+
   return await createNotification(userId, "DEPOSIT_PENDING", title, message, {
     amount,
     referenceId,
-    type: "deposit"
+    type: "deposit",
   });
 };
 
 // Helper function to send deposit failed notification
-const sendDepositFailedNotification = async (userId, amount, referenceId, reason = null) => {
+const sendDepositFailedNotification = async (
+  userId,
+  amount,
+  referenceId,
+  reason = null,
+) => {
   const title = "Deposit Failed";
   let message = `Your deposit of ₦${amount.toLocaleString()} could not be processed.`;
-  
+
   if (reason) {
     message += ` Reason: ${reason}`;
   }
-  
+
   return await createNotification(userId, "DEPOSIT_FAILED", title, message, {
     amount,
     referenceId,
     type: "deposit",
-    reason
+    reason,
   });
 };
 
 // Helper function to send payment received notification (for manual payments)
-const sendPaymentReceivedNotification = async (userId, amount, referenceId, depositorName) => {
+const sendPaymentReceivedNotification = async (
+  userId,
+  amount,
+  referenceId,
+  depositorName,
+) => {
   const title = "Payment Received";
   const message = `We have received your manual payment of ₦${amount.toLocaleString()}. Your wallet will be credited once confirmed.`;
-  
+
   return await createNotification(userId, "PAYMENT_RECEIVED", title, message, {
     amount,
     referenceId,
     depositorName,
-    type: "manual_payment"
+    type: "manual_payment",
   });
 };
 
 // Helper function to send payment confirmed notification (for manual payments)
-const sendPaymentConfirmedNotification = async (userId, amount, referenceId, balanceAfter) => {
+const sendPaymentConfirmedNotification = async (
+  userId,
+  amount,
+  referenceId,
+  balanceAfter,
+) => {
   const title = "Payment Confirmed";
   const message = `Your manual payment of ₦${amount.toLocaleString()} has been confirmed and credited to your wallet.`;
-  
+
   return await createNotification(userId, "PAYMENT_CONFIRMED", title, message, {
     amount,
     referenceId,
     balanceAfter,
-    type: "manual_payment"
+    type: "manual_payment",
   });
 };
 
@@ -223,10 +254,10 @@ const sendPaymentConfirmedNotification = async (userId, amount, referenceId, bal
 const sendLowBalanceAlert = async (userId, currentBalance) => {
   const title = "Low Balance Alert";
   const message = `Your wallet balance is ₦${currentBalance.toLocaleString()}. Please top up to continue using our services.`;
-  
+
   return await createNotification(userId, "LOW_BALANCE", title, message, {
     currentBalance,
-    type: "alert"
+    type: "alert",
   });
 };
 
@@ -242,5 +273,5 @@ export {
   sendPaymentReceivedNotification,
   sendPaymentConfirmedNotification,
   sendLowBalanceAlert,
-  createNotification
+  createNotification,
 };
