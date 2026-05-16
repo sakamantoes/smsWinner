@@ -47,7 +47,11 @@ const Login = () => {
     // Simulate API call
     try {
       // Replace with your actual API endpoint
-      const response = await login(formData);
+      const data = {
+        email: formData.email.trim(),
+        password: formData.password.trim(),
+      };
+      const response = await login(data);
 
       if (response.status === 200 || response.status === 201) {
         const user = response.data?.data || response.data;
