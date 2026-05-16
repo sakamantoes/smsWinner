@@ -23,12 +23,10 @@ import { FaMoneyBill } from "react-icons/fa";
 
 const adminNavItems = [
   { label: "Dashboard", to: "/a/dashboard", icon: Gauge },
-  { label: "Price Set", to: "/a/price_set", icon: FaMoneyBill },
+  { label: "Price Settings", to: "/a/price_set", icon: FaMoneyBill },
   { label: "Numbers", to: "/a/numbers", icon: Phone },
   { label: "Logs", to: "/a/logs", icon: Activity },
-  { label: "Users", to: "/a/users", icon: Users },
-  { label: "Deposits", to: "/a/deposits", icon: Wallet },
-  { label: "Analytics", to: "/a/analytics", icon: BarChart3 },
+  { label: "Deposit", to: "/a/deposits", icon: Wallet },
 ];
 
 const adminSidebarConfig = {
