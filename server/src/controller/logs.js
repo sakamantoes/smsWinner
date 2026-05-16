@@ -71,7 +71,7 @@ const buyLog = async (req, res, next) => {
   try {
     let finalResult = null;
 
-    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
       throw new Error("invalid id params");
     }
@@ -166,7 +166,7 @@ const updateLog = async (req, res, next) => {
     // ✅ FIX: Added category to destructuring
     const { email, password, price, country, category } = req.body;
 
-    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
       throw new Error("invalid id params");
     }
@@ -206,7 +206,7 @@ const deleteLog = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
       throw new Error("invalid id params");
     }
@@ -258,7 +258,7 @@ const getLogById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
       throw new Error("invalid id params");
     }

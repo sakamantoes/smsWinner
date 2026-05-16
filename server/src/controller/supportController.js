@@ -70,7 +70,7 @@ export const getSupportMessageById = async (req, res, next) => {
     const { id } = req.params;
     const userId = req.user._id;
 
-    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
       throw new Error("invalid id params");
     }
@@ -104,7 +104,7 @@ export const addUserReply = async (req, res, next) => {
     const { message } = req.body;
     const userId = req.user._id;
 
-    if (mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
       throw new Error("invalid id");
     }
@@ -147,7 +147,7 @@ export const deleteUserSupportMessage = async (req, res, next) => {
     const { id } = req.params;
     const userId = req.user._id;
 
-    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
       throw new Error("invalid id params");
     }
@@ -238,7 +238,7 @@ export const adminReply = async (req, res, next) => {
     const { id } = req.params;
     const { reply } = req.body;
 
-    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
       throw new Error("invalid id params");
     }
@@ -277,7 +277,7 @@ export const updateSupportStatus = async (req, res, next) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
       throw new Error("invalid id params");
     }
@@ -312,7 +312,7 @@ export const deleteSupportMessage = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
       throw new Error("invalid id params");
     }

@@ -188,7 +188,7 @@ const deactivateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
       throw new Error("invalid id params");
     }
@@ -213,7 +213,7 @@ const activateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    if (!id || mongoose.Types.ObjectId.isValid(id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
       throw new Error("invalid id params");
     }

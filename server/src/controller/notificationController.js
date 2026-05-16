@@ -119,7 +119,7 @@ const deleteNotification = async (req, res, next) => {
   const userId = req.user._id;
 
   try {
-    if (!notificationId || mongoose.Types.ObjectId.isValid(notificationId)) {
+    if (!notificationId || !mongoose.Types.ObjectId.isValid(notificationId)) {
       res.statusCode = 400;
       throw new Error("invalid id params");
     }
