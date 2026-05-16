@@ -209,11 +209,35 @@ export default function AdminDashboard() {
       setLoadingBalance(true);
       const response = await getSmsBowerBalance();
       
-      // Extract balance from nested object structure
-      // Response: { success: true, balance: { balance: "0.00", currency: "USD", success: true } }
-      const balanceValue = response?.balance?.balance 
-        ? parseFloat(response.balance.balance) 
-        : 0;
+      let balanceValue = 0;
+      
+      // Case 1: Response from your backend that forwards SMSBower API
+      // Format: "ACCESS_BALANCE:2.341"
+      if (response?.balance && typeof response.balance === 'string') {
+        const balanceString = response.balance;
+        // Extract number from "ACCESS_BALANCE:2.341" format
+        const match = balanceString.match(/[\d.]+/);
+        if (match) {
+          balanceValue = parseFloat(match[0]);
+        }
+      }
+      // Case 2: Nested object format { balance: { balance: "0.00", currency: "USD" } }
+      else if (response?.balance?.balance !== undefined) {
+        balanceValue = parseFloat(response.balance.balance);
+      }
+      // Case 3: Direct balance number/string
+      else if (response?.balance !== undefined && typeof response.balance !== 'object') {
+        balanceValue = parseFloat(response.balance);
+      }
+      // Case 4: Response.data format
+      else if (response?.data?.balance !== undefined) {
+        balanceValue = parseFloat(response.data.balance);
+      }
+      
+      // If balanceValue is NaN, default to 0
+      if (isNaN(balanceValue)) {
+        balanceValue = 0;
+      }
       
       setSmsBowerBalance(balanceValue);
     } catch (error) {
@@ -283,7 +307,7 @@ export default function AdminDashboard() {
               <Wallet size={24} className="sm:w-8 sm:h-8 text-red-light" />
             </div>
             <div>
-              <p className="text-[7px] sm:text-sm font-semibold uppercase  text-gray-400">
+              <p className="text-[7px] sm:text-sm font-semibold uppercase text-gray-400">
                 Track SMS Bower Funding Balance
               </p>
               <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-red-light">
