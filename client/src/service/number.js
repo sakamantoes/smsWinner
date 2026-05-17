@@ -60,6 +60,5 @@ export const getOrderDetails = async (orderId) => {
 export const getSmsBowerBalance = async () => {
   const res = await api.get("/api/otp/sms-balance");
 
-  console.log(res.data);
   return res.data;
 };

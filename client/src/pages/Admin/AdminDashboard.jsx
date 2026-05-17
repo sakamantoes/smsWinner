@@ -24,67 +24,40 @@ import {
   CoinsIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getAllUsers } from "../../service/auth";
 import { getPlatformDeposits } from "../../service/admin";
 import { getSmsBowerBalance } from "../../service/number";
+import useActiveOtp from "../../hooks/useActiveOtp.js";
 import { getRecentSystemNotifications } from "../../service/notificationApi";
+import { a } from "framer-motion/client";
 
-const activeSessions = [
-  {
-    user: "John Doe",
-    service: "WhatsApp",
-    country: "United States",
-    number: "+1 415 982 1044",
-    status: "Waiting for OTP",
-    time: "08:42",
-    received: false,
-  },
-  {
-    user: "Jane Smith",
-    service: "Telegram",
-    country: "United Kingdom",
-    number: "+44 7403 931 225",
-    status: "Code received",
-    time: "452981",
-    received: true,
-  },
-  {
-    user: "Mike Johnson",
-    service: "Google",
-    country: "Canada",
-    number: "+1 647 812 5590",
-    status: "Pending activation",
-    time: "11:07",
-    received: false,
-  },
-  {
-    user: "Sarah Williams",
-    service: "Microsoft",
-    country: "Australia",
-    number: "+61 412 345 678",
-    status: "Waiting for OTP",
-    time: "05:23",
-    received: false,
-  },
-];
+const formatSessionTime = (value) => {
+  if (!value) return "N/A";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 const serviceCards = [
   {
     title: "Available Numbers Stock",
     description: "Manage SMS-capable numbers inventory across 86 countries.",
-    meta: "12,847 numbers available",
+    meta: "Over 12,847 numbers available",
     icon: Smartphone,
   },
   {
     title: "Email Accounts Stock",
     description: "Monitor virtual email inventory and bulk purchase orders.",
-    meta: "3,421 emails in stock",
+    meta: "Over 3,421 emails in stock",
     icon: Mail,
   },
 ];
-
-
 
 const quickActions = [
   { label: "Manage Users", icon: Users, path: "/a/users" },
@@ -102,6 +75,33 @@ export default function AdminDashboard() {
   const [loadingBalance, setLoadingBalance] = useState(true);
   const [recentNotifications, setRecentNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
+  const { isLoading, error, otpOrder, total, refetch } = useActiveOtp();
+
+  const activeOtpSessions = useMemo(() => {
+    const orders = Array.isArray(otpOrder) ? otpOrder : [];
+
+    return orders.slice(0, 5).map((order) => {
+      const user = order.userId;
+      const username =
+        typeof user === "object"
+          ? user?.username || user?.email
+          : order.username || order.email;
+      const received = Boolean(order.otpCode);
+
+      return {
+        id: order._id || order.activationId || order.phoneNumber,
+        user: username || "Unknown user",
+        service: String(order.service || "OTP").toUpperCase(),
+        country: order.country || "N/A",
+        number: order.phoneNumber || "N/A",
+        status: received ? "Code received" : "Waiting for OTP",
+        time: received
+          ? order.otpCode
+          : formatSessionTime(order.purchasedAt || order.createdAt),
+        received,
+      };
+    });
+  }, [otpOrder]);
 
   const stats = [
     {
@@ -115,8 +115,10 @@ export default function AdminDashboard() {
     },
     {
       label: "Active Sessions",
-      value: "1,293",
-      change: "86% utilization",
+      value: isLoading
+        ? "..."
+        : Number(total ?? activeOtpSessions.length).toLocaleString(),
+      change: "Waiting for OTP",
       icon: Activity,
       iconBg: "bg-gradient-to-br from-red/50 to-red/20",
       iconColor: "text-white",
@@ -225,30 +227,29 @@ export default function AdminDashboard() {
     }
   };
 
- const fetchRecentNotifications = async () => {
-  try {
-    setLoadingNotifications(true);
-    const response = await getRecentSystemNotifications(5);
-    console.log("Recent notifications response:", response);
-    
-    // Fix: Access the nested notifications array properly
-    if (response?.success && response?.data?.notifications) {
-      setRecentNotifications(response.data.notifications);
-      console.log("Set notifications:", response.data.notifications); // Should show 3 items
-    } else if (response?.notifications) {
-      // Fallback in case the structure is different
-      setRecentNotifications(response.notifications);
-    } else {
-      console.log("No notifications found in response structure");
+  const fetchRecentNotifications = async () => {
+    try {
+      setLoadingNotifications(true);
+      const response = await getRecentSystemNotifications(5);
+      console.log("Recent notifications response:", response);
+
+      // Fix: Access the nested notifications array properly
+      if (response?.success && response?.data?.notifications) {
+        setRecentNotifications(response.data.notifications);
+      } else if (response?.notifications) {
+        // Fallback in case the structure is different
+        setRecentNotifications(response.notifications);
+      } else {
+        console.log("No notifications found in response structure");
+        setRecentNotifications([]);
+      }
+    } catch (error) {
+      console.error("Error fetching recent notifications:", error);
       setRecentNotifications([]);
+    } finally {
+      setLoadingNotifications(false);
     }
-  } catch (error) {
-    console.error("Error fetching recent notifications:", error);
-    setRecentNotifications([]);
-  } finally {
-    setLoadingNotifications(false);
-  }
-};
+  };
 
   // Update the stats array with dynamic total users
   const updatedStats = stats.map((stat) =>
@@ -425,73 +426,91 @@ export default function AdminDashboard() {
                   <UserCheck size={11} className="sm:w-[13px] sm:h-[13px]" />
                   <span className="hidden xs:inline">Filter</span>
                 </button>
-                <button className="flex items-center gap-1 rounded-lg border border-white/10 shadow-md px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold text-gray-300 transition-colors hover:border-red-light/30 hover:bg-red-light/8">
-                  <RefreshCw size={11} className="sm:w-[13px] sm:h-[13px]" />
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  disabled={isLoading}
+                  className="flex items-center gap-1 rounded-lg border border-white/10 shadow-md px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold text-gray-300 transition-colors hover:border-red-light/30 hover:bg-red-light/8 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <RefreshCw
+                    size={11}
+                    className={`sm:w-[13px] sm:h-[13px] ${isLoading ? "animate-spin" : ""}`}
+                  />
                   <span className="hidden xs:inline">Refresh</span>
                 </button>
               </div>
             </div>
 
             <div className="divide-y divide-red-light/10">
-              {activeSessions.map((session) => (
-                <div
-                  key={session.number}
-                  className="flex flex-col gap-2 px-4 sm:px-5 py-3 sm:py-4 hover:bg-white/5 transition-all"
-                >
-                  {/* User + service */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                      <span className="text-sm sm:text-base font-semibold text-white">
-                        {session.user}
-                      </span>
-                      <span className="rounded-full border border-white/10 shadow-md bg-red-light/10 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[11px] font-medium text-red">
-                        {session.service}
-                      </span>
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-1 text-xs sm:text-sm text-gray-500">
-                      <span className="break-all">{session.number}</span>
-                      <button
-                        aria-label="Copy number"
-                        className="rounded p-0.5 text-gray-600 transition-colors hover:text-gray-300"
-                      >
-                        <Copy size={11} className="sm:w-[13px] sm:h-[13px]" />
-                      </button>
-                    </div>
-                    <div className="mt-0.5 text-[10px] sm:text-xs text-gray-600">
-                      {session.country}
-                    </div>
-                  </div>
-
-                  {/* Status and code row */}
-                  <div className="flex items-center justify-between gap-3 mt-1">
-                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium">
-                      {session.received ? (
-                        <CheckCircle2
-                          size={12}
-                          className="sm:w-[14px] sm:h-[14px] text-emerald-500"
-                        />
-                      ) : (
-                        <Clock3
-                          size={12}
-                          className="sm:w-[14px] sm:h-[14px] text-amber-500"
-                        />
-                      )}
-                      <span
-                        className={
-                          session.received
-                            ? "text-emerald-400"
-                            : "text-gray-400"
-                        }
-                      >
-                        {session.status}
-                      </span>
-                    </div>
-                    <div className="shrink-0 rounded-lg border border-red-light/10 shadow-md bg-black/40 px-2 sm:px-3 py-1.5 sm:py-2 text-center font-mono text-xs sm:text-sm font-bold tracking-widest text-white">
-                      {session.time}
-                    </div>
-                  </div>
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2 px-4 sm:px-5 py-10 text-sm text-gray-400">
+                  <RefreshCw size={16} className="animate-spin" />
                 </div>
-              ))}
+              ) : activeOtpSessions.length === 0 ? (
+                <div className="px-4 sm:px-5 py-10 text-center text-sm text-gray-500">
+                  No active OTP orders right now.
+                </div>
+              ) : (
+                activeOtpSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className="flex flex-col gap-2 px-4 sm:px-5 py-3 sm:py-4 hover:bg-white/5 transition-all"
+                  >
+                    {/* User + service */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <span className="text-sm sm:text-base font-semibold text-white">
+                          {session.user}
+                        </span>
+                        <span className="rounded-full border border-white/10 shadow-md bg-red-light/10 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[11px] font-medium text-red">
+                          {session.service}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-1 text-xs sm:text-sm text-gray-500">
+                        <span className="break-all">{session.number}</span>
+                        <button
+                          aria-label="Copy number"
+                          className="rounded p-0.5 text-gray-600 transition-colors hover:text-gray-300"
+                        >
+                          <Copy size={11} className="sm:w-[13px] sm:h-[13px]" />
+                        </button>
+                      </div>
+                      <div className="mt-0.5 text-[10px] sm:text-xs text-gray-600">
+                        {session.country}
+                      </div>
+                    </div>
+
+                    {/* Status and code row */}
+                    <div className="flex items-center justify-between gap-3 mt-1">
+                      <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium">
+                        {session.received ? (
+                          <CheckCircle2
+                            size={12}
+                            className="sm:w-[14px] sm:h-[14px] text-emerald-500"
+                          />
+                        ) : (
+                          <Clock3
+                            size={12}
+                            className="sm:w-[14px] sm:h-[14px] text-amber-500"
+                          />
+                        )}
+                        <span
+                          className={
+                            session.received
+                              ? "text-emerald-400"
+                              : "text-gray-400"
+                          }
+                        >
+                          {session.status}
+                        </span>
+                      </div>
+                      <div className="shrink-0 rounded-lg border border-red-light/10 shadow-md bg-black/40 px-2 sm:px-3 py-1.5 sm:py-2 text-center font-mono text-xs sm:text-sm font-bold tracking-widest text-white">
+                        {session.time}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -532,111 +551,91 @@ export default function AdminDashboard() {
           </div>
 
           {/* Recent activity / alerts */}
-     
-<div className="rounded-xl border border-red-light/10 shadow-md bg-white/5 p-4 sm:p-5">
-  <div className="flex items-center justify-between">
-    <h2 className="text-sm sm:text-base font-semibold text-white">
-      System Alerts & Activity
-    </h2>
-    <button 
-      onClick={fetchRecentNotifications}
-      disabled={loadingNotifications}
-      className="text-amber-500 hover:text-amber-400 transition-colors"
-    >
-      <RefreshCw size={12} className={`sm:w-[14px] sm:h-[14px] ${loadingNotifications ? 'animate-spin' : ''}`} />
-    </button>
-  </div>
-  
-  <div className="mt-3 sm:mt-4 space-y-1">
-    {loadingNotifications ? (
-      <div className="flex justify-center py-8">
-        <RefreshCw size={24} className="animate-spin text-gray-500" />
-      </div>
-    ) : recentNotifications.length === 0 ? (
-      <div className="text-center py-8 text-gray-500 text-sm">
-        No recent activities
-      </div>
-    ) : (
-      recentNotifications.map((notification, index) => (
-        <div
-          key={index}
-          className="flex items-center gap-2 sm:gap-3 border-b border-red-light/5 shadow-md rounded-lg px-2 py-2 sm:py-2.5 transition-all hover:-translate-y-1 hover:bg-white/5"
-        >
-          <div
-            className={`flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg ${
-              notification.direction === "up"
-                ? "bg-emerald-500/10 text-emerald-400"
-                : notification.direction === "down"
-                ? "bg-red-light/10 text-red-light/80"
-                : "bg-amber-500/10 text-amber-400"
-            }`}
-          >
-            {notification.direction === "up" ? (
-              <ArrowUpRight size={13} className="sm:w-[15px] sm:h-[15px]" />
-            ) : notification.direction === "down" ? (
-              <ArrowDownRight size={13} className="sm:w-[15px] sm:h-[15px]" />
-            ) : (
-              <AlertTriangle size={13} className="sm:w-[15px] sm:h-[15px]" />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs sm:text-sm font-medium text-white">
-              {notification.title}
-            </p>
-            <p className="truncate text-[10px] sm:text-xs text-gray-500">
-              {notification.detail}
-            </p>
-            {notification.user && (
-              <p className="text-[9px] sm:text-[10px] text-gray-600 mt-0.5">
-                User: {notification.user}
-              </p>
-            )}
-          </div>
-          <p
-            className={`shrink-0 text-[10px] sm:text-xs font-semibold tabular-nums ${
-              notification.direction === "up"
-                ? "text-emerald-400"
-                : notification.direction === "down"
-                ? "text-amber-400"
-                : "text-red-400"
-            }`}
-          >
-            {notification.amount || ''}
-          </p>
-        </div>
-      ))
-    )}
-  </div>
-</div>
-
-          {/* Quick stats */}
           <div className="rounded-xl border border-red-light/10 shadow-md bg-white/5 p-4 sm:p-5">
-            <h2 className="text-sm sm:text-base font-semibold text-white">
-              Quick Stats
-            </h2>
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-3">
-              <div className="rounded-lg bg-black/20 p-2 sm:p-3 text-center">
-                <UserX
-                  size={14}
-                  className="sm:w-4 sm:h-4 mx-auto mb-1 text-red-400"
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm sm:text-base font-semibold text-white">
+                System Alerts & Activity
+              </h2>
+              <button
+                onClick={fetchRecentNotifications}
+                disabled={loadingNotifications}
+                className="text-amber-500 hover:text-amber-400 transition-colors"
+              >
+                <RefreshCw
+                  size={12}
+                  className={`sm:w-[14px] sm:h-[14px] ${loadingNotifications ? "animate-spin" : ""}`}
                 />
-                <p className="text-xl sm:text-2xl font-bold text-white">14</p>
-                <p className="text-[10px] sm:text-xs text-gray-500">
-                  Blocked Users
-                </p>
-              </div>
-              <div className="rounded-lg bg-black/20 p-2 sm:p-3 text-center">
-                <Activity
-                  size={14}
-                  className="sm:w-4 sm:h-4 mx-auto mb-1 text-emerald-400"
-                />
-                <p className="text-xl sm:text-2xl font-bold text-white">
-                  98.7%
-                </p>
-                <p className="text-[10px] sm:text-xs text-gray-500">
-                  Success Rate
-                </p>
-              </div>
+              </button>
+            </div>
+
+            <div className="mt-3 sm:mt-4 space-y-1">
+              {loadingNotifications ? (
+                <div className="flex justify-center py-8">
+                  <RefreshCw size={24} className="animate-spin text-gray-500" />
+                </div>
+              ) : recentNotifications.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 text-sm">
+                  No recent activities
+                </div>
+              ) : (
+                recentNotifications.map((notification, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 sm:gap-3 border-b border-red-light/5 shadow-md rounded-lg px-2 py-2 sm:py-2.5 transition-all hover:-translate-y-1 hover:bg-white/5"
+                  >
+                    <div
+                      className={`flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg ${
+                        notification.direction === "up"
+                          ? "bg-emerald-500/10 text-emerald-400"
+                          : notification.direction === "down"
+                            ? "bg-red-light/10 text-red-light/80"
+                            : "bg-amber-500/10 text-amber-400"
+                      }`}
+                    >
+                      {notification.direction === "up" ? (
+                        <ArrowUpRight
+                          size={13}
+                          className="sm:w-[15px] sm:h-[15px]"
+                        />
+                      ) : notification.direction === "down" ? (
+                        <ArrowDownRight
+                          size={13}
+                          className="sm:w-[15px] sm:h-[15px]"
+                        />
+                      ) : (
+                        <AlertTriangle
+                          size={13}
+                          className="sm:w-[15px] sm:h-[15px]"
+                        />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs sm:text-sm font-medium text-white">
+                        {notification.title}
+                      </p>
+                      <p className="truncate text-[10px] sm:text-xs text-gray-500">
+                        {notification.detail}
+                      </p>
+                      {notification.user && (
+                        <p className="text-[9px] sm:text-[10px] text-gray-600 mt-0.5">
+                          User: {notification.user}
+                        </p>
+                      )}
+                    </div>
+                    <p
+                      className={`shrink-0 text-[10px] sm:text-xs font-semibold tabular-nums ${
+                        notification.direction === "up"
+                          ? "text-emerald-400"
+                          : notification.direction === "down"
+                            ? "text-amber-400"
+                            : "text-red-400"
+                      }`}
+                    >
+                      {notification.amount || ""}
+                    </p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

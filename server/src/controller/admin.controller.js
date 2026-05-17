@@ -2,6 +2,7 @@ import WalletTransaction from "../model/WalletTransactions.js";
 import mongoose from "mongoose";
 import User from "../model/User.js";
 import PriceSetting from "../model/PriceSetting.js";
+import otporder from "../model/OtpOrder.js";
 
 const getPlatformDeposits = async (req, res, next) => {
   try {
@@ -35,7 +36,6 @@ const updateDepositsStatus = async (req, res, next) => {
   let finalResult = null;
 
   try {
-    
     if (!mongoose.Types.ObjectId.isValid(id) || id === undefined) {
       res.statusCode = 400;
       throw new Error("Invalid transaction ID");
@@ -140,4 +140,38 @@ const priceSettingController = async (req, res, next) => {
   }
 };
 
-export { getPlatformDeposits, updateDepositsStatus, priceSettingController };
+const getUserWaitingForOtp = async (req, res, next) => {
+  const { page = 1, limit = 5 } = req.query;
+  try {
+    const pageNumber = Math.max(Number(page) || 1, 1);
+    const limitNumber = Math.min(Math.max(Number(limit) || 5, 1), 20);
+
+    const otpOrders = await otporder
+      .find({
+        status: "WAITING_FOR_SMS",
+      })
+      .populate("userId", "username email")
+      .sort({ createdAt: -1 })
+      .limit(limitNumber)
+      .skip((pageNumber - 1) * limitNumber)
+      .lean();
+
+    const total = await otporder.countDocuments({ status: "WAITING_FOR_SMS" });
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: "success",
+      data: { otpOrders, total },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export {
+  getPlatformDeposits,
+  updateDepositsStatus,
+  priceSettingController,
+  getUserWaitingForOtp,
+};
