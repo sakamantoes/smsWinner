@@ -385,7 +385,7 @@ export default function AdminDashboard() {
       </section>
 
       {/* ── Main grid ── */}
-      <section className="grid gap-4 sm:gap-5 lg:grid-cols-1 xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <section className="w-full grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-[minmax(0,1fr)_22rem]">
         {/* Left column */}
         <div className="space-y-4 sm:space-y-5">
           {/* Quick actions */}
