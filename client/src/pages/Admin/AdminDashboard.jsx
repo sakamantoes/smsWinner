@@ -29,6 +29,8 @@ import { getAllUsers } from "../../service/auth";
 import { getPlatformDeposits } from "../../service/admin";
 import { getSmsBowerBalance } from "../../service/number";
 import useActiveOtp from "../../hooks/useActiveOtp.js";
+import { getRecentSystemNotifications } from "../../service/notificationApi";
+import { a } from "framer-motion/client";
 
 const formatSessionTime = (value) => {
   if (!value) return "N/A";
@@ -57,39 +59,6 @@ const serviceCards = [
   },
 ];
 
-const recentActivity = [
-  {
-    title: "New user registered",
-    detail: "user@example.com - Premium plan",
-    amount: "+NGN 15,000",
-    direction: "up",
-  },
-  {
-    title: "Number purchase failed",
-    detail: "US number - Insufficient funds",
-    amount: "Refunded",
-    direction: "down",
-  },
-  {
-    title: "Bulk email order",
-    detail: "50 emails - Corporate client",
-    amount: "+NGN 4,250",
-    direction: "up",
-  },
-  {
-    title: "Suspicious activity detected",
-    detail: "Multiple failed logins from IP",
-    amount: "Flagged",
-    direction: "down",
-  },
-  {
-    title: "API rate limit hit",
-    detail: "User: john_doe - 1000 requests/min",
-    amount: "Throttled",
-    direction: "down",
-  },
-];
-
 const quickActions = [
   { label: "Manage Users", icon: Users, path: "/a/users" },
   { label: "View Support", icon: BarChart3, path: "/a/support" },
@@ -104,6 +73,8 @@ export default function AdminDashboard() {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [smsBowerBalance, setSmsBowerBalance] = useState(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
+  const [recentNotifications, setRecentNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
   const { isLoading, error, otpOrder, total, refetch } = useActiveOtp();
 
   const activeOtpSessions = useMemo(() => {
@@ -177,6 +148,7 @@ export default function AdminDashboard() {
     fetchTotalUsers();
     fetchRevenue();
     fetchSmsBowerBalance();
+    fetchRecentNotifications();
   }, []);
 
   const fetchTotalUsers = async () => {
@@ -252,6 +224,30 @@ export default function AdminDashboard() {
       setSmsBowerBalance(0);
     } finally {
       setLoadingBalance(false);
+    }
+  };
+
+  const fetchRecentNotifications = async () => {
+    try {
+      setLoadingNotifications(true);
+      const response = await getRecentSystemNotifications(5);
+      console.log("Recent notifications response:", response);
+
+      // Fix: Access the nested notifications array properly
+      if (response?.success && response?.data?.notifications) {
+        setRecentNotifications(response.data.notifications);
+      } else if (response?.notifications) {
+        // Fallback in case the structure is different
+        setRecentNotifications(response.notifications);
+      } else {
+        console.log("No notifications found in response structure");
+        setRecentNotifications([]);
+      }
+    } catch (error) {
+      console.error("Error fetching recent notifications:", error);
+      setRecentNotifications([]);
+    } finally {
+      setLoadingNotifications(false);
     }
   };
 
@@ -449,11 +445,6 @@ export default function AdminDashboard() {
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2 px-4 sm:px-5 py-10 text-sm text-gray-400">
                   <RefreshCw size={16} className="animate-spin" />
-                  Loading active OTP orders...
-                </div>
-              ) : error ? (
-                <div className="px-4 sm:px-5 py-10 text-center text-sm text-red-300">
-                  {error}
                 </div>
               ) : activeOtpSessions.length === 0 ? (
                 <div className="px-4 sm:px-5 py-10 text-center text-sm text-gray-500">
@@ -565,55 +556,86 @@ export default function AdminDashboard() {
               <h2 className="text-sm sm:text-base font-semibold text-white">
                 System Alerts & Activity
               </h2>
-              <AlertTriangle
-                size={12}
-                className="sm:w-[14px] sm:h-[14px] text-amber-500"
-              />
+              <button
+                onClick={fetchRecentNotifications}
+                disabled={loadingNotifications}
+                className="text-amber-500 hover:text-amber-400 transition-colors"
+              >
+                <RefreshCw
+                  size={12}
+                  className={`sm:w-[14px] sm:h-[14px] ${loadingNotifications ? "animate-spin" : ""}`}
+                />
+              </button>
             </div>
+
             <div className="mt-3 sm:mt-4 space-y-1">
-              {recentActivity.map((item) => (
-                <div
-                  key={item.title}
-                  className="flex items-center gap-2 sm:gap-3 border-b border-red-light/5 shadow-md rounded-lg px-2 py-2 sm:py-2.5 transition-all hover:-translate-y-1 hover:bg-white/5"
-                >
-                  <div
-                    className={`flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg ${
-                      item.direction === "up"
-                        ? "bg-emerald-500/10 text-emerald-400"
-                        : "bg-red-light/10 text-red-light/80"
-                    }`}
-                  >
-                    {item.direction === "up" ? (
-                      <ArrowUpRight
-                        size={13}
-                        className="sm:w-[15px] sm:h-[15px]"
-                      />
-                    ) : (
-                      <ArrowDownRight
-                        size={13}
-                        className="sm:w-[15px] sm:h-[15px]"
-                      />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs sm:text-sm font-medium text-white">
-                      {item.title}
-                    </p>
-                    <p className="truncate text-[10px] sm:text-xs text-gray-500">
-                      {item.detail}
-                    </p>
-                  </div>
-                  <p
-                    className={`shrink-0 text-[10px] sm:text-xs font-semibold tabular-nums ${
-                      item.direction === "up"
-                        ? "text-emerald-400"
-                        : "text-amber-400"
-                    }`}
-                  >
-                    {item.amount}
-                  </p>
+              {loadingNotifications ? (
+                <div className="flex justify-center py-8">
+                  <RefreshCw size={24} className="animate-spin text-gray-500" />
                 </div>
-              ))}
+              ) : recentNotifications.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 text-sm">
+                  No recent activities
+                </div>
+              ) : (
+                recentNotifications.map((notification, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 sm:gap-3 border-b border-red-light/5 shadow-md rounded-lg px-2 py-2 sm:py-2.5 transition-all hover:-translate-y-1 hover:bg-white/5"
+                  >
+                    <div
+                      className={`flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg ${
+                        notification.direction === "up"
+                          ? "bg-emerald-500/10 text-emerald-400"
+                          : notification.direction === "down"
+                            ? "bg-red-light/10 text-red-light/80"
+                            : "bg-amber-500/10 text-amber-400"
+                      }`}
+                    >
+                      {notification.direction === "up" ? (
+                        <ArrowUpRight
+                          size={13}
+                          className="sm:w-[15px] sm:h-[15px]"
+                        />
+                      ) : notification.direction === "down" ? (
+                        <ArrowDownRight
+                          size={13}
+                          className="sm:w-[15px] sm:h-[15px]"
+                        />
+                      ) : (
+                        <AlertTriangle
+                          size={13}
+                          className="sm:w-[15px] sm:h-[15px]"
+                        />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs sm:text-sm font-medium text-white">
+                        {notification.title}
+                      </p>
+                      <p className="truncate text-[10px] sm:text-xs text-gray-500">
+                        {notification.detail}
+                      </p>
+                      {notification.user && (
+                        <p className="text-[9px] sm:text-[10px] text-gray-600 mt-0.5">
+                          User: {notification.user}
+                        </p>
+                      )}
+                    </div>
+                    <p
+                      className={`shrink-0 text-[10px] sm:text-xs font-semibold tabular-nums ${
+                        notification.direction === "up"
+                          ? "text-emerald-400"
+                          : notification.direction === "down"
+                            ? "text-amber-400"
+                            : "text-red-400"
+                      }`}
+                    >
+                      {notification.amount || ""}
+                    </p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

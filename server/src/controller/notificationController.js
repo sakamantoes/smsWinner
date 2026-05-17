@@ -162,6 +162,87 @@ const getUnreadCount = async (req, res, next) => {
   }
 };
 
+// Get recent notifications from all users (for admin dashboard)
+const getRecentSystemNotifications = async (req, res, next) => {
+  try {
+    const { limit = 3 } = req.query;
+    
+    // Fetch recent notifications from all users, populate user info
+    const notifications = await Notification.find({})
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .populate('userId', 'email username fullName') // Get user details
+      .lean();
+    
+    // Format notifications for display
+    const formattedNotifications = notifications.map(notif => ({
+      title: notif.title,
+      detail: notif.message,
+      amount: formatNotificationAmount(notif),
+      direction: getNotificationDirection(notif.type),
+      user: notif.userId?.email || notif.userId?.username || 'Unknown User',
+      type: notif.type,
+      createdAt: notif.createdAt,
+    }));
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        notifications: formattedNotifications,
+        total: await Notification.countDocuments(),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Helper function to format notification amount
+const formatNotificationAmount = (notification) => {
+  const amount = notification.metadata?.amount;
+  if (!amount) return '';
+  
+  // Format based on currency (assuming NGN or USD)
+  const currency = notification.metadata?.currency || 'NGN';
+  const symbol = currency === 'USD' ? '$' : '₦';
+  
+  if (notification.type.includes('SUCCESS') || notification.type.includes('CONFIRMED')) {
+    return `+${symbol}${amount.toLocaleString()}`;
+  }
+  if (notification.type.includes('FAILED')) {
+    return 'Failed';
+  }
+  if (notification.type === 'LOW_BALANCE') {
+    return `⚠️ ${symbol}${amount.toLocaleString()}`;
+  }
+  
+  return `${symbol}${amount.toLocaleString()}`;
+};
+
+// Helper function to determine notification direction/icon
+const getNotificationDirection = (type) => {
+  const positiveTypes = ['DEPOSIT_SUCCESS', 'PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED'];
+  const negativeTypes = ['DEPOSIT_FAILED', 'LOW_BALANCE'];
+  
+  if (positiveTypes.includes(type)) return 'up';
+  if (negativeTypes.includes(type)) return 'down';
+  return 'neutral';
+};
+
+// Also add a helper to get all notification types (for filtering)
+const getNotificationTypes = async (req, res, next) => {
+  try {
+    const types = await Notification.distinct('type');
+    res.status(200).json({
+      success: true,
+      data: { types },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 // Helper function to send deposit success notification
 const sendDepositSuccessNotification = async (
   userId,
@@ -274,4 +355,6 @@ export {
   sendPaymentConfirmedNotification,
   sendLowBalanceAlert,
   createNotification,
+  getNotificationTypes,
+  getRecentSystemNotifications,
 };
