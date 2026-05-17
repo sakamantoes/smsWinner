@@ -28,6 +28,7 @@ import { useEffect, useState } from "react";
 import { getAllUsers } from "../../service/auth";
 import { getPlatformDeposits } from "../../service/admin";
 import { getSmsBowerBalance } from "../../service/number";
+import { getRecentSystemNotifications } from "../../service/notificationApi";
 
 const activeSessions = [
   {
@@ -80,41 +81,10 @@ const serviceCards = [
     description: "Monitor virtual email inventory and bulk purchase orders.",
     meta: "3,421 emails in stock",
     icon: Mail,
-  }
+  },
 ];
 
-const recentActivity = [
-  {
-    title: "New user registered",
-    detail: "user@example.com - Premium plan",
-    amount: "+NGN 15,000",
-    direction: "up",
-  },
-  {
-    title: "Number purchase failed",
-    detail: "US number - Insufficient funds",
-    amount: "Refunded",
-    direction: "down",
-  },
-  {
-    title: "Bulk email order",
-    detail: "50 emails - Corporate client",
-    amount: "+NGN 4,250",
-    direction: "up",
-  },
-  {
-    title: "Suspicious activity detected",
-    detail: "Multiple failed logins from IP",
-    amount: "Flagged",
-    direction: "down",
-  },
-  {
-    title: "API rate limit hit",
-    detail: "User: john_doe - 1000 requests/min",
-    amount: "Throttled",
-    direction: "down",
-  },
-];
+
 
 const quickActions = [
   { label: "Manage Users", icon: Users, path: "/a/users" },
@@ -130,6 +100,8 @@ export default function AdminDashboard() {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [smsBowerBalance, setSmsBowerBalance] = useState(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
+  const [recentNotifications, setRecentNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
 
   const stats = [
     {
@@ -174,13 +146,15 @@ export default function AdminDashboard() {
     fetchTotalUsers();
     fetchRevenue();
     fetchSmsBowerBalance();
+    fetchRecentNotifications();
   }, []);
 
   const fetchTotalUsers = async () => {
     try {
       setLoading(true);
       const response = await getAllUsers();
-      const users = response.data?.users || response.users || response.data || [];
+      const users =
+        response.data?.users || response.users || response.data || [];
       const userCount = Array.isArray(users) ? users.length : 0;
       setTotalUsers(userCount);
     } catch (error) {
@@ -208,12 +182,12 @@ export default function AdminDashboard() {
     try {
       setLoadingBalance(true);
       const response = await getSmsBowerBalance();
-      
+
       let balanceValue = 0;
-      
+
       // Case 1: Response from your backend that forwards SMSBower API
       // Format: "ACCESS_BALANCE:2.341"
-      if (response?.balance && typeof response.balance === 'string') {
+      if (response?.balance && typeof response.balance === "string") {
         const balanceString = response.balance;
         // Extract number from "ACCESS_BALANCE:2.341" format
         const match = balanceString.match(/[\d.]+/);
@@ -226,19 +200,22 @@ export default function AdminDashboard() {
         balanceValue = parseFloat(response.balance.balance);
       }
       // Case 3: Direct balance number/string
-      else if (response?.balance !== undefined && typeof response.balance !== 'object') {
+      else if (
+        response?.balance !== undefined &&
+        typeof response.balance !== "object"
+      ) {
         balanceValue = parseFloat(response.balance);
       }
       // Case 4: Response.data format
       else if (response?.data?.balance !== undefined) {
         balanceValue = parseFloat(response.data.balance);
       }
-      
+
       // If balanceValue is NaN, default to 0
       if (isNaN(balanceValue)) {
         balanceValue = 0;
       }
-      
+
       setSmsBowerBalance(balanceValue);
     } catch (error) {
       console.error("Error fetching SMS Bower balance:", error);
@@ -248,11 +225,36 @@ export default function AdminDashboard() {
     }
   };
 
+ const fetchRecentNotifications = async () => {
+  try {
+    setLoadingNotifications(true);
+    const response = await getRecentSystemNotifications(5);
+    console.log("Recent notifications response:", response);
+    
+    // Fix: Access the nested notifications array properly
+    if (response?.success && response?.data?.notifications) {
+      setRecentNotifications(response.data.notifications);
+      console.log("Set notifications:", response.data.notifications); // Should show 3 items
+    } else if (response?.notifications) {
+      // Fallback in case the structure is different
+      setRecentNotifications(response.notifications);
+    } else {
+      console.log("No notifications found in response structure");
+      setRecentNotifications([]);
+    }
+  } catch (error) {
+    console.error("Error fetching recent notifications:", error);
+    setRecentNotifications([]);
+  } finally {
+    setLoadingNotifications(false);
+  }
+};
+
   // Update the stats array with dynamic total users
-  const updatedStats = stats.map(stat => 
-    stat.label === "Total Users" 
+  const updatedStats = stats.map((stat) =>
+    stat.label === "Total Users"
       ? { ...stat, value: loading ? "..." : totalUsers.toLocaleString() }
-      : stat
+      : stat,
   );
 
   return (
@@ -268,7 +270,8 @@ export default function AdminDashboard() {
             </div>
             <h1 className="mt-3 sm:mt-4 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight tracking-tight">
               Monitor users, transactions,
-              <br className="hidden xs:block sm:block" /> and system performance.
+              <br className="hidden xs:block sm:block" /> and system
+              performance.
             </h1>
             <p className="mt-2 sm:mt-3 max-w-xl text-xs sm:text-sm leading-5 sm:leading-6 text-gray-400">
               Manage user accounts, track revenue, oversee number/email stock,
@@ -332,7 +335,10 @@ export default function AdminDashboard() {
               disabled={loadingBalance}
               className="inline-flex items-center gap-2 rounded-lg border border-red-light/30 bg-red-light/10 px-4 py-2 text-sm font-semibold text-red-light transition-colors hover:bg-red-light/20 disabled:opacity-50"
             >
-              <RefreshCw size={14} className={loadingBalance ? "animate-spin" : ""} />
+              <RefreshCw
+                size={14}
+                className={loadingBalance ? "animate-spin" : ""}
+              />
               Refresh Balance
             </button>
             <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2">
@@ -460,13 +466,21 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between gap-3 mt-1">
                     <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium">
                       {session.received ? (
-                        <CheckCircle2 size={12} className="sm:w-[14px] sm:h-[14px] text-emerald-500" />
+                        <CheckCircle2
+                          size={12}
+                          className="sm:w-[14px] sm:h-[14px] text-emerald-500"
+                        />
                       ) : (
-                        <Clock3 size={12} className="sm:w-[14px] sm:h-[14px] text-amber-500" />
+                        <Clock3
+                          size={12}
+                          className="sm:w-[14px] sm:h-[14px] text-amber-500"
+                        />
                       )}
                       <span
                         className={
-                          session.received ? "text-emerald-400" : "text-gray-400"
+                          session.received
+                            ? "text-emerald-400"
+                            : "text-gray-400"
                         }
                       >
                         {session.status}
@@ -496,7 +510,10 @@ export default function AdminDashboard() {
                   className="group flex gap-3 rounded-xl border border-red-light/10 shadow-md bg-black/20 p-3 sm:p-4 transition-all hover:-translate-y-1 hover:border-red-light/40 hover:bg-red-light/5"
                 >
                   <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-red-light/10 text-red transition-colors group-hover:bg-red-light/20">
-                    <service.icon size={16} className="sm:w-[18px] sm:h-[18px]" />
+                    <service.icon
+                      size={16}
+                      className="sm:w-[18px] sm:h-[18px]"
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs sm:text-sm font-semibold text-white">
@@ -515,53 +532,82 @@ export default function AdminDashboard() {
           </div>
 
           {/* Recent activity / alerts */}
-          <div className="rounded-xl border border-red-light/10 shadow-md bg-white/5 p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm sm:text-base font-semibold text-white">
-                System Alerts & Activity
-              </h2>
-              <AlertTriangle size={12} className="sm:w-[14px] sm:h-[14px] text-amber-500" />
-            </div>
-            <div className="mt-3 sm:mt-4 space-y-1">
-              {recentActivity.map((item) => (
-                <div
-                  key={item.title}
-                  className="flex items-center gap-2 sm:gap-3 border-b border-red-light/5 shadow-md rounded-lg px-2 py-2 sm:py-2.5 transition-all hover:-translate-y-1 hover:bg-white/5"
-                >
-                  <div
-                    className={`flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg ${
-                      item.direction === "up"
-                        ? "bg-emerald-500/10 text-emerald-400"
-                        : "bg-red-light/10 text-red-light/80"
-                    }`}
-                  >
-                    {item.direction === "up" ? (
-                      <ArrowUpRight size={13} className="sm:w-[15px] sm:h-[15px]" />
-                    ) : (
-                      <ArrowDownRight size={13} className="sm:w-[15px] sm:h-[15px]" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs sm:text-sm font-medium text-white">
-                      {item.title}
-                    </p>
-                    <p className="truncate text-[10px] sm:text-xs text-gray-500">
-                      {item.detail}
-                    </p>
-                  </div>
-                  <p
-                    className={`shrink-0 text-[10px] sm:text-xs font-semibold tabular-nums ${
-                      item.direction === "up"
-                        ? "text-emerald-400"
-                        : "text-amber-400"
-                    }`}
-                  >
-                    {item.amount}
-                  </p>
-                </div>
-              ))}
-            </div>
+     
+<div className="rounded-xl border border-red-light/10 shadow-md bg-white/5 p-4 sm:p-5">
+  <div className="flex items-center justify-between">
+    <h2 className="text-sm sm:text-base font-semibold text-white">
+      System Alerts & Activity
+    </h2>
+    <button 
+      onClick={fetchRecentNotifications}
+      disabled={loadingNotifications}
+      className="text-amber-500 hover:text-amber-400 transition-colors"
+    >
+      <RefreshCw size={12} className={`sm:w-[14px] sm:h-[14px] ${loadingNotifications ? 'animate-spin' : ''}`} />
+    </button>
+  </div>
+  
+  <div className="mt-3 sm:mt-4 space-y-1">
+    {loadingNotifications ? (
+      <div className="flex justify-center py-8">
+        <RefreshCw size={24} className="animate-spin text-gray-500" />
+      </div>
+    ) : recentNotifications.length === 0 ? (
+      <div className="text-center py-8 text-gray-500 text-sm">
+        No recent activities
+      </div>
+    ) : (
+      recentNotifications.map((notification, index) => (
+        <div
+          key={index}
+          className="flex items-center gap-2 sm:gap-3 border-b border-red-light/5 shadow-md rounded-lg px-2 py-2 sm:py-2.5 transition-all hover:-translate-y-1 hover:bg-white/5"
+        >
+          <div
+            className={`flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg ${
+              notification.direction === "up"
+                ? "bg-emerald-500/10 text-emerald-400"
+                : notification.direction === "down"
+                ? "bg-red-light/10 text-red-light/80"
+                : "bg-amber-500/10 text-amber-400"
+            }`}
+          >
+            {notification.direction === "up" ? (
+              <ArrowUpRight size={13} className="sm:w-[15px] sm:h-[15px]" />
+            ) : notification.direction === "down" ? (
+              <ArrowDownRight size={13} className="sm:w-[15px] sm:h-[15px]" />
+            ) : (
+              <AlertTriangle size={13} className="sm:w-[15px] sm:h-[15px]" />
+            )}
           </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs sm:text-sm font-medium text-white">
+              {notification.title}
+            </p>
+            <p className="truncate text-[10px] sm:text-xs text-gray-500">
+              {notification.detail}
+            </p>
+            {notification.user && (
+              <p className="text-[9px] sm:text-[10px] text-gray-600 mt-0.5">
+                User: {notification.user}
+              </p>
+            )}
+          </div>
+          <p
+            className={`shrink-0 text-[10px] sm:text-xs font-semibold tabular-nums ${
+              notification.direction === "up"
+                ? "text-emerald-400"
+                : notification.direction === "down"
+                ? "text-amber-400"
+                : "text-red-400"
+            }`}
+          >
+            {notification.amount || ''}
+          </p>
+        </div>
+      ))
+    )}
+  </div>
+</div>
 
           {/* Quick stats */}
           <div className="rounded-xl border border-red-light/10 shadow-md bg-white/5 p-4 sm:p-5">
@@ -570,14 +616,26 @@ export default function AdminDashboard() {
             </h2>
             <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-3">
               <div className="rounded-lg bg-black/20 p-2 sm:p-3 text-center">
-                <UserX size={14} className="sm:w-4 sm:h-4 mx-auto mb-1 text-red-400" />
+                <UserX
+                  size={14}
+                  className="sm:w-4 sm:h-4 mx-auto mb-1 text-red-400"
+                />
                 <p className="text-xl sm:text-2xl font-bold text-white">14</p>
-                <p className="text-[10px] sm:text-xs text-gray-500">Blocked Users</p>
+                <p className="text-[10px] sm:text-xs text-gray-500">
+                  Blocked Users
+                </p>
               </div>
               <div className="rounded-lg bg-black/20 p-2 sm:p-3 text-center">
-                <Activity size={14} className="sm:w-4 sm:h-4 mx-auto mb-1 text-emerald-400" />
-                <p className="text-xl sm:text-2xl font-bold text-white">98.7%</p>
-                <p className="text-[10px] sm:text-xs text-gray-500">Success Rate</p>
+                <Activity
+                  size={14}
+                  className="sm:w-4 sm:h-4 mx-auto mb-1 text-emerald-400"
+                />
+                <p className="text-xl sm:text-2xl font-bold text-white">
+                  98.7%
+                </p>
+                <p className="text-[10px] sm:text-xs text-gray-500">
+                  Success Rate
+                </p>
               </div>
             </div>
           </div>

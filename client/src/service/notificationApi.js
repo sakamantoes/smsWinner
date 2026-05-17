@@ -33,6 +33,13 @@ export const DeleteNotification = async (notificationId) => {
   return res.data;
 };
 
+
+// Get recent system notifications for admin dashboard
+export const getRecentSystemNotifications = async (limit = 5) => {
+  const res = await api.get(`/api/notification/admin/recent?limit=${limit}`);
+  return res.data;
+};
+
 // React hook for notifications
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState([]);
