@@ -289,7 +289,7 @@ const getLogById = async (req, res, next) => {
       });
     }
 
-    if (log.sold && log.soldTo === user._id) {
+    if (log.sold && String(log.soldTo) === String(user._id)) {
       return res.status(200).json({
         success: true,
         data: {
