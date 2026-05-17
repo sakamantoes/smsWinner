@@ -49,7 +49,7 @@ const otpOrderSchema = new mongoose.Schema(
         "FAILED",
       ],
 
-      default: "PENDING",
+      default: "WAITING_FOR_SMS",
     },
 
     otpCode: {

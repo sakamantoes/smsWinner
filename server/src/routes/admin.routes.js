@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   priceSettingController,
   getPlatformDeposits,
+  getUserWaitingForOtp,
   updateDepositsStatus,
 } from "../controller/admin.controller.js";
 import authMiddleware, {
@@ -33,4 +34,10 @@ router.post(
   priceSettingController,
 );
 
+router.get(
+  "/pending/otp",
+  authMiddleware,
+  validateAdminRole,
+  getUserWaitingForOtp,
+);
 export default router;
