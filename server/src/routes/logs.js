@@ -35,7 +35,7 @@ router.post(
 router.get("/", authMiddleware, getLogs);
 
 // BUY LOG
-router.post("/buy/:id", authMiddleware, validateUserRole, buyLog);
+router.post("/buy/:id", authMiddleware, buyLog);
 
 // UPDATE LOG
 router.put(

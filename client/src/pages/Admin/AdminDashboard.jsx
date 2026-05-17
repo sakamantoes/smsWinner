@@ -288,7 +288,7 @@ export default function AdminDashboard() {
               <span className="hidden xs:inline">Manage Users</span>
               <span className="xs:hidden">Users</span>
             </button>
-            <button
+            {/* <button
               type="button"
               onClick={() => navigate("/a/reports")}
               className="inline-flex h-9 sm:h-11 shrink-0 items-center justify-center gap-2 rounded-lg sm:rounded-xl border border-white/20 px-3 sm:px-5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-white/10"
@@ -296,7 +296,7 @@ export default function AdminDashboard() {
               <BarChart3 size={14} className="sm:w-4 sm:h-4" />
               <span className="hidden xs:inline">Analytics</span>
               <span className="xs:hidden">Reports</span>
-            </button>
+            </button> */}
           </div>
         </div>
       </section>
