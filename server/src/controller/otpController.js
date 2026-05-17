@@ -766,7 +766,7 @@ export const getAvailableServices = async (req, res) => {
 
 // GET SMSBOWER BALANCE
 export const getSmsBowerBalance = async (req, res) => {
-  const API_KEY = env.smsBowerApiKey;
+  const API_KEY = env.sms_bower_api_key;
   try {
     const response = await smsBowerApi.get("/stubs/handler_api.php", {
       params: { api_key: API_KEY, action: "getBalance" },
