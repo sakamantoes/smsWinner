@@ -24,63 +24,37 @@ import {
   CoinsIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getAllUsers } from "../../service/auth";
 import { getPlatformDeposits } from "../../service/admin";
 import { getSmsBowerBalance } from "../../service/number";
+import useActiveOtp from "../../hooks/useActiveOtp.js";
 
-const activeSessions = [
-  {
-    user: "John Doe",
-    service: "WhatsApp",
-    country: "United States",
-    number: "+1 415 982 1044",
-    status: "Waiting for OTP",
-    time: "08:42",
-    received: false,
-  },
-  {
-    user: "Jane Smith",
-    service: "Telegram",
-    country: "United Kingdom",
-    number: "+44 7403 931 225",
-    status: "Code received",
-    time: "452981",
-    received: true,
-  },
-  {
-    user: "Mike Johnson",
-    service: "Google",
-    country: "Canada",
-    number: "+1 647 812 5590",
-    status: "Pending activation",
-    time: "11:07",
-    received: false,
-  },
-  {
-    user: "Sarah Williams",
-    service: "Microsoft",
-    country: "Australia",
-    number: "+61 412 345 678",
-    status: "Waiting for OTP",
-    time: "05:23",
-    received: false,
-  },
-];
+const formatSessionTime = (value) => {
+  if (!value) return "N/A";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 const serviceCards = [
   {
     title: "Available Numbers Stock",
     description: "Manage SMS-capable numbers inventory across 86 countries.",
-    meta: "12,847 numbers available",
+    meta: "Over 12,847 numbers available",
     icon: Smartphone,
   },
   {
     title: "Email Accounts Stock",
     description: "Monitor virtual email inventory and bulk purchase orders.",
-    meta: "3,421 emails in stock",
+    meta: "Over 3,421 emails in stock",
     icon: Mail,
-  }
+  },
 ];
 
 const recentActivity = [
@@ -130,6 +104,33 @@ export default function AdminDashboard() {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [smsBowerBalance, setSmsBowerBalance] = useState(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
+  const { isLoading, error, otpOrder, total, refetch } = useActiveOtp();
+
+  const activeOtpSessions = useMemo(() => {
+    const orders = Array.isArray(otpOrder) ? otpOrder : [];
+
+    return orders.slice(0, 5).map((order) => {
+      const user = order.userId;
+      const username =
+        typeof user === "object"
+          ? user?.username || user?.email
+          : order.username || order.email;
+      const received = Boolean(order.otpCode);
+
+      return {
+        id: order._id || order.activationId || order.phoneNumber,
+        user: username || "Unknown user",
+        service: String(order.service || "OTP").toUpperCase(),
+        country: order.country || "N/A",
+        number: order.phoneNumber || "N/A",
+        status: received ? "Code received" : "Waiting for OTP",
+        time: received
+          ? order.otpCode
+          : formatSessionTime(order.purchasedAt || order.createdAt),
+        received,
+      };
+    });
+  }, [otpOrder]);
 
   const stats = [
     {
@@ -143,8 +144,10 @@ export default function AdminDashboard() {
     },
     {
       label: "Active Sessions",
-      value: "1,293",
-      change: "86% utilization",
+      value: isLoading
+        ? "..."
+        : Number(total ?? activeOtpSessions.length).toLocaleString(),
+      change: "Waiting for OTP",
       icon: Activity,
       iconBg: "bg-gradient-to-br from-red/50 to-red/20",
       iconColor: "text-white",
@@ -180,7 +183,8 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       const response = await getAllUsers();
-      const users = response.data?.users || response.users || response.data || [];
+      const users =
+        response.data?.users || response.users || response.data || [];
       const userCount = Array.isArray(users) ? users.length : 0;
       setTotalUsers(userCount);
     } catch (error) {
@@ -208,12 +212,12 @@ export default function AdminDashboard() {
     try {
       setLoadingBalance(true);
       const response = await getSmsBowerBalance();
-      
+
       let balanceValue = 0;
-      
+
       // Case 1: Response from your backend that forwards SMSBower API
       // Format: "ACCESS_BALANCE:2.341"
-      if (response?.balance && typeof response.balance === 'string') {
+      if (response?.balance && typeof response.balance === "string") {
         const balanceString = response.balance;
         // Extract number from "ACCESS_BALANCE:2.341" format
         const match = balanceString.match(/[\d.]+/);
@@ -226,19 +230,22 @@ export default function AdminDashboard() {
         balanceValue = parseFloat(response.balance.balance);
       }
       // Case 3: Direct balance number/string
-      else if (response?.balance !== undefined && typeof response.balance !== 'object') {
+      else if (
+        response?.balance !== undefined &&
+        typeof response.balance !== "object"
+      ) {
         balanceValue = parseFloat(response.balance);
       }
       // Case 4: Response.data format
       else if (response?.data?.balance !== undefined) {
         balanceValue = parseFloat(response.data.balance);
       }
-      
+
       // If balanceValue is NaN, default to 0
       if (isNaN(balanceValue)) {
         balanceValue = 0;
       }
-      
+
       setSmsBowerBalance(balanceValue);
     } catch (error) {
       console.error("Error fetching SMS Bower balance:", error);
@@ -249,10 +256,10 @@ export default function AdminDashboard() {
   };
 
   // Update the stats array with dynamic total users
-  const updatedStats = stats.map(stat => 
-    stat.label === "Total Users" 
+  const updatedStats = stats.map((stat) =>
+    stat.label === "Total Users"
       ? { ...stat, value: loading ? "..." : totalUsers.toLocaleString() }
-      : stat
+      : stat,
   );
 
   return (
@@ -268,7 +275,8 @@ export default function AdminDashboard() {
             </div>
             <h1 className="mt-3 sm:mt-4 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight tracking-tight">
               Monitor users, transactions,
-              <br className="hidden xs:block sm:block" /> and system performance.
+              <br className="hidden xs:block sm:block" /> and system
+              performance.
             </h1>
             <p className="mt-2 sm:mt-3 max-w-xl text-xs sm:text-sm leading-5 sm:leading-6 text-gray-400">
               Manage user accounts, track revenue, oversee number/email stock,
@@ -332,7 +340,10 @@ export default function AdminDashboard() {
               disabled={loadingBalance}
               className="inline-flex items-center gap-2 rounded-lg border border-red-light/30 bg-red-light/10 px-4 py-2 text-sm font-semibold text-red-light transition-colors hover:bg-red-light/20 disabled:opacity-50"
             >
-              <RefreshCw size={14} className={loadingBalance ? "animate-spin" : ""} />
+              <RefreshCw
+                size={14}
+                className={loadingBalance ? "animate-spin" : ""}
+              />
               Refresh Balance
             </button>
             <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2">
@@ -419,65 +430,96 @@ export default function AdminDashboard() {
                   <UserCheck size={11} className="sm:w-[13px] sm:h-[13px]" />
                   <span className="hidden xs:inline">Filter</span>
                 </button>
-                <button className="flex items-center gap-1 rounded-lg border border-white/10 shadow-md px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold text-gray-300 transition-colors hover:border-red-light/30 hover:bg-red-light/8">
-                  <RefreshCw size={11} className="sm:w-[13px] sm:h-[13px]" />
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  disabled={isLoading}
+                  className="flex items-center gap-1 rounded-lg border border-white/10 shadow-md px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold text-gray-300 transition-colors hover:border-red-light/30 hover:bg-red-light/8 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <RefreshCw
+                    size={11}
+                    className={`sm:w-[13px] sm:h-[13px] ${isLoading ? "animate-spin" : ""}`}
+                  />
                   <span className="hidden xs:inline">Refresh</span>
                 </button>
               </div>
             </div>
 
             <div className="divide-y divide-red-light/10">
-              {activeSessions.map((session) => (
-                <div
-                  key={session.number}
-                  className="flex flex-col gap-2 px-4 sm:px-5 py-3 sm:py-4 hover:bg-white/5 transition-all"
-                >
-                  {/* User + service */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                      <span className="text-sm sm:text-base font-semibold text-white">
-                        {session.user}
-                      </span>
-                      <span className="rounded-full border border-white/10 shadow-md bg-red-light/10 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[11px] font-medium text-red">
-                        {session.service}
-                      </span>
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-1 text-xs sm:text-sm text-gray-500">
-                      <span className="break-all">{session.number}</span>
-                      <button
-                        aria-label="Copy number"
-                        className="rounded p-0.5 text-gray-600 transition-colors hover:text-gray-300"
-                      >
-                        <Copy size={11} className="sm:w-[13px] sm:h-[13px]" />
-                      </button>
-                    </div>
-                    <div className="mt-0.5 text-[10px] sm:text-xs text-gray-600">
-                      {session.country}
-                    </div>
-                  </div>
-
-                  {/* Status and code row */}
-                  <div className="flex items-center justify-between gap-3 mt-1">
-                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium">
-                      {session.received ? (
-                        <CheckCircle2 size={12} className="sm:w-[14px] sm:h-[14px] text-emerald-500" />
-                      ) : (
-                        <Clock3 size={12} className="sm:w-[14px] sm:h-[14px] text-amber-500" />
-                      )}
-                      <span
-                        className={
-                          session.received ? "text-emerald-400" : "text-gray-400"
-                        }
-                      >
-                        {session.status}
-                      </span>
-                    </div>
-                    <div className="shrink-0 rounded-lg border border-red-light/10 shadow-md bg-black/40 px-2 sm:px-3 py-1.5 sm:py-2 text-center font-mono text-xs sm:text-sm font-bold tracking-widest text-white">
-                      {session.time}
-                    </div>
-                  </div>
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2 px-4 sm:px-5 py-10 text-sm text-gray-400">
+                  <RefreshCw size={16} className="animate-spin" />
+                  Loading active OTP orders...
                 </div>
-              ))}
+              ) : error ? (
+                <div className="px-4 sm:px-5 py-10 text-center text-sm text-red-300">
+                  {error}
+                </div>
+              ) : activeOtpSessions.length === 0 ? (
+                <div className="px-4 sm:px-5 py-10 text-center text-sm text-gray-500">
+                  No active OTP orders right now.
+                </div>
+              ) : (
+                activeOtpSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className="flex flex-col gap-2 px-4 sm:px-5 py-3 sm:py-4 hover:bg-white/5 transition-all"
+                  >
+                    {/* User + service */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <span className="text-sm sm:text-base font-semibold text-white">
+                          {session.user}
+                        </span>
+                        <span className="rounded-full border border-white/10 shadow-md bg-red-light/10 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[11px] font-medium text-red">
+                          {session.service}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-1 text-xs sm:text-sm text-gray-500">
+                        <span className="break-all">{session.number}</span>
+                        <button
+                          aria-label="Copy number"
+                          className="rounded p-0.5 text-gray-600 transition-colors hover:text-gray-300"
+                        >
+                          <Copy size={11} className="sm:w-[13px] sm:h-[13px]" />
+                        </button>
+                      </div>
+                      <div className="mt-0.5 text-[10px] sm:text-xs text-gray-600">
+                        {session.country}
+                      </div>
+                    </div>
+
+                    {/* Status and code row */}
+                    <div className="flex items-center justify-between gap-3 mt-1">
+                      <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium">
+                        {session.received ? (
+                          <CheckCircle2
+                            size={12}
+                            className="sm:w-[14px] sm:h-[14px] text-emerald-500"
+                          />
+                        ) : (
+                          <Clock3
+                            size={12}
+                            className="sm:w-[14px] sm:h-[14px] text-amber-500"
+                          />
+                        )}
+                        <span
+                          className={
+                            session.received
+                              ? "text-emerald-400"
+                              : "text-gray-400"
+                          }
+                        >
+                          {session.status}
+                        </span>
+                      </div>
+                      <div className="shrink-0 rounded-lg border border-red-light/10 shadow-md bg-black/40 px-2 sm:px-3 py-1.5 sm:py-2 text-center font-mono text-xs sm:text-sm font-bold tracking-widest text-white">
+                        {session.time}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -496,7 +538,10 @@ export default function AdminDashboard() {
                   className="group flex gap-3 rounded-xl border border-red-light/10 shadow-md bg-black/20 p-3 sm:p-4 transition-all hover:-translate-y-1 hover:border-red-light/40 hover:bg-red-light/5"
                 >
                   <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-red-light/10 text-red transition-colors group-hover:bg-red-light/20">
-                    <service.icon size={16} className="sm:w-[18px] sm:h-[18px]" />
+                    <service.icon
+                      size={16}
+                      className="sm:w-[18px] sm:h-[18px]"
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs sm:text-sm font-semibold text-white">
@@ -520,7 +565,10 @@ export default function AdminDashboard() {
               <h2 className="text-sm sm:text-base font-semibold text-white">
                 System Alerts & Activity
               </h2>
-              <AlertTriangle size={12} className="sm:w-[14px] sm:h-[14px] text-amber-500" />
+              <AlertTriangle
+                size={12}
+                className="sm:w-[14px] sm:h-[14px] text-amber-500"
+              />
             </div>
             <div className="mt-3 sm:mt-4 space-y-1">
               {recentActivity.map((item) => (
@@ -536,9 +584,15 @@ export default function AdminDashboard() {
                     }`}
                   >
                     {item.direction === "up" ? (
-                      <ArrowUpRight size={13} className="sm:w-[15px] sm:h-[15px]" />
+                      <ArrowUpRight
+                        size={13}
+                        className="sm:w-[15px] sm:h-[15px]"
+                      />
                     ) : (
-                      <ArrowDownRight size={13} className="sm:w-[15px] sm:h-[15px]" />
+                      <ArrowDownRight
+                        size={13}
+                        className="sm:w-[15px] sm:h-[15px]"
+                      />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -560,25 +614,6 @@ export default function AdminDashboard() {
                   </p>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Quick stats */}
-          <div className="rounded-xl border border-red-light/10 shadow-md bg-white/5 p-4 sm:p-5">
-            <h2 className="text-sm sm:text-base font-semibold text-white">
-              Quick Stats
-            </h2>
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-3">
-              <div className="rounded-lg bg-black/20 p-2 sm:p-3 text-center">
-                <UserX size={14} className="sm:w-4 sm:h-4 mx-auto mb-1 text-red-400" />
-                <p className="text-xl sm:text-2xl font-bold text-white">14</p>
-                <p className="text-[10px] sm:text-xs text-gray-500">Blocked Users</p>
-              </div>
-              <div className="rounded-lg bg-black/20 p-2 sm:p-3 text-center">
-                <Activity size={14} className="sm:w-4 sm:h-4 mx-auto mb-1 text-emerald-400" />
-                <p className="text-xl sm:text-2xl font-bold text-white">98.7%</p>
-                <p className="text-[10px] sm:text-xs text-gray-500">Success Rate</p>
-              </div>
             </div>
           </div>
         </div>

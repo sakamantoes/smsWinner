@@ -14,7 +14,6 @@ export const updatePlatformDepositStatus = async (id, status) => {
   return res.data;
 };
 
-
 export const updatePricingSettings = async (data) => {
   try {
     const response = await api.post("/api/admin/pricing/setting", data);
@@ -22,4 +21,11 @@ export const updatePricingSettings = async (data) => {
   } catch (error) {
     throw error.response?.data || error;
   }
-}; 
+};
+
+export const getOtpOrder = async () => {
+  const res = await api.get("/api/admin/pending/otp");
+
+  console.log(res.data);
+  return res.data;
+};
