@@ -133,7 +133,7 @@ const checkUserOtpOrderStatus = async (req, res, next) => {
   const { orderId } = req.params;
 
   try {
-    if (!orderId || mongoose.Types.ObjectId.isValid(orderId)) {
+    if (!orderId) {
       res.statusCode = 400;
       throw new Error("invalid id params");
     }
