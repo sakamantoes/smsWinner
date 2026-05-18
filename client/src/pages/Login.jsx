@@ -47,6 +47,7 @@ const Login = () => {
     // Simulate API call
     try {
       // Replace with your actual API endpoint
+      localStorage.removeItem("smswinner_token");
       const data = {
         email: formData.email.trim(),
         password: formData.password.trim(),
@@ -55,6 +56,8 @@ const Login = () => {
 
       if (response.status === 200 || response.status === 201) {
         const user = response.data?.data || response.data;
+
+        localStorage.setItem("smswinner_token", user.token);
 
         if (user.role === "admin") {
           navigate("/a/dashboard", { replace: true });

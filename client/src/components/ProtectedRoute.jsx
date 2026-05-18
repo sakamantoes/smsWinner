@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { getAuthUser } from "../service/auth.js";
 import useAuth from "../store/useAuth.js";
@@ -6,10 +6,15 @@ import { Loader2 } from "lucide-react";
 
 export default function ProtectedRoute({ role, children }) {
   const { user, status, setStatus, setAuthUser, clearAuth } = useAuth();
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkUser = async () => {
       setStatus("checking");
+      setIsChecking(true);
+
       try {
         const res = await getAuthUser();
 
@@ -22,13 +27,21 @@ export default function ProtectedRoute({ role, children }) {
       } catch (error) {
         console.error("fetching user data: ", error);
         clearAuth();
+      } finally {
+        if (isMounted) {
+          setIsChecking(false);
+        }
       }
     };
 
     checkUser();
+
+    return () => {
+      isMounted = false;
+    };
   }, [clearAuth, setAuthUser, setStatus]);
 
-  if (status === "checking") {
+  if (isChecking || status === "checking") {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="flex flex-col items-center justify-center">

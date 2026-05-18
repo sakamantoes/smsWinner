@@ -2,7 +2,7 @@ import User from "../model/User.js";
 import client from "../utils/google.js";
 import { generateToken } from "../utils/jwttoken.js";
 import { comparePassword, hashPassword } from "../utils/bycrpt.js";
-import { setAuthCookie } from "../utils/setCookie.js";
+import { authCookieOptions, setAuthCookie } from "../utils/setCookie.js";
 import { env } from "../config/constant.js";
 import mongoose from "mongoose";
 
@@ -57,6 +57,9 @@ const googleSetup = async (req, res, next) => {
       status: 201,
       success: true,
       message: "You're Google registration was successful",
+      data: {
+        token: jwtToken,
+      },
     });
   } catch (error) {
     next(error);
@@ -118,6 +121,9 @@ const emailSignup = async (req, res, next) => {
       status: 201,
       success: true,
       message: "Registration successful",
+      data: {
+        token: jwtToken,
+      },
     });
   } catch (error) {
     next(error);
@@ -158,8 +164,8 @@ const emailLogin = async (req, res, next) => {
         email: user.email,
         username: user.username,
         role: user.role,
+        token: jwtToken,
       },
-      token: jwtToken,
     });
   } catch (error) {
     next(error);
@@ -288,6 +294,22 @@ const updatePassword = async (req, res, next) => {
   }
 };
 
+const logout = async (req, res, next) => {
+  try {
+    res.clearCookie("smsWinnerToken", {
+      ...authCookieOptions,
+    });
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: "Successfully logged out",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   googleSetup,
   getAuthUser,
@@ -298,4 +320,5 @@ export {
   activateUser,
   updatePassword,
   updateUsername,
+  logout,
 };

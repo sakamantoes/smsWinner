@@ -26,6 +26,5 @@ export const updatePricingSettings = async (data) => {
 export const getOtpOrder = async () => {
   const res = await api.get("/api/admin/pending/otp");
 
-  console.log(res.data);
   return res.data;
 };

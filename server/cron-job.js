@@ -61,7 +61,7 @@ const CronJob = async () => {
     );
   } catch (err) {
     console.error("node cron: ", err);
-  } git
+  }
 };
 
 export default CronJob;

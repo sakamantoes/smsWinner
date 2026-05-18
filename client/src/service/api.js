@@ -3,8 +3,8 @@ import axios from "axios";
 const api = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL_LOCAL,
   withCredentials: true,
-  headers: {
-    "ngrok-skip-browser-warning": "true",
+  headers:{
+     "Content-Type": "application/json",
   },
   timeout: 30000,
 });
@@ -13,6 +13,17 @@ const api = axios.create({
  * intercept user reguest providing their token expires in an
  * authenticated screen and navigate them back to their login page
  */
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("smswinner_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 api.interceptors.response.use(
   (response) => response,

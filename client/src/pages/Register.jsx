@@ -125,9 +125,14 @@ const Register = () => {
     // Simulate API call
     try {
       // Replace with your actual API endpoint
+      localStorage.removeItem("smswinner_token");
       const response = await signup(formData);
 
       if (response.status === 200 || response.status === 201) {
+        if (response.data?.token) {
+          localStorage.setItem("smswinner_token", response.data.token);
+        }
+
         navigate("/f/dashboard", { replace: true });
       } else {
         setErrors({ submit: response.message || "Registration failed" });

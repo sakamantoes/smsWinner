@@ -3,8 +3,14 @@ import User from "../model/User.js";
 
 const authMiddleware = async (req, res, next) => {
   try {
-    const token =
-      req.cookies.smsWinnerToken || req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers["authorization"];
+    let token = authHeader?.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : null;
+
+    if (!token) {
+      token = req.cookies.smsWinnerToken;
+    }
 
     if (!token) {
       res.statusCode = 401;
