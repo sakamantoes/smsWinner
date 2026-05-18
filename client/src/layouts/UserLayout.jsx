@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import useAuth from "../store/useAuth";
+import { logout } from "../service/auth.js";
 import NotificationBell from "../components/NotificationBell";
 
 const userNavItems = [
@@ -64,16 +65,22 @@ const UserLayout = () => {
       const eqPos = cookie.indexOf("=");
       const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
       document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+      document.cookie =
+        name +
+        "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" +
+        window.location.hostname;
     }
-    
+
     // Clear specific auth tokens
-    document.cookie = "smsWinnerToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "smsWinnerToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = "refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    
+    document.cookie =
+      "refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
     // Clear localStorage
     localStorage.removeItem("user");
     localStorage.removeItem("token");
@@ -81,32 +88,36 @@ const UserLayout = () => {
     localStorage.removeItem("smsWinnerToken");
     localStorage.removeItem("persist:root");
     localStorage.clear();
-    
+
     // Clear sessionStorage
     sessionStorage.removeItem("user");
     sessionStorage.removeItem("token");
     sessionStorage.removeItem("authToken");
     sessionStorage.clear();
-    
+
     // Clear any cached data
     if (window.caches) {
-      caches.keys().then(names => {
-        names.forEach(name => caches.delete(name));
+      caches.keys().then((names) => {
+        names.forEach((name) => caches.delete(name));
       });
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.warn("Logout API failed", error);
+    }
+
     // Clear all tokens and cookies
     clearAllTokensAndCookies();
-    
+
     // Clear auth state from Zustand
     clearAuth();
-    
-    // Force hard reload to login page
-    setTimeout(() => {
-      window.location.href = "/login";
-    }, 50);
+
+    // Navigate to login page
+    navigate("/login");
   };
 
   const closeMobileNav = () => {

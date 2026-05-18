@@ -1,8 +1,16 @@
+import { env } from "../config/constant.js";
+
+const isProduction = env.node_env === "production";
+
+export const authCookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
+  path: "/",
+};
+
 export const setAuthCookie = (res, token) => {
   res.cookie("smsWinnerToken", token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    ...authCookieOptions,
   });
 };

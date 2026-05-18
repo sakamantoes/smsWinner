@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import useAuth from "../store/useAuth";
+import { logout } from "../service/auth.js";
 import { FaMoneyBill } from "react-icons/fa";
 
 const adminNavItems = [
@@ -79,7 +80,7 @@ const AdminLayout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     localStorage.removeItem("authToken");
-    localStorage.removeItem("smsWinnerToken");
+    localStorage.removeItem("smswinner_token");
     localStorage.clear();
 
     // Clear sessionStorage
@@ -95,18 +96,20 @@ const AdminLayout = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.warn("Logout API failed", error);
+    }
+
     // Clear all tokens and cookies
     clearAllTokensAndCookies();
 
     // Clear auth state
     clearAuth();
 
-    // Small delay to ensure everything is cleared
-    setTimeout(() => {
-      // Force hard reload to clear any cached state
-      window.location.href = "/login";
-    }, 50);
+    navigate("/login");
   };
 
   const closeMobileNav = () => {

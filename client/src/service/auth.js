@@ -24,6 +24,11 @@ export const signup = async (data) => {
   return res.data;
 };
 
+export const logout = async () => {
+  const res = await api.post("api/auth/logout");
+  return res.data;
+};
+
 export const VerifyCallback = async (data) => {
   const res = await api.post("api/payment/callback", data);
 
@@ -47,5 +52,3 @@ export const deactivateUser = async (id) => {
 
   return res.data;
 };
-
-
