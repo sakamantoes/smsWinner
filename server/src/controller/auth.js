@@ -5,6 +5,8 @@ import { comparePassword, hashPassword } from "../utils/bycrpt.js";
 import { authCookieOptions, setAuthCookie } from "../utils/setCookie.js";
 import { env } from "../config/constant.js";
 import mongoose from "mongoose";
+import crypto from "crypto";
+import { sendMail } from "../services/resend.js";
 
 const googleSetup = async (req, res, next) => {
   const { token } = req.body;
@@ -310,6 +312,112 @@ const logout = async (req, res, next) => {
   }
 };
 
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    user.resetPasswordToken = resetToken;
+
+    user.resetPasswordTokenExpires = Date.now() + 15 * 60 * 1000;
+
+    await user.save();
+
+    // create reset url
+    const resetUrl = `${env.client_url}/reset-password/${resetToken}`;
+
+    // send email
+    const mail = await sendMail({
+      to: user.email,
+      subject: "Reset Your Password",
+      message: `
+      <div>
+        <h2>Password Reset</h2>
+
+        <p>Click the link below to reset your password:</p>
+
+        <a href="${resetUrl}">
+          Reset Password
+        </a>
+
+        <p>This link expires in 15 minutes.</p>
+      
+      </div>
+      `,
+    });
+
+    console.log("email sent reset password: ", mail);
+
+    res.status(200).json({
+      success: true,
+      message: "Reset email sent",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resetPassword = async (req, res, next) => {
+  const { token } = req.params;
+  const { newPassword } = req.body;
+
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: token,
+    });
+
+    if (!user) {
+      res.statusCode = 400;
+      throw new Error("Invalid password reset token");
+    }
+
+    if (
+      !user.resetPasswordTokenExpires ||
+      user.resetPasswordTokenExpires < Date.now()
+    ) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordTokenExpires = undefined;
+      await user.save();
+
+      res.statusCode = 400;
+      throw new Error("Password reset token has expired");
+    }
+
+    const hashedPassword = await hashPassword(newPassword);
+
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordTokenExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: "Password reset successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   googleSetup,
   getAuthUser,
@@ -321,4 +429,6 @@ export {
   updatePassword,
   updateUsername,
   logout,
+  forgotPassword,
+  resetPassword
 };

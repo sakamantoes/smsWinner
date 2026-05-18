@@ -9,23 +9,28 @@ import {
   googleSetup,
   updatePassword,
   updateUsername,
+  forgotPassword,
+  resetPassword,
   logout,
 } from "../controller/auth.js";
 import authMiddleware, {
   validateAdminRole,
 } from "../middleware/authMiddleware.js";
+import { loginLimiter } from "../middleware/rateLimiter.js";
 import { validateData } from "../validator/validator.js";
 import {
   googleSchema,
+  forgotPasswordSchema,
   loginSchema,
   registerSchema,
+  resetPasswordSchema,
 } from "../validator/auth.validator.js";
 
 const router = Router();
 
-router.post("/signup", registerSchema, validateData, emailSignup);
-router.post("/login", loginSchema, validateData, emailLogin);
-router.post("/google", googleSchema, validateData, googleSetup);
+router.post("/signup", loginLimiter, registerSchema, validateData, emailSignup);
+router.post("/login", loginLimiter, loginSchema, validateData, emailLogin);
+router.post("/google", loginLimiter, googleSchema, validateData, googleSetup);
 router.post("/logout", logout);
 router.get("/me", authMiddleware, getAuthUser);
 router.get("/allUsers", authMiddleware, validateAdminRole, getAllUser);
@@ -38,5 +43,20 @@ router.put(
 );
 router.put("/update-username", authMiddleware, updateUsername);
 router.put("/update-password", authMiddleware, updatePassword);
+
+router.post(
+  "/forgot/password",
+  loginLimiter,
+  forgotPasswordSchema,
+  validateData,
+  forgotPassword,
+);
+router.post(
+  "/reset-password/:token",
+  loginLimiter,
+  resetPasswordSchema,
+  validateData,
+  resetPassword,
+);
 
 export default router;

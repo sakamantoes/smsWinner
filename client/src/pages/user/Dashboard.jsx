@@ -375,22 +375,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Recent Activity / Notifications */}
-          <div className="rounded-xl border border-red-light/10 shadow-md bg-white/5 p-4 sm:p-5">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <h2 className="text-sm sm:text-base font-semibold text-white">
-                Recent Activity
-              </h2>
-              {recentNotifications.length > 0 && (
-                <button
-                  onClick={() => navigate("/f/notifications")}
-                  className="text-[10px] sm:text-xs text-red-light hover:text-red-400 transition-colors"
-                >
-                  View All →
-                </button>
-              )}
-            </div>
-            <div className="mt-3 sm:mt-4 space-y-1">
+          <div className="rounded-xl border border-red-light/10 shadow-md bg-white/5 p-5">
+            <h2 className="font-semibold text-white">Recent Deposit</h2>
+            <div className="mt-4 space-y-1">
               {loadingNotifications ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 size={22} className="animate-spin text-red-light" />

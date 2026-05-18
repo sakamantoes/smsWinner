@@ -6,22 +6,28 @@ import authRoutes from "./routes/auth.js";
 import logsRoutes from "./routes/logs.js";
 import paymentRoutes from "./routes/payment.js";
 import otpRoutes from "./routes/otpRoutes.js";
-import notificationRoute from "./routes/notification.js"
+import notificationRoute from "./routes/notification.js";
 import userRoutes from "./routes/user.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
-import supportRoute from "./routes/supportRoutes.js"
+import supportRoute from "./routes/supportRoutes.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import CronJob from "../cron-job.js"
+import CronJob from "../cron-job.js";
+import compression from "compression";
 
 const app = express();
 
+app.use(compression());
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://sms-winner.vercel.app", "https://www.smswinners.online"],
+    origin: [
+      "http://localhost:5173",
+      "https://sms-winner.vercel.app",
+      "https://www.smswinners.online",
+    ],
     credentials: true,
   }),
 );
@@ -39,12 +45,12 @@ app.use("/api/otp", otpRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/notification", notificationRoute);
 app.use("/api/admin", adminRoutes);
-app.use("/api/support", supportRoute)
+app.use("/api/support", supportRoute);
 
-app.get("/cron-jobs", (req, res)=>{
+app.get("/cron-jobs", (req, res) => {
   CronJob();
-  res.status(200).send("Cron Job Ran")
-})
+  res.status(200).send("Cron Job Ran");
+});
 
 // database connection
 connectDB();

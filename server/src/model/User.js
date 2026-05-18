@@ -24,12 +24,14 @@ const userSchema = new mongoose.Schema(
     },
     walletBalance: {
       type: Number,
-      default: 0, 
+      default: 0,
     },
-      isActive: {
+    isActive: {
       type: Boolean,
       default: true,
-    }
+    },
+    resetPasswordToken: String,
+    resetPasswordTokenExpires: Date,
   },
   { timestamps: true },
 );
