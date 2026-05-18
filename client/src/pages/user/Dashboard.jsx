@@ -240,7 +240,7 @@ export default function Dashboard() {
           </div>
 
           <div className="rounded-xl border border-red-light/10 shadow-md bg-white/5 p-5">
-            <h2 className="font-semibold text-white">Recent Activity</h2>
+            <h2 className="font-semibold text-white">Recent Deposit</h2>
             <div className="mt-4 space-y-1">
               {loadingNotifications ? (
                 <div className="flex items-center justify-center py-8">

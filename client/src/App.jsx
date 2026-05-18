@@ -2,6 +2,8 @@ import { Navigate, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage.jsx";
 import Register from "./pages/Register.jsx";
 import Login from "./pages/Login.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
+import ResetPassword from "./pages/ResetPassword.jsx";
 import PaymentStatus from "./pages/PaymentStatus.jsx";
 import Dashboard from "./pages/user/Dashboard.jsx";
 import FundAccount from "./pages/user/FundAccount.jsx";
@@ -16,7 +18,6 @@ import UserDeposits from "./pages/user/UserDeposits.jsx";
 import UserReceipts from "./pages/user/UserReceipts.jsx";
 import AdminLayout from "./layouts/AdminLayout.jsx";
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
-import Analytics from "./pages/Admin/Analytics.jsx";
 import Users from "./pages/Admin/Users.jsx";
 import Transactions from "./pages/Admin/Transactions.jsx";
 import AdminNumbers from "./pages/Admin/AdminNumbers.jsx";
@@ -34,6 +35,8 @@ const App = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/payment/status" element={<PaymentStatus />} />
 
         <Route
