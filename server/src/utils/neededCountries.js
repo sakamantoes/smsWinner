@@ -1,4 +1,4 @@
-export const services = [
+export const nowService = [
   // =========================
   // Instagram (ig)
   // =========================
@@ -69,12 +69,67 @@ export const services = [
   { country: "New Zealand", countryId: "67", service: "wa" },
   { country: "Bulgaria", countryId: "83", service: "wa" },
 
+  { country: "", countryId: "", service: "gf" },
+  { country: "", countryId: "", service: "ght" },
   // =========================
   // Google / Gmail / YouTube (go)
   // =========================
   // ALL COUNTRIES ENABLED
   { country: "", countryId: "", service: "go" },
 ];
+
+const extraServices = [
+  { service: "tg", name: "Telegram" },
+  { service: "fb", name: "Facebook" },
+  { service: "wr", name: "Walmart" },
+  { service: "gp", name: "Ticketmaster" }, 
+  { service: "hb", name: "Twitch" },
+  { service: "mc", name: "MiChat" },
+  { service: "wx", name: "Apple" },
+  { service: "mt", name: "Steam" },
+  { service: "nu", name: "Stripe" }, 
+  { service: "ng", name: "FunPay" }, 
+  { service: "qg", name: "Money Pay / Monese" },
+  { service: "vy", name: "Meta" },
+  { service: "it", name: "Cash App" }, 
+  { service: "yy", name: "Venmo" }, 
+  { service: "bw", name: "Signal" },
+  { service: "alj", name: "Spotify" },
+  { service: "gc", name: "TradingView" },
+  { service: "nc", name: "Payoneer" },
+  { service: "zo", name: "Kaggle" },
+  { service: "wb", name: "WeChat" },
+  { service: "lf", name: "TikTok" },
+  { service: "tw", name: "Twitter" },
+  { service: "nf", name: "Netflix" },
+  { service: "ts", name: "PayPal" },
+  { service: "oi", name: "Tinder" },
+  { service: "dh", name: "Ebay" },
+];
+
+
+const sharedCountries = nowService 
+  .filter((item) => item.service === "ig")
+  .map(({ country, countryId }) => ({
+    country,
+    countryId,
+  }))
+
+ const generatedServices = extraServices.flatMap((srv) =>
+  sharedCountries.map((country) => ({
+    country: country.country,
+    countryId: country.countryId,
+    service: srv.service,
+  })),
+);
+
+
+export const services=[
+  ...nowService,
+  ...generatedServices
+]
+
+
 
 export const countries = [
   { country: "Afghanistan", countryId: 74 },

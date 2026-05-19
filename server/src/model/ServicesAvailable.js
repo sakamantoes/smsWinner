@@ -22,6 +22,11 @@ const AvailableServiceSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    
+    customPrice: {
+      type: Number,
+      default: null,
+    },
 
     stock: {
       type: Number,
@@ -30,7 +35,7 @@ const AvailableServiceSchema = new mongoose.Schema(
 
     active: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     providerId: {
       type: Number,

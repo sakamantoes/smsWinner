@@ -25,7 +25,6 @@ import AdminLogs from "./pages/Admin/AdminLogs.jsx";
 import Setting from "./pages/user/Setting.jsx";
 import UserSupport from "./pages/user/UserSupport.jsx";
 import AdminSupport from "./pages/Admin/AdminSupport.jsx";
-import PricingSettings from "./pages/Admin/PricingSettings.jsx";
 
 const App = () => {
   return (
@@ -75,7 +74,6 @@ const App = () => {
           <Route path="numbers" element={<AdminNumbers />} />
           <Route path="logs" element={<AdminLogs />} />
           <Route path="support" element={<AdminSupport />} />
-          <Route path="price_set" element={<PricingSettings />} />
         </Route>
       </Routes>
     </>

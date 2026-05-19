@@ -3,6 +3,10 @@ import mongoose from "mongoose";
 import User from "../model/User.js";
 import PriceSetting from "../model/PriceSetting.js";
 import otporder from "../model/OtpOrder.js";
+import AvailableService from "../model/ServicesAvailable.js";
+import { countries } from "../utils/neededCountries.js";
+import calculateSellingPrice from "../utils/calculateSellingPrice.js";
+import PricingSetting from "../model/PriceSetting.js";
 
 const getPlatformDeposits = async (req, res, next) => {
   try {
@@ -169,9 +173,188 @@ const getUserWaitingForOtp = async (req, res, next) => {
   }
 };
 
+const getAdminServices = async (req, res, next) => {
+  try {
+    const priceSetting = await PricingSetting.findOne({});
+
+    if (!priceSetting) {
+      res.statusCode = 400;
+
+      throw new Error("error fetching price");
+    }
+
+    const availableServices = await AvailableService.find({}).lean();
+
+    const services = availableServices.map((item) => {
+      const matchedService = countries.find(
+        (i) => i.countryId === Number(item.country),
+      );
+
+      return {
+        ...item,
+        countryName: matchedService?.country || "Unknown",
+        costPrice: Number(item.providerPrice * priceSetting.usdToNgnRate),
+        sellingPrice: calculateSellingPrice(item, priceSetting),
+      };
+    });
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: "services has been fetched",
+      data: services,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getServicesAvailableName = async (req, res, next) => {
+  try {
+    const servicesName = await AvailableService.aggregate([
+      {
+        $group: {
+          _id: "$service",
+          totalCountries: { $addToSet: "$country" },
+          totalStock: { $sum: "$stock" },
+          activeCount: {
+            $sum: {
+              $cond: ["$active", 1, 0],
+            },
+          },
+          totalListings: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          service: "$_id",
+          totalCountries: { $size: "$totalCountries" },
+          totalStock: 1,
+          activeCount: 1,
+          totalListings: 1,
+          active: {
+            $eq: ["$activeCount", "$totalListings"],
+          },
+        },
+      },
+      {
+        $sort: {
+          service: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: "successfull",
+      data: servicesName,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateServiceActiveStatus = async (req, res, next) => {
+  const { service } = req.params;
+  const { active } = req.body;
+
+  try {
+    if (!service) {
+      res.statusCode = 400;
+      throw new Error("service is required");
+    }
+
+    if (typeof active !== "boolean") {
+      res.statusCode = 400;
+      throw new Error("active should be true or false");
+    }
+
+    const result = await AvailableService.updateMany(
+      {
+        service,
+      },
+      {
+        $set: {
+          active,
+        },
+      },
+    );
+
+    if (result.matchedCount === 0) {
+      res.statusCode = 404;
+      throw new Error("service not found");
+    }
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: "service status updated successfully",
+      data: {
+        service,
+        active,
+        modifiedCount: result.modifiedCount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateServiceCustomPrice = async (req, res, next) => {
+  const { id } = req.params;
+  const { customPrice } = req.body;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.statusCode = 400;
+      throw new Error("Invalid service ID");
+    }
+
+    const priceValue =
+      customPrice === null || customPrice === "" ? null : Number(customPrice);
+
+    if (priceValue !== null && (Number.isNaN(priceValue) || priceValue < 0)) {
+      res.statusCode = 400;
+      throw new Error("customPrice should be a valid amount");
+    }
+
+    const service = await AvailableService.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          customPrice: priceValue,
+        },
+      },
+      {
+        new: true,
+      },
+    );
+
+    if (!service) {
+      res.statusCode = 404;
+      throw new Error("service not found");
+    }
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: "custom price updated successfully",
+      data: service,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   getPlatformDeposits,
   updateDepositsStatus,
   priceSettingController,
   getUserWaitingForOtp,
+  getAdminServices,
+  getServicesAvailableName,
+  updateServiceActiveStatus,
+  updateServiceCustomPrice,
 };

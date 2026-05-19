@@ -4,6 +4,10 @@ import {
   getPlatformDeposits,
   getUserWaitingForOtp,
   updateDepositsStatus,
+  getAdminServices,
+  getServicesAvailableName,
+  updateServiceActiveStatus,
+  updateServiceCustomPrice,
 } from "../controller/admin.controller.js";
 import authMiddleware, {
   validateAdminRole,
@@ -40,4 +44,33 @@ router.get(
   validateAdminRole,
   getUserWaitingForOtp,
 );
+
+router.get(
+  "/all/platform/services",
+  authMiddleware,
+  validateAdminRole,
+  getAdminServices,
+);
+
+router.get(
+  "/all/platform/service-name",
+  authMiddleware,
+  validateAdminRole,
+  getServicesAvailableName,
+);
+
+router.patch(
+  "/platform/service/:service/active",
+  authMiddleware,
+  validateAdminRole,
+  updateServiceActiveStatus,
+);
+
+router.patch(
+  "/platform/service/:id/custom-price",
+  authMiddleware,
+  validateAdminRole,
+  updateServiceCustomPrice,
+);
+
 export default router;

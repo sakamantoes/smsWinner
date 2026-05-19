@@ -1,21 +1,16 @@
 import { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import {
-  Bell,
-  CreditCard,
   Gauge,
   LogOut,
   Menu,
   Phone,
   Search,
-  Settings,
   ShieldCheck,
   Wallet,
   X,
   Users,
-  BarChart3,
   Activity,
-  Flag,
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import useAuth from "../store/useAuth";
@@ -26,7 +21,7 @@ const adminNavItems = [
   { label: "Dashboard", to: "/a/dashboard", icon: Gauge },
   { label: "Price Control", to: "/a/price_set", icon: FaMoneyBill },
   { label: "Users Management", to: "/a/users", icon: Users },
-  { label: "Services and Numbers", to: "/a/numbers", icon: Phone },
+  { label: "Services & Price Control", to: "/a/numbers", icon: Phone },
   { label: "Logs management", to: "/a/logs", icon: Activity },
   { label: "Payment Tracking", to: "/a/deposits", icon: Wallet },
 ];
@@ -147,7 +142,7 @@ const AdminLayout = () => {
         </div>
       )}
 
-      <div className="relative min-h-screen text-slate-950 lg:pl-72">
+      <div className="relative min-h-screen min-w-0 overflow-x-hidden text-slate-950 lg:pl-72">
         {/* Header */}
         <header className="sticky top-0 z-30 border-b border-white/30 bg-gradient-to-br from-black via-gray-900 to-black backdrop-blur-xl">
           <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
@@ -219,7 +214,7 @@ const AdminLayout = () => {
           </div>
         </header>
 
-        <main className="min-h-[calc(100vh-4rem)] px-4 py-6 sm:px-6 lg:px-8">
+        <main className="min-h-[calc(100vh-4rem)] w-full min-w-0 overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8">
           <Outlet />
         </main>
       </div>

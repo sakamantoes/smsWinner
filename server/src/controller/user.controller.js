@@ -269,7 +269,7 @@ const getPlatformServices = async (req, res, next) => {
 
         countryName: matchedService?.country || "Unknown",
 
-        sellingPrice: calculateSellingPrice(item.providerPrice, priceSetting),
+        sellingPrice: calculateSellingPrice(item, priceSetting),
       };
     });
 

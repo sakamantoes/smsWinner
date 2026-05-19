@@ -1,5 +1,9 @@
-const calculateSellingPrice = (providerPriceUsd, settings) => {
-  const nairaPrice = providerPriceUsd * settings.usdToNgnRate;
+const calculateSellingPrice = (item, settings) => {
+  const nairaPrice = item.providerPrice * settings.usdToNgnRate;
+
+  if (Number(item.customPrice)) {
+    return item.customPrice;
+  }
 
   if (settings.globalMarkupType === "percentage") {
     return nairaPrice + (nairaPrice * settings.globalMarkupValue) / 100;

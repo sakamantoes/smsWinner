@@ -28,3 +28,34 @@ export const getOtpOrder = async () => {
 
   return res.data;
 };
+
+export const getAllPlatformServices = async () => {
+  const res = await api.get("/api/admin/all/platform/services");
+
+  return res.data;
+};
+
+export const getPlatformServiceNames = async () => {
+  const res = await api.get("/api/admin/all/platform/service-name");
+
+  return res.data;
+};
+
+export const updatePlatformServiceActiveStatus = async (service, active) => {
+  const res = await api.patch(
+    `/api/admin/platform/service/${encodeURIComponent(service)}/active`,
+    {
+      active,
+    },
+  );
+
+  return res.data;
+};
+
+export const updatePlatformServiceCustomPrice = async (id, customPrice) => {
+  const res = await api.patch(`/api/admin/platform/service/${id}/custom-price`, {
+    customPrice,
+  });
+
+  return res.data;
+};
