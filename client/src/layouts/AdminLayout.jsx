@@ -19,7 +19,6 @@ import { FaMoneyBill } from "react-icons/fa";
 
 const adminNavItems = [
   { label: "Dashboard", to: "/a/dashboard", icon: Gauge },
-  { label: "Price Control", to: "/a/price_set", icon: FaMoneyBill },
   { label: "Users Management", to: "/a/users", icon: Users },
   { label: "Services & Price Control", to: "/a/numbers", icon: Phone },
   { label: "Logs management", to: "/a/logs", icon: Activity },
