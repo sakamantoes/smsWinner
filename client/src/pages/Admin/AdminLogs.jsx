@@ -700,23 +700,15 @@ export default function AdminLogs() {
                       <label className="block text-xs font-medium text-gray-500 mb-1.5">
                         Category *
                       </label>
-                      <select
+                      <input
+                        type="text"
                         value={formData.category}
                         onChange={(e) =>
                           setFormData({ ...formData, category: e.target.value })
                         }
                         className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-red-bg-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-bg-red-light/50"
-                      >
-                        <option value="">Select Category</option>
-                        <option value="Social Media">Social Media</option>
-                        <option value="Gaming">Gaming</option>
-                        <option value="Finance">Finance</option>
-                        <option value="Email">Email</option>
-                        <option value="Messaging">Messaging</option>
-                        <option value="Shopping">Shopping</option>
-                        <option value="Entertainment">Entertainment</option>
-                        <option value="Other">Other</option>
-                      </select>
+                        placeholder="e.g., Social Media, Gaming, Finance"
+                      />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1.5">

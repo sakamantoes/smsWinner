@@ -13,6 +13,9 @@ import {
   DollarSign,
   Wallet,
   ChevronRight,
+  Tag,
+  Grid3x3,
+  List,
 } from "lucide-react";
 import {
   getLogs,
@@ -25,6 +28,7 @@ import WalletBalanceCard from "../../components/WalletBalanceCard.jsx";
 const Logs = () => {
   const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
+  const [filteredLogs, setFilteredLogs] = useState([]);
   const [purchaseHistory, setPurchaseHistory] = useState([]);
   const [selectedLog, setSelectedLog] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -33,24 +37,43 @@ const Logs = () => {
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState("available");
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [categories, setCategories] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
 
-  // ================= FETCH LOGS =================
+  // ================= FETCH ALL LOGS =================
   const fetchLogs = async () => {
     try {
       setLoading(true);
       const data = await getLogs();
       console.log("Logs data:", data);
       const logsArray = data.logs || data.data || [];
-      console.log("First log _id:", logsArray[0]?._id);
       setLogs(logsArray);
+      setFilteredLogs(logsArray);
+      
+      // Extract unique categories from logs
+      const uniqueCats = [...new Set(logsArray.map(log => log.category).filter(Boolean))];
+      setCategories(uniqueCats);
     } catch (error) {
       console.log(error);
       setError("Failed to load logs");
     } finally {
       setLoading(false);
     }
+  };
+
+  // ================= FETCH LOGS BY CATEGORY (LOCAL FILTERING) =================
+  const fetchLogsByCategory = (category) => {
+    setSelectedCategory(category);
+    
+    let filtered;
+    if (category === "all") {
+      filtered = logs;
+    } else {
+      filtered = logs.filter(log => log.category === category);
+    }
+    
+    setFilteredLogs(filtered);
   };
 
   // ================= FETCH PURCHASE HISTORY =================
@@ -90,8 +113,12 @@ const Logs = () => {
 
       setSuccess("Log purchased successfully!");
 
+      // Refresh data
       await fetchLogs();
       await fetchPurchaseHistory();
+      
+      // Keep the current category filter
+      fetchLogsByCategory(selectedCategory);
 
       setTimeout(() => {
         setSuccess("");
@@ -130,21 +157,34 @@ const Logs = () => {
     fetchPurchaseHistory();
   }, []);
 
-  // Filter logs
-  const filteredLogs = logs.filter((log) => {
-    const matchesSearch =
-      searchTerm === "" ||
-      (log.email &&
-        log.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.country &&
-        log.country.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.category &&
-        log.category.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    const matchesFilter = filterType === "all" || log.type === filterType;
-
-    return matchesSearch && matchesFilter;
-  });
+  // Filter logs by search term
+  useEffect(() => {
+    if (searchTerm === "") {
+      // Reset to category-filtered logs
+      fetchLogsByCategory(selectedCategory);
+      return;
+    }
+    
+    const searched = logs.filter((log) => {
+      // First check if log matches selected category
+      if (selectedCategory !== "all" && log.category !== selectedCategory) {
+        return false;
+      }
+      
+      // Then check search term
+      const matchesSearch =
+        (log.email &&
+          log.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (log.country &&
+          log.country.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (log.category &&
+          log.category.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      return matchesSearch;
+    });
+    
+    setFilteredLogs(searched);
+  }, [searchTerm, logs, selectedCategory]);
 
   const totalLogs = logs.length;
   const purchasedCount = purchaseHistory.length;
@@ -156,11 +196,19 @@ const Logs = () => {
   const stats = [
     {
       label: "Available Logs",
-      value: totalLogs,
+      value: filteredLogs.length,
       change: "Ready to purchase",
       icon: FileText,
       iconBg: "bg-red/15",
       iconColor: "text-red",
+    },
+    {
+      label: "Total Categories",
+      value: categories.length,
+      change: "Available types",
+      icon: Tag,
+      iconBg: "bg-purple-500/15",
+      iconColor: "text-purple-400",
     },
     {
       label: "Purchased Logs",
@@ -180,6 +228,9 @@ const Logs = () => {
     },
   ];
 
+  // Get unique categories from logs for display
+  const uniqueCategories = [...new Set(logs.map(log => log.category).filter(Boolean))];
+
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       {/* Hero Section */}
@@ -196,8 +247,8 @@ const Logs = () => {
               <br className="hidden sm:block" /> premium logs & data.
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-gray-400">
-              Access verified logs, user data, and activity records. Purchase
-              individual logs or buy in bulk for better rates.
+              Access verified logs, user data, and activity records. Filter by
+              category to find exactly what you need.
             </p>
           </div>
           <button
@@ -252,9 +303,9 @@ const Logs = () => {
           }`}
         >
           Available Logs
-          {totalLogs > 0 && activeTab !== "available" && (
+          {filteredLogs.length > 0 && activeTab !== "available" && (
             <span className="ml-2 rounded-full bg-red-light/20 px-1.5 py-0.5 text-xs text-red-light">
-              {totalLogs}
+              {filteredLogs.length}
             </span>
           )}
         </button>
@@ -275,138 +326,184 @@ const Logs = () => {
         </button>
       </div>
 
-      {/* Search Bar */}
       {activeTab === "available" && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search logs by email, country, or category..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-black/40 py-2 pl-9 pr-4 text-sm text-white placeholder:text-gray-500 focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50"
-            />
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilterType("all")}
-              className={`rounded-lg px-3 py-2 text-xs font-medium transition-all ${
-                filterType === "all"
-                  ? "bg-red-light/20 text-white border border-red-light/30"
-                  : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10"
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilterType("premium")}
-              className={`rounded-lg px-3 py-2 text-xs font-medium transition-all ${
-                filterType === "premium"
-                  ? "bg-red-light/20 text-white border border-red-light/30"
-                  : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10"
-              }`}
-            >
-              Premium
-            </button>
-            <button
-              onClick={() => setFilterType("standard")}
-              className={`rounded-lg px-3 py-2 text-xs font-medium transition-all ${
-                filterType === "standard"
-                  ? "bg-red-light/20 text-white border border-red-light/30"
-                  : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10"
-              }`}
-            >
-              Standard
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Available Logs Grid */}
-      {activeTab === "available" && (
-        <div className="space-y-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-red-light" />
-            </div>
-          ) : error ? (
-            <div className="flex items-center justify-center gap-2 rounded-lg bg-red-light/10 p-4 text-red-light">
-              <AlertCircle size={20} />
-              {error}
-            </div>
-          ) : filteredLogs.length === 0 ? (
-            <div className="rounded-xl border border-white/10 bg-white/5 p-12 text-center">
-              <FileText size={48} className="mx-auto text-gray-600 mb-4" />
-              <h3 className="text-lg font-semibold text-white">
-                No logs available
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {searchTerm
-                  ? "Try adjusting your search or filter"
-                  : "Check back later for new logs"}
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredLogs.map((log) => (
-                <div
-                  key={log._id}
-                  className="group rounded-xl border border-white/10 shadow-md bg-white/5 p-5 transition-all transform hover:-translate-y-1 hover:border-red-light/40 hover:bg-white/10"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-light/10 text-red-light">
-                        <FileText size={18} />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-white">
-                          {log.email || "No email"}
-                        </h3>
-                        <p className="text-xs text-gray-500">
-                          {log.category || "General"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className="mt-3 text-sm text-gray-400">
-                    Country: {log.country || "Not specified"}
-                  </p>
-
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      <span className="text-gray-500">₦</span>
-                      <span className="text-lg font-bold text-white">
-                        {log.price || "0.00"}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleViewDetails(log._id)}
-                        className="rounded-lg border border-white/10 p-1.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleBuyLog(log._id, log.price)}
-                        disabled={buyingId === log._id}
-                        className="inline-flex items-center gap-1 rounded-lg bg-red-dark px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-red-light disabled:opacity-50"
-                      >
-                        {buyingId === log._id ? (
-                          <Loader2 size={12} className="animate-spin" />
-                        ) : (
-                          <ShoppingBag size={12} />
-                        )}
-                        Buy
-                      </button>
-                    </div>
-                  </div>
+        <>
+          {/* TWO CONTAINER LAYOUT */}
+          <div className="grid gap-6 lg:grid-cols-4">
+            {/* CONTAINER 1: Categories Sidebar */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-6 rounded-xl border border-white/10 shadow-md bg-white/5 p-4">
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/10">
+                  <Tag size={18} className="text-red-light" />
+                  <h3 className="font-semibold text-white">Filter by Category</h3>
                 </div>
-              ))}
+                
+                <div className="space-y-2">
+                  {/* All Categories Button */}
+                  <button
+                    onClick={() => fetchLogsByCategory("all")}
+                    className={`w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+                      selectedCategory === "all"
+                        ? "bg-red-light/20 text-white border border-red-light/30"
+                        : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Grid3x3 size={14} />
+                      <span>All Categories</span>
+                    </div>
+                    <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full">
+                      {logs.length}
+                    </span>
+                  </button>
+
+                  {/* Category Buttons */}
+                  {uniqueCategories.length > 0 ? (
+                    uniqueCategories.map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => fetchLogsByCategory(category)}
+                        className={`w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+                          selectedCategory === category
+                            ? "bg-red-light/20 text-white border border-red-light/30"
+                            : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10 hover:text-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Tag size={14} />
+                          <span className="truncate">{category}</span>
+                        </div>
+                        <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full">
+                          {logs.filter(log => log.category === category).length}
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="text-center py-6 text-gray-500 text-sm">
+                      No categories available
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* CONTAINER 2: Logs Grid */}
+            <div className="lg:col-span-3">
+              {/* Search Bar */}
+              <div className="mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="text"
+                    placeholder="Search logs by email, country, or category..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full rounded-lg border border-white/10 bg-black/40 py-2 pl-9 pr-4 text-sm text-white placeholder:text-gray-500 focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50"
+                  />
+                </div>
+              </div>
+
+              {/* Active Category Indicator */}
+              {selectedCategory !== "all" && (
+                <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-light/10 px-3 py-2 text-sm text-red-light border border-red-light/20">
+                  <Tag size={14} />
+                  <span>Showing logs in category: <strong>{selectedCategory}</strong></span>
+                  <button
+                    onClick={() => fetchLogsByCategory("all")}
+                    className="ml-auto text-xs bg-red-light/20 px-2 py-1 rounded hover:bg-red-light/30 transition-colors"
+                  >
+                    Clear Filter
+                  </button>
+                </div>
+              )}
+
+              {/* Logs Grid Content */}
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-red-light" />
+                </div>
+              ) : error ? (
+                <div className="flex items-center justify-center gap-2 rounded-lg bg-red-light/10 p-4 text-red-light">
+                  <AlertCircle size={20} />
+                  {error}
+                </div>
+              ) : filteredLogs.length === 0 ? (
+                <div className="rounded-xl border border-white/10 bg-white/5 p-12 text-center">
+                  <FileText size={48} className="mx-auto text-gray-600 mb-4" />
+                  <h3 className="text-lg font-semibold text-white">
+                    No logs available
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {searchTerm
+                      ? "Try adjusting your search or filter"
+                      : selectedCategory !== "all"
+                      ? `No logs found in "${selectedCategory}" category`
+                      : "Check back later for new logs"}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {filteredLogs.map((log) => (
+                    <div
+                      key={log._id}
+                      className="group rounded-xl border border-white/10 shadow-md bg-white/5 p-5 transition-all transform hover:-translate-y-1 hover:border-red-light/40 hover:bg-white/10"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-light/10 text-red-light">
+                            <FileText size={18} />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-white truncate max-w-[150px]">
+                              {log.email || "No email"}
+                            </h3>
+                            <p className="text-xs text-gray-400 flex items-center gap-1">
+                              <Tag size={10} />
+                              {log.category || "General"}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                          {log.country || "N/A"}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-500 text-sm">₦</span>
+                          <span className="text-lg font-bold text-white">
+                            {log.price || "0.00"}
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleViewDetails(log._id)}
+                            className="rounded-lg border border-white/10 p-1.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                            title="View Details"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleBuyLog(log._id, log.price)}
+                            disabled={buyingId === log._id}
+                            className="inline-flex items-center gap-1 rounded-lg bg-red-dark px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-red-light disabled:opacity-50"
+                          >
+                            {buyingId === log._id ? (
+                              <Loader2 size={12} className="animate-spin" />
+                            ) : (
+                              <ShoppingBag size={12} />
+                            )}
+                            Buy
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
       )}
 
       {/* Purchase History */}
@@ -439,6 +536,9 @@ const Logs = () => {
                         Log
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                        Category
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
                         Purchase Date
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
@@ -464,9 +564,15 @@ const Logs = () => {
                               {purchase.email || "Log"}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {purchase.category || "Log"}
+                              {purchase.country || "N/A"}
                             </p>
                           </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-1 text-xs text-gray-300">
+                            <Tag size={10} />
+                            {purchase.category || "General"}
+                          </span>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-400">
                           {new Date(
@@ -489,7 +595,7 @@ const Logs = () => {
                             onClick={() => handleViewDetails(purchase._id)}
                             className="rounded-lg border border-white/10 p-1.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
                           >
-                            <Download size={14} />
+                            <Eye size={14} />
                           </button>
                         </td>
                       </tr>
@@ -525,7 +631,8 @@ const Logs = () => {
                   <h3 className="text-xl font-bold text-white">
                     {selectedLog.email || "Log Details"}
                   </h3>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-gray-400 flex items-center gap-1">
+                    <Tag size={12} />
                     {selectedLog.category || "General"}
                   </p>
                 </div>
@@ -640,6 +747,12 @@ const Logs = () => {
                   <p className="text-xs text-gray-500">Status</p>
                   <p className="text-sm font-medium text-white capitalize">
                     {selectedLog.sold ? "Sold" : "Available"}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-black/30 p-3">
+                  <p className="text-xs text-gray-500">Category</p>
+                  <p className="text-sm font-medium text-white">
+                    {selectedLog.category || "N/A"}
                   </p>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/30 p-3">
