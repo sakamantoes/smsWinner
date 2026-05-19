@@ -320,10 +320,7 @@ const buyNumberService = async (req, res, next) => {
       throw new Error("error fetching price");
     }
 
-    const price = calculateSellingPrice(
-      activeService.providerPrice,
-      priceSetting,
-    );
+    const price = calculateSellingPrice(activeService, priceSetting);
 
     if (isUser.walletBalance < price) {
       res.statusCode = 400;
@@ -434,7 +431,6 @@ const buyNumberService = async (req, res, next) => {
     await session.endSession();
   }
 };
-
 
 export {
   getUserWalletBalance,

@@ -15,19 +15,10 @@ import {
 } from "lucide-react";
 import WalletBalanceCard from "../../components/WalletBalanceCard.jsx";
 import StatCard from "../../components/ui/StatCard.jsx";
-import { buyNumber, getAvailableServices } from "../../service/number";
+import { buyNumber, getAvailableServices } from "../../service/number.js";
 import { formatCurrency } from "../../utils/transaction.js";
 import { toast } from "react-toastify";
-
-const serviceNames = {
-  go: "Google / Gmail",
-  ig: "Instagram",
-  wa: "WhatsApp",
-};
-
-const formatServiceName = (code) =>
-  serviceNames[String(code || "").toLowerCase()] ||
-  String(code || "Unknown").toUpperCase();
+import { formatServiceName } from "../../utils/serviceCode.js";
 
 const normalizeCatalog = (response) => {
   const services = Array.isArray(response?.data) ? response.data : [];
@@ -196,6 +187,7 @@ const PhoneNumber = () => {
         service: selectedListing.service,
       });
 
+      console.log("data: ", response)
       const otpOrder = response?.data?.otpOrder || response?.data;
       const nextPurchaseData = {
         ...otpOrder,
@@ -240,8 +232,10 @@ const PhoneNumber = () => {
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-gray-400">
               Pick a service, choose an available country from the current
-              stock, purchase the number, then open OTP Box to request the OTP
-              for that purchased number.
+              stock, and purchase the number. Important: only buy a number
+              when you are ready to use it. After purchase, assign the number
+              to the service you bought before requesting an OTP — OTPs can
+              expire quickly (typically within 15 minutes).
             </p>
           </div>
           <button
@@ -385,7 +379,9 @@ const PhoneNumber = () => {
             </button>
 
             <p className="mt-4 text-center text-[11px] text-gray-600">
-              After purchase, go to OTP Box and request the code for the number.
+              After purchase, go to OTP Box and request the code for the
+              number only when you've assigned the number to your service.
+              OTPs may expire in as little as 15 minutes.
             </p>
           </section>
         </div>
@@ -552,7 +548,9 @@ const PhoneNumber = () => {
                   </h3>
                   <p className="mx-auto mt-1 max-w-md text-sm text-gray-500">
                     Go to your OTP Box and click Get OTP on this purchased
-                    number when you are ready to request the code.
+                    number when you are ready to request the code. Important:
+                    ensure you've added the number to the service you bought
+                    before requesting the OTP — codes expire within 15 minutes.
                   </p>
                   <button
                     type="button"

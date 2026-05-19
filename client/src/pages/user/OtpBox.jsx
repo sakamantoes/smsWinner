@@ -13,6 +13,7 @@ import {
 import { toast } from "react-toastify";
 import { checkOtpStatus, getMyOrders } from "../../service/number";
 import { formatCurrency } from "../../utils/transaction.js";
+import { formatServiceName } from "../../utils/serviceCode.js";
 
 const OtpBox = () => {
   const [orders, setOrders] = useState([]);
@@ -55,10 +56,21 @@ const OtpBox = () => {
         statusFilter === "ALL" || order.status === statusFilter;
       const matchesSearch =
         !search ||
-        String(order.phoneNumber || "").toLowerCase().includes(search) ||
-        String(order.service || "").toLowerCase().includes(search) ||
-        String(order.country || "").toLowerCase().includes(search) ||
-        String(order.activationId || "").toLowerCase().includes(search);
+        String(order.phoneNumber || "")
+          .toLowerCase()
+          .includes(search) ||
+        String(order.service || "")
+          .toLowerCase()
+          .includes(search) ||
+        String(order.country || "")
+          .toLowerCase()
+          .includes(search) ||
+        String(formatServiceName(order.service )|| "")
+          .toLowerCase()
+          .includes(search) ||
+        String(order.activationId || "")
+          .toLowerCase()
+          .includes(search);
 
       return matchesStatus && matchesSearch;
     });
@@ -155,6 +167,12 @@ const OtpBox = () => {
             <p className="mt-3 max-w-xl text-sm leading-6 text-gray-400">
               View every activation tied to your account, including phone
               numbers, status, OTP code, and provider message.
+            </p>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-red-300 font-semibold">
+              Important: Before requesting an OTP, make sure you have assigned
+              or linked the purchased number to the service you bought it for.
+              Only request an OTP when you are ready to use it — OTPs expire
+              quickly (typically within 15 minutes).
             </p>
           </div>
           <button
@@ -310,7 +328,10 @@ const OtpBox = () => {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-300">
                         <p className="font-medium text-white">
-                          {String(order.service || "N/A").toUpperCase()}
+                          {String(
+                            formatServiceName(order.service) || "N/A",
+                          ).toUpperCase()}
+                           ({ " ",order.service})
                         </p>
                         <p className="text-xs text-gray-500">
                           Country {order.country || "N/A"}
