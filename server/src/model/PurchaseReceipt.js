@@ -11,7 +11,7 @@ const purchaseReceiptSchema = new mongoose.Schema(
 
     purchaseType: {
       type: String,
-      enum: ["LOG", "OTP"],
+      enum: ["LOG", "OTP", "OTP_REFUND"],
       required: true,
     },
 

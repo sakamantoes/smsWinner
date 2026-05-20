@@ -30,7 +30,7 @@ export const checkOtpStatus = async (orderId) => {
 
 // ================= CANCEL ACTIVATION =================
 export const cancelActivation = async (orderId) => {
-  const res = await api.post(`/api/otp/cancel/${orderId}`);
+  const res = await api.post(`/api/user/otp/cancel/${orderId}`);
 
   return res.data;
 };

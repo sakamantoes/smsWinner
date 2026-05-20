@@ -423,9 +423,143 @@ const buyNumberService = async (req, res, next) => {
   } catch (error) {
     if (activationId && !transactionSucceeded) {
       await axios.get(
-        `https://smsbower.page/stubs/handler_api.php?api_key=${env.sms_bower_api_key}&action=setStatus&id=${activationId}&status=8`,
+        `https://smsbower.page/stubs/handler_api.php?api_key=${env.sms_bower_api_key}&action=setStatus&status=8&id=${activationId}`,
       );
     }
+    next(error);
+  } finally {
+    await session.endSession();
+  }
+};
+
+const cancelOtpAndRefund = async (req, res, next) => {
+  const user = req.user;
+  const { orderId } = req.params;
+  const session = await mongoose.startSession();
+  const receiptNo = recieptNumberGenerator();
+  let finalResult = null;
+
+  try {
+    if (!orderId) {
+      res.statusCode = 400;
+      throw new Error("invalid id parameters");
+    }
+
+    const userOrderExist = await OtpOrder.findOne({
+      userId: user._id,
+      activationId: orderId,
+    });
+
+    if (!userOrderExist) {
+      res.statusCode = 404;
+      throw new Error("otp order not found");
+    }
+
+    // already completed
+    if (["OTP_RECEIVED", "COMPLETED"].includes(userOrderExist.status)) {
+      res.statusCode = 400;
+      throw new Error("otp already received");
+    }
+
+    // already cancelled
+    if (["CANCELLED", "FAILED"].includes(userOrderExist.status)) {
+      res.statusCode = 400;
+      throw new Error("otp already cancelled");
+    }
+
+    // cancel from provider
+    const smsBowerCancel = await axios.get(
+      `https://smsbower.page/stubs/handler_api.php?api_key=${env.sms_bower_api_key}&action=setStatus&status=8&id=${userOrderExist.activationId}`,
+    );
+
+    const response = smsBowerCancel.data;
+
+    // if provider fails to cancel
+    if (response !== "ACCESS_CANCEL") {
+      res.statusCode = 400;
+      throw new Error("provider failed to cancel otp");
+    }
+
+    await session.withTransaction(async () => {
+      // cancel order
+      const updatedOrder = await OtpOrder.findByIdAndUpdate(
+        userOrderExist._id,
+        {
+          $set: {
+            status: "CANCELLED",
+            cancelReason: "Cancelled by user",
+          },
+        },
+        {
+          session,
+          new: true,
+        },
+      );
+
+      if (!updatedOrder) {
+        throw new Error("failed to update otp order");
+      }
+
+      // refund wallet
+      const userSaved = await User.findByIdAndUpdate(
+        user._id,
+        {
+          $inc: {
+            walletBalance: Number(userOrderExist.sellingPrice),
+          },
+        },
+        {
+          session,
+          new: true,
+        },
+      );
+
+      // invalid user
+      if (!userSaved) {
+        throw new Error("user not found");
+      }
+
+      const balanceAfter = userSaved.walletBalance;
+
+      const balanceBefore = balanceAfter - userOrderExist.sellingPrice;
+
+      // generate receipt for record purpose
+      const [receipt] = await PurchaseReceipt.create(
+        [
+          {
+            userId: user._id,
+            amount: userOrderExist.sellingPrice,
+            itemModel: "OtpOrder",
+            itemId: userOrderExist._id,
+            receiptNo,
+            purchaseType: "OTP_REFUND",
+            description: "OTP order cancelled and refunded",
+            balanceAfter: Number(balanceAfter),
+            balanceBefore: Number(balanceBefore),
+          },
+        ],
+        {
+          session,
+        },
+      );
+
+      if (!receipt) {
+        throw new Error("failed to create refund receipt");
+      }
+
+      finalResult = {
+        receipt,
+        order: updatedOrder,
+      };
+    });
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: "otp cancelled and refunded successfully",
+      data: finalResult,
+    });
+  } catch (error) {
     next(error);
   } finally {
     await session.endSession();
@@ -440,4 +574,5 @@ export {
   checkUserOtpOrderStatus,
   getPlatformServices,
   buyNumberService,
+  cancelOtpAndRefund,
 };

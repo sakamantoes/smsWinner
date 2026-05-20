@@ -11,7 +11,11 @@ import {
   XCircle,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { checkOtpStatus, getMyOrders } from "../../service/number";
+import {
+  cancelActivation,
+  checkOtpStatus,
+  getMyOrders,
+} from "../../service/number";
 import { formatCurrency } from "../../utils/transaction.js";
 import { formatServiceName } from "../../utils/serviceCode.js";
 
@@ -22,6 +26,7 @@ const OtpBox = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [checkingOrderId, setCheckingOrderId] = useState("");
+  const [cancellingOrderId, setCancellingOrderId] = useState("");
 
   const fetchOrders = async () => {
     try {
@@ -65,7 +70,7 @@ const OtpBox = () => {
         String(order.country || "")
           .toLowerCase()
           .includes(search) ||
-        String(formatServiceName(order.service )|| "")
+        String(formatServiceName(order.service) || "")
           .toLowerCase()
           .includes(search) ||
         String(order.activationId || "")
@@ -148,6 +153,38 @@ const OtpBox = () => {
       toast.error(err?.response?.data?.message || "Failed to check OTP");
     } finally {
       setCheckingOrderId("");
+    }
+  };
+
+  const handleCancelOtp = async (order) => {
+    if (!order?._id || !order?.activationId) return;
+
+    const shouldCancel = window.confirm(
+      "Are you sure you want to cancel this OTP order?",
+    );
+
+    if (!shouldCancel) return;
+
+    try {
+      setCancellingOrderId(order._id);
+
+      const response = await cancelActivation(order.activationId);
+      const updatedOrder = response?.data?.order;
+
+      if (updatedOrder?._id) {
+        setOrders((currentOrders) =>
+          currentOrders.map((currentOrder) =>
+            currentOrder._id === updatedOrder._id ? updatedOrder : currentOrder,
+          ),
+        );
+      }
+
+      toast.success(response?.message || "OTP cancelled successfully");
+    } catch (err) {
+      console.error("Failed to cancel OTP order:", err);
+      toast.error(err?.response?.data?.message || "Failed to cancel OTP");
+    } finally {
+      setCancellingOrderId("");
     }
   };
 
@@ -290,12 +327,21 @@ const OtpBox = () => {
                   const statusBadge = getStatusBadge(order.status);
                   const StatusIcon = statusBadge.icon;
                   const isChecking = checkingOrderId === order._id;
+                  const isCancelling = cancellingOrderId === order._id;
                   const canCheckOtp = ![
                     "OTP_RECEIVED",
                     "COMPLETED",
                     "CANCELLED",
                     "FAILED",
                   ].includes(order.status);
+                  const canCancelOtp =
+                    Boolean(order.activationId) &&
+                    ![
+                      "OTP_RECEIVED",
+                      "COMPLETED",
+                      "CANCELLED",
+                      "FAILED",
+                    ].includes(order.status);
 
                   return (
                     <tr
@@ -331,7 +377,7 @@ const OtpBox = () => {
                           {String(
                             formatServiceName(order.service) || "N/A",
                           ).toUpperCase()}
-                           ({ " ",order.service})
+                          ({" " + order.service})
                         </p>
                         <p className="text-xs text-gray-500">
                           Country {order.country || "N/A"}
@@ -359,7 +405,20 @@ const OtpBox = () => {
                       <td className="px-4 py-3 text-sm text-gray-400">
                         {formatDate(order.purchasedAt || order.createdAt)}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 flex">
+                        <button
+                          type="button"
+                          onClick={() => void handleCancelOtp(order)}
+                          disabled={isCancelling || !canCancelOtp}
+                          className="mr-2 inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-gray-300 transition-colors hover:border-red-light/30 hover:bg-red-light/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isCancelling ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <XCircle size={14} />
+                          )}
+                          Cancel
+                        </button>
                         <button
                           type="button"
                           onClick={() => void handleCheckOtp(order._id)}

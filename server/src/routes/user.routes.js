@@ -10,6 +10,7 @@ import {
   getUserWalletBalance,
   getPlatformServices,
   buyNumberService,
+  cancelOtpAndRefund,
 } from "../controller/user.controller.js";
 import { buyNumberServiceSchema } from "../validator/user.validator.js";
 import { validateData } from "../validator/validator.js";
@@ -37,12 +38,7 @@ router.get(
   getPurchaseHistory,
 );
 
-router.get(
-  "/otp/orders",
-  authMiddleware,
-  validateUserRole,
-  getUserOtpOrders,
-);
+router.get("/otp/orders", authMiddleware, validateUserRole, getUserOtpOrders);
 
 router.get(
   "/otp/status/:orderId",
@@ -58,6 +54,13 @@ router.post(
   buyNumberServiceSchema,
   validateData,
   buyNumberService,
+);
+
+router.post(
+  "/otp/cancel/:orderId",
+  authMiddleware,
+  validateUserRole,
+  cancelOtpAndRefund,
 );
 
 router.get("/platform/services", authMiddleware, getPlatformServices);
