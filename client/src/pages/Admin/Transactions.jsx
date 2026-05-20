@@ -35,13 +35,22 @@ const statusOptions = [
   { label: "Pending", value: "PENDING", icon: Clock3 },
 ];
 
+const isManualReceipt = (deposit) => {
+  const reference = String(deposit?.referenceId || "");
+
+  return (
+    deposit?.paymentMethod === "MANUAL_TRANSFER" &&
+    /^https?:\/\/.+\.(png|jpe?g|webp|gif|avif)(\?.*)?$/i.test(reference)
+  );
+};
+
 const detailRows = (deposit) => [
   ["Depositor", deposit?.depositorName || "N/A"],
   ["Amount", formatCurrency(deposit?.amount)],
   ["Status", normalizeStatus(deposit?.status)],
   ["Payment Method", formatPaymentMethod(deposit?.paymentMethod)],
   ["Type", deposit?.type || "DEPOSIT"],
-  ["Reference", deposit?.referenceId || "N/A"],
+  [isManualReceipt(deposit) ? "Receipt URL" : "Reference", deposit?.referenceId || "N/A"],
   ["Order ID", deposit?.orderId || "Not assigned"],
   ["User ID", deposit?.userId || "N/A"],
   ["Balance Before", formatCurrency(deposit?.balanceBefore)],
@@ -64,6 +73,7 @@ export default function Transactions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDeposit, setSelectedDeposit] = useState(null);
   const [statusDeposit, setStatusDeposit] = useState(null);
+  const [receiptPreview, setReceiptPreview] = useState(null);
   const [updating, setUpdating] = useState(false);
 
   const fetchDeposits = async () => {
@@ -193,6 +203,47 @@ export default function Transactions() {
     } catch {
       toast.error(`Failed to copy ${label.toLowerCase()}`);
     }
+  };
+
+  const renderReference = (deposit) => {
+    if (isManualReceipt(deposit)) {
+      return (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setReceiptPreview(deposit.referenceId)}
+            className="group h-12 w-12 overflow-hidden rounded-lg border border-white/10 bg-black/30 transition-colors hover:border-red-light/40"
+            aria-label="View receipt image"
+          >
+            <img
+              src={deposit.referenceId}
+              alt="Manual deposit receipt"
+              className="h-full w-full object-cover transition-transform group-hover:scale-105"
+            />
+          </button>
+          <button
+            type="button"
+            onClick={() => setReceiptPreview(deposit.referenceId)}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 text-xs font-medium text-gray-300 transition-colors hover:border-red-light/30 hover:bg-white/10 hover:text-white"
+          >
+            <Eye size={13} />
+            View
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => handleCopy(deposit.referenceId, "Reference")}
+        disabled={!deposit.referenceId}
+        className="inline-flex max-w-44 items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs font-medium text-gray-300 transition-colors hover:border-red-light/30 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <Copy size={13} />
+        <span className="truncate">{deposit.referenceId || "N/A"}</span>
+      </button>
+    );
   };
 
   const handleStatusChange = async (status) => {
@@ -376,19 +427,7 @@ export default function Transactions() {
                         <TransactionStatusBadge status={deposit.status} />
                       </td>
                       <td className="px-5 py-4">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleCopy(deposit.referenceId, "Reference")
-                          }
-                          disabled={!deposit.referenceId}
-                          className="inline-flex max-w-44 items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs font-medium text-gray-300 transition-colors hover:border-red-light/30 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Copy size={13} />
-                          <span className="truncate">
-                            {deposit.referenceId || "N/A"}
-                          </span>
-                        </button>
+                        {renderReference(deposit)}
                       </td>
                       <td className="px-5 py-4 text-sm text-gray-400">
                         {formatTransactionDate(deposit)}
@@ -447,10 +486,27 @@ export default function Transactions() {
                       <span>{formatPaymentMethod(deposit.paymentMethod)}</span>
                     </p>
                     <p className="flex justify-between gap-3">
-                      <span className="text-gray-500">Reference</span>
-                      <span className="max-w-40 truncate font-mono">
-                        {deposit.referenceId || "N/A"}
+                      <span className="text-gray-500">
+                        {isManualReceipt(deposit) ? "Receipt" : "Reference"}
                       </span>
+                      {isManualReceipt(deposit) ? (
+                        <button
+                          type="button"
+                          onClick={() => setReceiptPreview(deposit.referenceId)}
+                          className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs font-medium text-gray-300"
+                        >
+                          <img
+                            src={deposit.referenceId}
+                            alt="Manual deposit receipt"
+                            className="h-8 w-8 rounded-md object-cover"
+                          />
+                          View
+                        </button>
+                      ) : (
+                        <span className="max-w-40 truncate font-mono">
+                          {deposit.referenceId || "N/A"}
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-2">
@@ -515,6 +571,34 @@ export default function Transactions() {
                   Change Status
                 </button>
               </div>
+              {isManualReceipt(selectedDeposit) ? (
+                <div className="mb-5 rounded-xl border border-white/10 bg-black/30 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                      Payment Receipt
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setReceiptPreview(selectedDeposit.referenceId)}
+                      className="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-medium text-gray-300 transition-colors hover:border-red-light/30 hover:bg-white/10 hover:text-white"
+                    >
+                      <Eye size={13} />
+                      View Full
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setReceiptPreview(selectedDeposit.referenceId)}
+                    className="block max-h-72 w-full overflow-hidden rounded-lg border border-white/10 bg-black"
+                  >
+                    <img
+                      src={selectedDeposit.referenceId}
+                      alt="Manual deposit receipt"
+                      className="max-h-72 w-full object-contain"
+                    />
+                  </button>
+                </div>
+              ) : null}
               <dl className="grid gap-3 sm:grid-cols-2">
                 {detailRows(selectedDeposit).map(([label, value]) => (
                   <div
@@ -580,6 +664,35 @@ export default function Transactions() {
               </div>
             </div>
 
+            {isManualReceipt(statusDeposit) ? (
+              <div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                    Receipt
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setReceiptPreview(statusDeposit.referenceId)}
+                    className="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-medium text-gray-300 transition-colors hover:border-red-light/30 hover:bg-white/10 hover:text-white"
+                  >
+                    <Eye size={13} />
+                    View
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReceiptPreview(statusDeposit.referenceId)}
+                  className="block max-h-48 w-full overflow-hidden rounded-lg border border-white/10 bg-black"
+                >
+                  <img
+                    src={statusDeposit.referenceId}
+                    alt="Manual deposit receipt"
+                    className="max-h-48 w-full object-contain"
+                  />
+                </button>
+              </div>
+            ) : null}
+
             <div className="mt-6 space-y-3">
               {statusOptions.map(({ label, value, icon: Icon }) => {
                 const isCurrent = normalizeStatus(statusDeposit.status) === value;
@@ -620,6 +733,37 @@ export default function Transactions() {
               list after the server confirms the change.
             </p>
           </aside>
+        </div>
+      ) : null}
+
+      {receiptPreview ? (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4">
+          <button
+            type="button"
+            aria-label="Close receipt preview"
+            className="absolute inset-0"
+            onClick={() => setReceiptPreview(null)}
+          />
+          <div className="relative max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-xl border border-white/10 bg-gray-950 shadow-2xl">
+            <div className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4">
+              <h3 className="font-semibold text-white">Payment Receipt</h3>
+              <button
+                type="button"
+                aria-label="Close receipt preview"
+                onClick={() => setReceiptPreview(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="max-h-[82vh] overflow-auto bg-black p-4">
+              <img
+                src={receiptPreview}
+                alt="Manual deposit receipt full preview"
+                className="mx-auto max-h-[78vh] max-w-full rounded-lg object-contain"
+              />
+            </div>
+          </div>
         </div>
       ) : null}
     </div>

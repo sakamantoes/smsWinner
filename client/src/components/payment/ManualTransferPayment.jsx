@@ -6,9 +6,9 @@ import {
   CheckCircle2,
   Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { manualBankPayment } from "../../service/payment.js";
+import { manualBankPayment, uploadImage } from "../../service/payment.js";
 
 const inputClass =
   "mt-2 h-12 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none transition-colors placeholder:text-gray-600 focus:border-red-light/60";
@@ -16,18 +16,61 @@ const inputClass =
 export default function ManualTransferPayment({ amount = "", onBack }) {
   const [formData, setFormData] = useState({
     depositorName: "",
-    transactionId: "",
     amount,
   });
+  const [receiptImage, setReceiptImage] = useState(null);
+  const [receiptPreview, setReceiptPreview] = useState("");
   const [loading, setLoading] = useState(false);
   const [requestError, setRequestError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  useEffect(() => {
+    return () => {
+      if (receiptPreview) {
+        URL.revokeObjectURL(receiptPreview);
+      }
+    };
+  }, [receiptPreview]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setRequestError("");
     setSuccessMessage("");
     setFormData((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleReceiptChange = (event) => {
+    const file = event.target.files?.[0];
+
+    setRequestError("");
+    setSuccessMessage("");
+
+    if (!file) {
+      setReceiptImage(null);
+      if (receiptPreview) {
+        URL.revokeObjectURL(receiptPreview);
+      }
+      setReceiptPreview("");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setReceiptImage(null);
+      if (receiptPreview) {
+        URL.revokeObjectURL(receiptPreview);
+      }
+      setReceiptPreview("");
+      setRequestError("Please select a valid image receipt.");
+      event.target.value = "";
+      return;
+    }
+
+    if (receiptPreview) {
+      URL.revokeObjectURL(receiptPreview);
+    }
+
+    setReceiptImage(file);
+    setReceiptPreview(URL.createObjectURL(file));
   };
 
   const handleSubmit = async (event) => {
@@ -38,9 +81,19 @@ export default function ManualTransferPayment({ amount = "", onBack }) {
     setSuccessMessage("");
 
     try {
+      if (!receiptImage) {
+        throw new Error("Please upload your payment receipt image.");
+      }
+
+      const uploadedReceipt = await uploadImage(receiptImage);
+
+      if (!uploadedReceipt?.url) {
+        throw new Error("Receipt upload failed. Please try again.");
+      }
+
       const payload = {
         depositorName: formData.depositorName.trim(),
-        transactionId: formData.transactionId.trim(),
+        transactionId: uploadedReceipt.url,
         amount: Number(formData.amount),
       };
 
@@ -58,8 +111,10 @@ export default function ManualTransferPayment({ amount = "", onBack }) {
       setFormData((current) => ({
         ...current,
         depositorName: "",
-        transactionId: "",
       }));
+      setReceiptImage(null);
+      setReceiptPreview("");
+      event.target.reset();
     } catch (error) {
       const message =
         error?.response?.data?.message ||
@@ -75,7 +130,7 @@ export default function ManualTransferPayment({ amount = "", onBack }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center  overflow-y-auto justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-start overflow-y-auto justify-center bg-black/70  px-4 py-6 backdrop-blur-sm">
       <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-red-light/20 bg-[#111] shadow-2xl">
         <div className="flex items-start gap-3 border-b border-white/10 px-5 py-4">
           <button
@@ -154,19 +209,31 @@ export default function ManualTransferPayment({ amount = "", onBack }) {
 
           <label className="block">
             <span className="text-sm font-semibold text-gray-300">
-              Transaction reference
+              Payment receipt image
             </span>
             <input
               name="transactionId"
-              type="text"
-              value={formData.transactionId}
-              onChange={handleChange}
-              placeholder="Bank transfer reference"
+              type="file"
+              accept="image/*"
+              onChange={handleReceiptChange}
               required
               disabled={loading}
-              className={inputClass}
+              className="mt-2 block w-full cursor-pointer rounded-xl border border-white/10 bg-black/40 text-sm text-gray-300 outline-none transition-colors file:mr-4 file:h-12 file:border-0 file:bg-red-dark file:px-4 file:text-sm file:font-semibold file:text-white hover:file:bg-red disabled:cursor-not-allowed disabled:opacity-60"
             />
           </label>
+
+          {receiptPreview ? (
+            <div className="rounded-xl border border-white/10 bg-black/35 p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500">
+                Receipt Preview
+              </p>
+              <img
+                src={receiptPreview}
+                alt="Payment receipt preview"
+                className="h-40 w-full rounded-lg object-cover"
+              />
+            </div>
+          ) : null}
 
           <label className="block">
             <span className="text-sm font-semibold text-gray-300">Amount</span>
