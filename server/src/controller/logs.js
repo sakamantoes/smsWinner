@@ -136,7 +136,6 @@ const buyLog = async (req, res, next) => {
             sold: true,
             soldTo: isUser._id,
             purchasedAt: new Date(),
-            
           },
         },
         {
