@@ -348,9 +348,16 @@ const buyNumberService = async (req, res, next) => {
     const response = buyBowerNumber.data;
 
     if (typeof response === "string") {
+
+      if(response === "NO_BALANCE"){
+        res.statusCode =400
+        throw new Error("this particular service is under maintenance.. contact support!!")
+      }
+      
       res.statusCode = 400
       throw new Error(response);
     }
+
     const activationTime = new Date(response.activationTime);
     activationId = response.activationId;
 
