@@ -208,8 +208,9 @@ const OtpBox = () => {
             <p className="mt-3 max-w-xl text-sm leading-6 text-red-300 font-semibold">
               Important: Before requesting an OTP, make sure you have assigned
               or linked the purchased number to the service you bought it for.
-              Only request an OTP when you are ready to use it — OTPs expire
-              quickly (typically within 15 minutes).
+              After the assigned expiry time, cancel the order. you will be
+              refunded immediatly refund. Do not proceed to get the OTP
+              after it has expired, to avoid losing funds.
             </p>
           </div>
           <button
@@ -318,6 +319,9 @@ const OtpBox = () => {
                     Date
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    Expires At
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
                     Action
                   </th>
                 </tr>
@@ -405,12 +409,15 @@ const OtpBox = () => {
                       <td className="px-4 py-3 text-sm text-gray-400">
                         {formatDate(order.purchasedAt || order.createdAt)}
                       </td>
+                      <td className="px-4 py-3 text-sm text-gray-400">
+                        {formatDate(order.expiresAt)}
+                      </td>
                       <td className="px-4 py-3 flex">
                         <button
                           type="button"
                           onClick={() => void handleCancelOtp(order)}
                           disabled={isCancelling || !canCancelOtp}
-                          className="mr-2 inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-gray-300 transition-colors hover:border-red-light/30 hover:bg-red-light/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                          className="mr-2 inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-red-light/50 px-3 text-xs font-semibold text-gray-300 transition-colors hover:border-red-light/30 hover:bg-red-light/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {isCancelling ? (
                             <Loader2 size={14} className="animate-spin" />
@@ -423,7 +430,7 @@ const OtpBox = () => {
                           type="button"
                           onClick={() => void handleCheckOtp(order._id)}
                           disabled={isChecking || !canCheckOtp}
-                          className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-gray-300 transition-colors hover:border-red-light/30 hover:bg-red-light/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/20 bg-green-700/70 px-3 text-xs font-semibold text-gray-300 transition-colors hover:border-green-500/30 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {isChecking ? (
                             <Loader2 size={14} className="animate-spin" />

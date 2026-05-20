@@ -131,6 +131,7 @@ const getUserOtpOrders = async (req, res, next) => {
 const checkUserOtpOrderStatus = async (req, res, next) => {
   const user = req.user;
   const { orderId } = req.params;
+  const now = new Date();
 
   try {
     if (!orderId) {
@@ -163,6 +164,13 @@ const checkUserOtpOrderStatus = async (req, res, next) => {
         otpMessage: otpOrder.otpMessage,
         data: otpOrder,
       });
+    }
+
+    if (otpOrder.expiresAt && now > otpOrder.expiresAt) {
+      res.statusCode = 400;
+      throw new Error(
+        "otp session expired, click the cancel button to get a refund",
+      );
     }
 
     const otpStatus = await axios.get(
@@ -340,6 +348,7 @@ const buyNumberService = async (req, res, next) => {
     const response = buyBowerNumber.data;
 
     if (typeof response === "string") {
+      res.statusCode = 400
       throw new Error(response);
     }
     const activationTime = new Date(response.activationTime);

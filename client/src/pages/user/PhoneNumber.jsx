@@ -232,10 +232,9 @@ const PhoneNumber = () => {
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-gray-400">
               Pick a service, choose an available country from the current
-              stock, and purchase the number. Important: only buy a number
-              when you are ready to use it. After purchase, assign the number
-              to the service you bought before requesting an OTP — OTPs can
-              expire quickly (typically within 15 minutes).
+              stock, and purchase the number. After purchase, proceed to your
+              OTP Box to see the purchased number and request your OTP when you
+              are ready.
             </p>
           </div>
           <button
@@ -379,9 +378,8 @@ const PhoneNumber = () => {
             </button>
 
             <p className="mt-4 text-center text-[11px] text-gray-600">
-              After purchase, go to OTP Box and request the code for the
-              number only when you've assigned the number to your service.
-              OTPs may expire in as little as 15 minutes.
+              After purchase, go to OTP Box to see your number and request the
+              OTP when you are ready to use it.
             </p>
           </section>
         </div>
@@ -547,10 +545,8 @@ const PhoneNumber = () => {
                     Purchase successful
                   </h3>
                   <p className="mx-auto mt-1 max-w-md text-sm text-gray-500">
-                    Go to your OTP Box and click Get OTP on this purchased
-                    number when you are ready to request the code. Important:
-                    ensure you've added the number to the service you bought
-                    before requesting the OTP — codes expire within 15 minutes.
+                    Go to your OTP Box to see this purchased number, then click
+                    Get OTP when you are ready to request the code.
                   </p>
                   <button
                     type="button"
