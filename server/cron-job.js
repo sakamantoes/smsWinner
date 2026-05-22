@@ -4,6 +4,8 @@ import axios from "axios";
 import { services } from "./src/utils/neededCountries.js";
 import AvailableService from "./src/model/ServicesAvailable.js";
 
+const MAX_ALLOWED_PRICE = 1.35;
+
 const CronJob = async () => {
   console.log("Starting up Node-Crun");
   try {
@@ -28,6 +30,9 @@ const CronJob = async () => {
             for (const providerKey in providers) {
               const details = providers[providerKey];
 
+              if (details.price > MAX_ALLOWED_PRICE) {
+                continue;
+              }
               arr.push({
                 updateOne: {
                   filter: {
@@ -63,6 +68,5 @@ const CronJob = async () => {
     console.error("node cron: ", err);
   }
 };
-
 
 export default CronJob;

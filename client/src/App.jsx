@@ -25,14 +25,14 @@ import AdminLogs from "./pages/Admin/AdminLogs.jsx";
 import Setting from "./pages/user/Setting.jsx";
 import UserSupport from "./pages/user/UserSupport.jsx";
 import AdminSupport from "./pages/Admin/AdminSupport.jsx";
-import SiteNotWorking from  "./components/SiteNotWorking.jsx"
+// import SiteNotWorking from  "./components/SiteNotWorking.jsx"
 
 const App = () => {
   return (
     <>
       <ToastContainer position="bottom-right" theme="colored" />
-      <SiteNotWorking />
-      {/* <Routes>
+      {/* <SiteNotWorking /> */}
+      <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<Register />} />
         <Route path="/login" element={<Login />} />
@@ -77,7 +77,7 @@ const App = () => {
           <Route path="logs" element={<AdminLogs />} />
           <Route path="support" element={<AdminSupport />} />
         </Route>
-      </Routes> */}
+      </Routes>
     </>
   );
 };
