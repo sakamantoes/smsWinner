@@ -5,6 +5,7 @@ import { services } from "./src/utils/neededCountries.js";
 import AvailableService from "./src/model/ServicesAvailable.js";
 
 const MAX_ALLOWED_PRICE = 1.35;
+const US_COUNTRY_ID = "187";
 
 const CronJob = async () => {
   console.log("Starting up Node-Crun");
@@ -30,9 +31,18 @@ const CronJob = async () => {
             for (const providerKey in providers) {
               const details = providers[providerKey];
 
-              if (details.price > MAX_ALLOWED_PRICE) {
-                continue;
+              // special rule for US numbers
+              if (countryId === US_COUNTRY_ID) {
+                if (details.price < 1.2 || details.price > 1.5) {
+                  continue;
+                }
+              } else {
+                // global rule for others
+                if (details.price > MAX_ALLOWED_PRICE) {
+                  continue;
+                }
               }
+
               arr.push({
                 updateOne: {
                   filter: {
