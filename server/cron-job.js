@@ -32,19 +32,26 @@ const CronJob = async () => {
               const details = providers[providerKey];
 
               // special rule for US numbers
-              if (String(countryId) === String(US_COUNTRY_ID)) {
-                if (
-                  Number(details.price) < 1.2 ||
-                  Number(details.price) > 1.5
-                ) {
-                  continue;
-                }
-              } else {
-                // global rule for others
-                if (details.price > MAX_ALLOWED_PRICE) {
-                  continue;
+              if (String(serviceCode) === "wa") {
+                if (String(countryId) === String(US_COUNTRY_ID)) {
+                  if (
+                    Number(details.price) < 1.2 ||
+                    Number(details.price) > 1.36
+                  ) {
+                    continue;
+                  }
                 }
               }
+
+              // global rule for others
+              if (details.price > MAX_ALLOWED_PRICE) {
+                continue;
+              }
+
+              // console.log(
+              //   `low product saved :`,
+              //   serviceCode + " " + details.price + " " + countryId,
+              // );
 
               arr.push({
                 updateOne: {
