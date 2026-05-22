@@ -37,7 +37,9 @@ export default function UserDeposits() {
       setDeposits(response?.data || []);
     } catch (err) {
       console.error("Failed to fetch deposits:", err);
-      setError(err?.response?.data?.message || "Failed to load deposit history");
+      setError(
+        err?.response?.data?.message || "Failed to load deposit history",
+      );
     } finally {
       setLoading(false);
     }
@@ -155,7 +157,6 @@ export default function UserDeposits() {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-
         {stats.map((stat) => (
           <StatCard key={stat.label} {...stat} />
         ))}
@@ -262,9 +263,16 @@ export default function UserDeposits() {
                         </p>
                         <p>
                           <span className="text-gray-500">Reference:</span>{" "}
-                          <span className="font-mono text-gray-300">
-                            {deposit.referenceId || "N/A"}
-                          </span>
+                          {deposit.paymentMethod === "MANUAL_TRANSFER" ? (
+                            <img
+                              src={deposit.referenceId}
+                              className="w-20 h-20 object-cover"
+                            />
+                          ) : (
+                            <span className="font-mono text-gray-300">
+                              {deposit.referenceId || "N/A"}
+                            </span>
+                          )}
                         </p>
                         <p>
                           <span className="text-gray-500">Order ID:</span>{" "}

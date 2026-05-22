@@ -31,7 +31,7 @@ const normalizeCatalog = (response) => {
       serviceName: formatServiceName(item.service),
       country: item.country,
       countryName: item.countryName || `Country ${item.country}`,
-      provider: item.provider || "Auto",
+      provider: "smswinner",
       stock: Number(item.stock || 0),
       price: Number(item.sellingPrice || 0),
       updatedAt: item.lastFetchedAt || item.updatedAt,
@@ -526,7 +526,7 @@ const PhoneNumber = () => {
                       Provider
                     </p>
                     <p className="mt-1 text-sm font-medium text-white">
-                      {purchaseData.provider || "Auto"}
+                      {"smswinner"}
                     </p>
                   </div>
                   <div className="rounded-lg border border-white/10 bg-black/30 p-3">
