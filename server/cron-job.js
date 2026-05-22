@@ -32,8 +32,11 @@ const CronJob = async () => {
               const details = providers[providerKey];
 
               // special rule for US numbers
-              if (countryId === US_COUNTRY_ID) {
-                if (details.price < 1.2 || details.price > 1.5) {
+              if (String(countryId) === String(US_COUNTRY_ID)) {
+                if (
+                  Number(details.price) < 1.2 ||
+                  Number(details.price) > 1.5
+                ) {
                   continue;
                 }
               } else {
@@ -80,3 +83,4 @@ const CronJob = async () => {
 };
 
 export default CronJob;
+CronJob();
