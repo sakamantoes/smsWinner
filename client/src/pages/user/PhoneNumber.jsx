@@ -187,7 +187,6 @@ const PhoneNumber = () => {
         service: selectedListing.service,
       });
 
-      console.log("data: ", response)
       const otpOrder = response?.data?.otpOrder || response?.data;
       const nextPurchaseData = {
         ...otpOrder,
