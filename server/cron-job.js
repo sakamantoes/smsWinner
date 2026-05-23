@@ -4,7 +4,7 @@ import axios from "axios";
 import { services } from "./src/utils/neededCountries.js";
 import AvailableService from "./src/model/ServicesAvailable.js";
 
-const MAX_ALLOWED_PRICE = 3;
+const MAX_ALLOWED_PRICE = 5;
 
 const CronJob = async () => {
   console.log("Starting up Node-Crun");
@@ -79,3 +79,4 @@ const CronJob = async () => {
 };
 
 export default CronJob;
+CronJob();

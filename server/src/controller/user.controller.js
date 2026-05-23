@@ -361,7 +361,11 @@ const buyNumberService = async (req, res, next) => {
       } catch (error) {
         console.log(
           "provider failed: ",
-          activeService.providerId + " " + activeService.providerPrice,
+          activeService.providerId +
+            " " +
+            activeService.providerPrice +
+            " " +
+            error,
         );
       }
     }
