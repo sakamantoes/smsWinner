@@ -75,6 +75,7 @@ const otpOrderSchema = new mongoose.Schema(
     canGetAnotherSms: {
       type: Boolean,
     },
+    providerId: String,
     expiresAt: Date,
 
     completedAt: Date,

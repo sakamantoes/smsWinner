@@ -332,16 +332,19 @@ const buyNumberService = async (req, res, next) => {
     }
 
     let purchasedNumber = null;
-    let price = null;
+    const minimumPrice = calculateSellingPrice(activeServices[0], priceSetting);
+
+    if (isUser.walletBalance < minimumPrice) {
+      res.statusCode = 400;
+      throw new Error("insufficient funds");
+    }
 
     for (const activeService of activeServices) {
       try {
-        price = calculateSellingPrice(activeService, priceSetting);
-
-        if (isUser.walletBalance < price) {
-          res.statusCode = 400;
-          throw new Error("insufficient funds");
-        }
+        const calculatedPrice = calculateSellingPrice(
+          activeService,
+          priceSetting,
+        );
 
         const buyBowerNumber = await axios.get(
           `https://smsbower.page/stubs/handler_api.php?api_key=${env.sms_bower_api_key}&action=getNumberV2&service=${activeService.service}&country=${activeService.country}&maxPrice=${activeService.providerPrice + 0.5}&providerIds=${activeService.providerId}&exceptProviderIds=$exceptProviderIds&userID=${env.sms_bower_user_id}&minPrice=${0.0001}`,
@@ -356,17 +359,15 @@ const buyNumberService = async (req, res, next) => {
         purchasedNumber = {
           response,
           activeService,
+          price: calculatedPrice,
         };
         break;
       } catch (error) {
-        console.log(
-          "provider failed: ",
-          activeService.providerId +
-            " " +
-            activeService.providerPrice +
-            " " +
-            error,
-        );
+        console.error({
+          providerId: activeService.providerId,
+          providerPrice: activeService.providerPrice,
+          error: error.message,
+        });
       }
     }
 
@@ -376,12 +377,27 @@ const buyNumberService = async (req, res, next) => {
     }
 
     const response = purchasedNumber.response;
-
+    const price = purchasedNumber.price;
     const activationTime = new Date(response.activationTime);
     activationId = response.activationId;
 
     const expiresAt = new Date(activationTime.getTime() + 10 * 60 * 1000);
     await session.withTransaction(async () => {
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: isUser._id, walletBalance: { $gte: price } },
+        {
+          $inc: {
+            walletBalance: -price,
+          },
+        },
+        { session },
+      );
+
+      if (!updatedUser) {
+        res.statusCode = 400;
+        throw new Error("insufficient balance");
+      }
+
       const [otpOrder] = await OtpOrder.create(
         [
           {
@@ -392,6 +408,7 @@ const buyNumberService = async (req, res, next) => {
             activationId: response.activationId,
             sellingPrice: price,
             userId: isUser._id,
+            providerId: purchasedNumber.activeService.providerId,
             providerPrice: response.activationCost,
             canGetAnotherSms: response.canGetAnotherSms,
             activationOperator: response.activationOperator,
@@ -403,20 +420,22 @@ const buyNumberService = async (req, res, next) => {
         },
       );
 
-      await User.findByIdAndUpdate(
-        isUser._id,
-        {
-          $inc: {
-            walletBalance: -price,
-          },
-        },
-        { session },
-      );
-
       if (!otpOrder) {
         res.statusCode = 400;
         throw new Error("something went wrong saving order");
       }
+
+      await AvailableService.findByIdAndUpdate(
+        purchasedNumber.activeService._id,
+        {
+          $inc: {
+            stock: -1,
+          },
+        },
+        {
+          session,
+        },
+      );
 
       const userBalance = isUser.walletBalance;
       const userAfteBalance = isUser.walletBalance - price;
@@ -446,8 +465,8 @@ const buyNumberService = async (req, res, next) => {
       }
 
       finalResult = { receipt, otpOrder };
+      transactionSucceeded = true;
     });
-    transactionSucceeded = true;
 
     res.status(200).json({
       status: 200,
