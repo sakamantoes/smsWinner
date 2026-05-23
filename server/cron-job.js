@@ -4,8 +4,7 @@ import axios from "axios";
 import { services } from "./src/utils/neededCountries.js";
 import AvailableService from "./src/model/ServicesAvailable.js";
 
-const MAX_ALLOWED_PRICE = 1.35;
-const US_COUNTRY_ID = "187";
+const MAX_ALLOWED_PRICE = 3;
 
 const CronJob = async () => {
   console.log("Starting up Node-Crun");
@@ -32,17 +31,6 @@ const CronJob = async () => {
               const details = providers[providerKey];
 
               // special rule for US numbers
-              if (String(serviceCode) === "wa") {
-                if (String(countryId) === String(US_COUNTRY_ID)) {
-                  if (
-                    Number(details.price) < 1.2 ||
-                    Number(details.price) > 1.36
-                  ) {
-                    continue;
-                  }
-                }
-              }
-
               // global rule for others
               if (details.price > MAX_ALLOWED_PRICE) {
                 continue;
@@ -59,13 +47,14 @@ const CronJob = async () => {
                     service: serviceCode,
                     country: countryId,
                     provider: "smsbower",
+                    providerId: Number(providerKey),
                   },
 
                   update: {
                     $set: {
                       providerPrice: details.price,
                       stock: details.count,
-                      providerId: providerKey,
+                      providerId: Number(providerKey),
                       lastFetchedAt: new Date(),
                     },
                   },

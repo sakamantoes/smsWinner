@@ -309,13 +309,16 @@ const buyNumberService = async (req, res, next) => {
       throw new Error("unAuthorise access");
     }
 
-    const activeService = await AvailableService.findOne({
+    const activeServices = await AvailableService.find({
       service,
       country,
       active: true,
+      stock: { $gt: 0 },
+    }).sort({
+      providerPrice: 1,
     });
 
-    if (!activeService) {
+    if (!activeServices.length) {
       res.statusCode = 400;
       throw new Error("service not available at the moment");
     }
@@ -328,35 +331,47 @@ const buyNumberService = async (req, res, next) => {
       throw new Error("error fetching price");
     }
 
-    const price = calculateSellingPrice(activeService, priceSetting);
+    let purchasedNumber = null;
+    let price = null;
 
-    if (isUser.walletBalance < price) {
-      res.statusCode = 400;
-      throw new Error("insufficient funds");
-    }
+    for (const activeService of activeServices) {
+      try {
+        price = calculateSellingPrice(activeService, priceSetting);
 
-    const buyBowerNumber = await axios.get(
-      `https://smsbower.page/stubs/handler_api.php?api_key=${env.sms_bower_api_key}&action=getNumberV2&service=${activeService.service}&country=${activeService.country}&maxPrice=${activeService.providerPrice}&providerIds=${activeService.providerId}&exceptProviderIds=$exceptProviderIds&userID=${env.sms_bower_user_id}&minPrice=${0.0001}`,
-    );
+        if (isUser.walletBalance < price) {
+          res.statusCode = 400;
+          throw new Error("insufficient funds");
+        }
 
-    if (!buyBowerNumber || !buyBowerNumber.data) {
-      res.statusCode = 400;
+        const buyBowerNumber = await axios.get(
+          `https://smsbower.page/stubs/handler_api.php?api_key=${env.sms_bower_api_key}&action=getNumberV2&service=${activeService.service}&country=${activeService.country}&maxPrice=${activeService.providerPrice + 0.5}&providerIds=${activeService.providerId}&exceptProviderIds=$exceptProviderIds&userID=${env.sms_bower_user_id}&minPrice=${0.0001}`,
+        );
 
-      throw new Error("our provider not currently available");
-    }
+        const response = buyBowerNumber.data;
 
-    const response = buyBowerNumber.data;
+        if (typeof response === "string") {
+          continue;
+        }
 
-    if (typeof response === "string") {
-
-      if(response === "NO_BALANCE"){
-        res.statusCode =400
-        throw new Error("this particular service is under maintenance.. contact support!!")
+        purchasedNumber = {
+          response,
+          activeService,
+        };
+        break;
+      } catch (error) {
+        console.log(
+          "provider failed: ",
+          activeService.providerId + " " + activeService.providerPrice,
+        );
       }
-      
-      res.statusCode = 400
-      throw new Error(response);
     }
+
+    if (!purchasedNumber) {
+      res.statusCode = 400;
+      throw new Error("No providers available currently");
+    }
+
+    const response = purchasedNumber.response;
 
     const activationTime = new Date(response.activationTime);
     activationId = response.activationId;

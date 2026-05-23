@@ -22,7 +22,7 @@ const AvailableServiceSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    
+
     customPrice: {
       type: Number,
       default: null,
@@ -39,6 +39,8 @@ const AvailableServiceSchema = new mongoose.Schema(
     },
     providerId: {
       type: Number,
+      required: true,
+      index: true,
     },
     lastFetchedAt: {
       type: Date,
@@ -55,6 +57,7 @@ AvailableServiceSchema.index(
     service: 1,
     country: 1,
     provider: 1,
+    providerId: 1,
   },
   {
     unique: true,
