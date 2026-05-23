@@ -79,4 +79,3 @@ const CronJob = async () => {
 };
 
 export default CronJob;
-CronJob();
