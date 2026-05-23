@@ -4,7 +4,7 @@ import axios from "axios";
 import { services } from "./src/utils/neededCountries.js";
 import AvailableService from "./src/model/ServicesAvailable.js";
 
-const MAX_ALLOWED_PRICE = 5;
+const MAX_ALLOWED_PRICE = 10;
 
 const CronJob = async () => {
   console.log("Starting up Node-Crun");
@@ -32,7 +32,7 @@ const CronJob = async () => {
 
               // special rule for US numbers
               // global rule for others
-              if (details.price > MAX_ALLOWED_PRICE) {
+              if (Number(details.price) > MAX_ALLOWED_PRICE) {
                 continue;
               }
 
