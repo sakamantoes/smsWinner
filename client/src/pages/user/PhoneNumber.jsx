@@ -1,4 +1,4 @@
- import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AlertCircle,
@@ -185,6 +185,7 @@ const PhoneNumber = () => {
       const response = await buyNumber({
         country: selectedListing.country,
         service: selectedListing.service,
+        id: selectedListing.id,
       });
 
       const otpOrder = response?.data?.otpOrder || response?.data;
@@ -227,7 +228,8 @@ const PhoneNumber = () => {
             </div>
             <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
               Buy from live admin-listed numbers
-              <br className="hidden sm:block" /> then request OTP from your inbox.
+              <br className="hidden sm:block" /> then request OTP from your
+              inbox.
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-gray-400">
               Pick a service, choose an available country from the current
@@ -539,7 +541,10 @@ const PhoneNumber = () => {
                 </div>
 
                 <div className="mt-5 rounded-xl border border-red-light/20 bg-black/30 p-5 text-center">
-                  <CheckCircle2 size={32} className="mx-auto text-emerald-400" />
+                  <CheckCircle2
+                    size={32}
+                    className="mx-auto text-emerald-400"
+                  />
                   <h3 className="mt-3 font-semibold text-white">
                     Purchase successful
                   </h3>

@@ -294,7 +294,7 @@ const getPlatformServices = async (req, res, next) => {
 
 const buyNumberService = async (req, res, next) => {
   const user = req.user;
-  const { service, country } = req.body;
+  const { service, country, id } = req.body;
   const session = await mongoose.startSession();
   const receiptNo = recieptNumberGenerator();
   let finalResult = null;
@@ -309,11 +309,27 @@ const buyNumberService = async (req, res, next) => {
       throw new Error("unAuthorise access");
     }
 
+    const selectedService = await AvailableService.findOne({
+      _id: id,
+      active: true,
+      stock: { $gt: 0 },
+    });
+
+    if (!selectedService) {
+      res.statusCode = 400;
+      throw new Error("selected service unavailable");
+    }
+
+    const maxAllowedProviderPrice = Number(selectedService.providerPrice) + 0.5;
+
     const activeServices = await AvailableService.find({
       service,
       country,
       active: true,
       stock: { $gt: 0 },
+      providerPrice: {
+        $lte: maxAllowedProviderPrice,
+      },
     }).sort({
       providerPrice: 1,
     });
