@@ -9,8 +9,8 @@ export const getAllCountry = async () => {
 };
 
 // ================= SERVICES =================
-export const getAvailableServices = async () => {
-  const res = await api.get("/api/user/platform/services");
+export const getAvailableServices = async (params = {}) => {
+  const res = await api.get("/api/user/platform/services", { params });
   return res.data;
 };
 

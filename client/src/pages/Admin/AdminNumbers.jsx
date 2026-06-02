@@ -24,31 +24,49 @@ import {
 } from "../../service/admin.js";
 import { formatCurrency } from "../../utils/transaction.js";
 import { formatServiceName } from "../../utils/serviceCode.js";
+import { getNumberAvailabilityInfo } from "../../utils/availability.js";
 import AdminPriceSetting from "../../components/AdminPriceSetting.jsx";
+
+const LISTINGS_PER_PAGE = 25;
 
 const normalizeCatalog = (response) => {
   const services = Array.isArray(response?.data) ? response.data : [];
 
   return services
-    .filter((item) => item?.service && item?.country)
-    .map((item) => ({
-      id: item._id || `${item.provider}-${item.country}-${item.service}`,
-      service: item.service,
-      serviceName: formatServiceName(item.service),
-      country: item.country,
-      costPrice: Number(item.costPrice || 0),
-      countryName: item.countryName || `Country ${item.country}`,
-      provider: item.provider || "Auto",
-      stock: Number(item.stock || 0),
-      price: Number(item.sellingPrice || 0),
-      autoPrice: Number(item.sellingPrice || 0),
-      customPrice:
-        item.customPrice === null || item.customPrice === undefined
-          ? null
-          : Number(item.customPrice),
-      active: Boolean(item.active),
-      updatedAt: item.lastFetchedAt || item.updatedAt,
-    }))
+    .filter(
+      (item) =>
+        (item?.internalService || item?.service) &&
+        (item?.internalCountry || item?.country),
+    )
+    .map((item) => {
+      const serviceCode = item.internalService || item.service;
+      const countryCode = item.internalCountry || item.country;
+      const availability = getNumberAvailabilityInfo(item);
+
+      return {
+        id: item._id || `${item.provider}-${countryCode}-${serviceCode}`,
+        service: serviceCode,
+        serviceName: formatServiceName(serviceCode),
+        country: countryCode,
+        costPrice: Number(item.costPrice || 0),
+        countryName: item.countryName || countryCode,
+        provider: item.provider || "Auto",
+        stock: Number(item.stock || 0),
+        availability: Boolean(item.availability),
+        availabilityLabel: availability.label,
+        availabilityDetail: availability.detail,
+        availabilityScore: availability.score,
+        availabilityClassName: availability.className,
+        price: Number(item.sellingPrice || 0),
+        autoPrice: Number(item.sellingPrice || 0),
+        customPrice:
+          item.customPrice === null || item.customPrice === undefined
+            ? null
+            : Number(item.customPrice),
+        active: Boolean(item.active),
+        updatedAt: item.lastFetchedAt || item.updatedAt,
+      };
+    })
     .sort((a, b) => {
       const serviceSort = a.serviceName.localeCompare(b.serviceName);
       if (serviceSort !== 0) return serviceSort;
@@ -67,6 +85,13 @@ export default function AdminNumbers() {
   const [editingId, setEditingId] = useState("");
   const [priceDraft, setPriceDraft] = useState("");
   const [savingPriceId, setSavingPriceId] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: LISTINGS_PER_PAGE,
+    total: 0,
+    totalPages: 1,
+  });
 
   const fetchServices = useCallback(async () => {
     try {
@@ -74,11 +99,24 @@ export default function AdminNumbers() {
       setError("");
 
       const [response, namesResponse] = await Promise.all([
-        getAllPlatformServices(),
+        getAllPlatformServices({
+          page: currentPage,
+          limit: LISTINGS_PER_PAGE,
+          service: selectedService || undefined,
+          search: searchTerm.trim() || undefined,
+        }),
         getPlatformServiceNames(),
       ]);
       const nextCatalog = normalizeCatalog(response);
       setCatalog(nextCatalog);
+      setPagination(
+        response?.pagination || {
+          page: currentPage,
+          limit: LISTINGS_PER_PAGE,
+          total: nextCatalog.length,
+          totalPages: 1,
+        },
+      );
       setServiceNames(
         Array.isArray(namesResponse?.data) ? namesResponse.data : [],
       );
@@ -88,7 +126,7 @@ export default function AdminNumbers() {
     } finally {
       setLoadingCatalog(false);
     }
-  }, []);
+  }, [currentPage, searchTerm, selectedService]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -102,8 +140,8 @@ export default function AdminNumbers() {
     if (serviceNames.length > 0) {
       return serviceNames
         .map((item) => ({
-          code: item.service,
-          name: formatServiceName(item.service),
+          code: item.internalService,
+          name: formatServiceName(item.internalService),
           stock: Number(item.totalStock || 0),
           countries: Number(item.totalCountries || 0),
           active: Boolean(item.active),
@@ -113,12 +151,11 @@ export default function AdminNumbers() {
         .sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    const services = new Map();
+    const summaries = new Map();
+
     catalog.forEach((item) => {
-      if (!services.has(item.service)) {
-        services.set(item.service, {
-          code: item.service,
-          name: item.serviceName,
+      if (!summaries.has(item.service)) {
+        summaries.set(item.service, {
           stock: 0,
           countries: new Set(),
           totalListings: 0,
@@ -126,35 +163,30 @@ export default function AdminNumbers() {
         });
       }
 
-      const service = services.get(item.service);
-      service.stock += item.stock;
-      service.countries.add(item.country);
-      service.totalListings += 1;
-      if (item.active) service.activeCount += 1;
+      const summary = summaries.get(item.service);
+      summary.stock += item.availabilityScore;
+      summary.countries.add(item.country);
+      summary.totalListings += 1;
+      if (item.active) summary.activeCount += 1;
     });
 
-    return Array.from(services.values()).map((item) => ({
-      ...item,
+    return Array.from(summaries.entries()).map(([service, item]) => ({
+      code: service,
+      name: formatServiceName(service),
+      stock: item.stock,
       countries: item.countries.size,
+      totalListings: item.totalListings,
+      activeCount: item.activeCount,
       active: item.totalListings > 0 && item.activeCount === item.totalListings,
     }));
   }, [catalog, serviceNames]);
 
-  const filteredListings = useMemo(() => {
-    const search = searchTerm.trim().toLowerCase();
-
-    return catalog.filter((item) => {
-      const matchesService =
-        !selectedService || item.service === selectedService;
-      const matchesSearch =
-        !search ||
-        item.countryName.toLowerCase().includes(search) ||
-        item.provider.toLowerCase().includes(search) ||
-        item.serviceName.toLowerCase().includes(search);
-
-      return matchesService && matchesSearch;
-    });
-  }, [catalog, searchTerm, selectedService]);
+  const filteredListings = catalog;
+  const totalPages = Math.max(Number(pagination.totalPages || 1), 1);
+  const totalListings = Number(pagination.total || 0);
+  const visiblePage = Math.min(currentPage, totalPages);
+  const pageStart = totalListings === 0 ? 0 : (visiblePage - 1) * LISTINGS_PER_PAGE;
+  const paginatedListings = filteredListings;
 
   const selectedServiceLabel = selectedService
     ? serviceOptions.find((item) => item.code === selectedService)?.name ||
@@ -170,7 +202,7 @@ export default function AdminNumbers() {
 
       setServiceNames((prev) =>
         prev.map((item) =>
-          item.service === service.code
+          item.internalService === service.code
             ? {
                 ...item,
                 active: nextActive,
@@ -235,7 +267,7 @@ export default function AdminNumbers() {
     }
   };
 
-  const totalStock = catalog.reduce((sum, item) => sum + item.stock, 0);
+  const liveListings = catalog.filter((item) => item.availabilityScore > 0).length;
   const activeCountries = new Set(catalog.map((item) => item.country)).size;
   const totalServices = serviceOptions.length;
   const averagePrice =
@@ -255,7 +287,7 @@ export default function AdminNumbers() {
     {
       label: "Active Countries",
       value: activeCountries,
-      change: `${totalStock} total numbers`,
+      change: `${liveListings} live listings`,
       icon: ShieldCheck,
       iconBg: "bg-emerald-500/15",
       iconColor: "text-emerald-400",
@@ -285,7 +317,7 @@ export default function AdminNumbers() {
             Admin Numbers
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-gray-400">
-            View and manage all available number stocks across different
+            View and manage all available number routes across different
             services and countries.
           </p>
         </div>
@@ -325,8 +357,8 @@ export default function AdminNumbers() {
         ))}
       </section>
 
-      <section className="grid w-full min-w-0 gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <div className="min-w-0 rounded-xl border border-white/10 bg-white/5 shadow-md">
+      <section className="grid w-full min-w-0 gap-5 md:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="min-w-0 max-h-screen overflow-y-auto rounded-xl border border-white/10 bg-white/5 shadow-md">
           <div className="flex items-center justify-between border-b border-white/10 bg-black/20 px-5 py-4">
             <div>
               <h2 className="font-semibold text-white">Service Names</h2>
@@ -343,7 +375,10 @@ export default function AdminNumbers() {
           <div className="space-y-2 overflow-y-auto p-4">
             <button
               type="button"
-              onClick={() => setSelectedService("")}
+              onClick={() => {
+                setSelectedService("");
+                setCurrentPage(1);
+              }}
               className={`flex w-full items-center justify-between rounded-lg border px-3 py-3 text-left transition-all ${
                 selectedService === ""
                   ? "border-red-light/40 bg-red-light/10"
@@ -374,7 +409,10 @@ export default function AdminNumbers() {
               >
                 <button
                   type="button"
-                  onClick={() => setSelectedService(service.code)}
+                  onClick={() => {
+                    setSelectedService(service.code);
+                    setCurrentPage(1);
+                  }}
                   className="flex w-full items-start justify-between gap-3 px-3 py-3 text-left"
                 >
                   <span className="min-w-0">
@@ -384,7 +422,7 @@ export default function AdminNumbers() {
                     <span className="mt-0.5 block text-xs text-gray-500">
                       {service.countries} countr
                       {service.countries === 1 ? "y" : "ies"} | {service.stock}{" "}
-                      stock
+                      live routes
                     </span>
                   </span>
                   <span
@@ -420,15 +458,15 @@ export default function AdminNumbers() {
           </div>
         </div>
 
-        <div className="min-w-0 overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-md">
+        <div className="min-w-0 max-h-screen overflow-y-auto rounded-xl border border-white/10 bg-white/5 shadow-md">
           <div className="flex min-w-0 flex-col gap-4 border-b border-white/10 bg-black/20 px-5 py-4 md:flex-row md:items-center md:justify-between">
             <div className="min-w-0">
               <h2 className="font-semibold text-white">
                 {selectedServiceLabel}
               </h2>
               <p className="mt-0.5 text-xs text-gray-500">
-                {filteredListings.length} listing
-                {filteredListings.length === 1 ? "" : "s"} found
+                {totalListings} listing
+                {totalListings === 1 ? "" : "s"} found
               </p>
             </div>
 
@@ -437,7 +475,10 @@ export default function AdminNumbers() {
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                 <input
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   placeholder="Search country..."
                   className="h-10 w-full rounded-lg border border-white/10 bg-black/40 py-2 pl-10 pr-4 text-sm text-white transition-all placeholder:text-gray-600 focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50"
                 />
@@ -469,7 +510,7 @@ export default function AdminNumbers() {
             <div className="flex items-center justify-center py-16 text-gray-400">
               <Loader2 className="h-8 w-8 animate-spin text-red-light" />
             </div>
-          ) : filteredListings.length === 0 ? (
+          ) : totalListings === 0 ? (
             <div className="px-5 py-14 text-center">
               <Package size={42} className="mx-auto text-gray-600" />
               <h3 className="mt-4 text-lg font-semibold text-white">
@@ -487,7 +528,7 @@ export default function AdminNumbers() {
                     <th className="px-5 py-3 font-semibold">Service</th>
                     <th className="px-5 py-3 font-semibold">Country</th>
                     <th className="px-5 py-3 font-semibold">Provider</th>
-                    <th className="px-5 py-3 font-semibold">Stock</th>
+                    <th className="px-5 py-3 font-semibold">Availability</th>
                     <th className="px-5 py-3 font-semibold">Cost Price</th>
                     <th className="px-5 py-3 font-semibold">Selling Price</th>
                     <th className="px-5 py-3 font-semibold">Custom Price</th>
@@ -496,7 +537,7 @@ export default function AdminNumbers() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10 text-sm">
-                  {filteredListings.map((item) => (
+                  {paginatedListings.map((item) => (
                     <tr
                       key={item.id}
                       className="bg-black/10 transition-colors hover:bg-white/[0.03]"
@@ -516,7 +557,18 @@ export default function AdminNumbers() {
                       <td className="px-5 py-4 text-gray-300">
                         {item.provider}
                       </td>
-                      <td className="px-5 py-4 text-gray-300">{item.stock}</td>
+                      <td className="px-5 py-4">
+                        <div className="flex flex-col items-start gap-1.5">
+                          <span
+                            className={`rounded-full border px-2 py-1 text-xs font-semibold ${item.availabilityClassName}`}
+                          >
+                            {item.availabilityLabel}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {item.availabilityDetail}
+                          </span>
+                        </div>
+                      </td>
                       <td className="px-5 py-4 text-gray-300">
                         {formatCurrency(item.costPrice)}
                       </td>
@@ -592,6 +644,36 @@ export default function AdminNumbers() {
                   ))}
                 </tbody>
               </table>
+              <div className="flex flex-col gap-3 border-t border-white/10 px-5 py-4 text-sm text-gray-400 sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  Showing {pageStart + 1}-
+                  {Math.min(pageStart + LISTINGS_PER_PAGE, totalListings)}{" "}
+                  of {totalListings}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                    disabled={visiblePage === 1}
+                    className="h-9 rounded-lg border border-white/10 px-3 text-xs font-semibold text-gray-300 transition-colors hover:border-red-light/30 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Previous
+                  </button>
+                  <span className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs font-semibold text-white">
+                    Page {visiblePage} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage((page) => Math.min(page + 1, totalPages))
+                    }
+                    disabled={visiblePage === totalPages}
+                    className="h-9 rounded-lg border border-white/10 px-3 text-xs font-semibold text-gray-300 transition-colors hover:border-red-light/30 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

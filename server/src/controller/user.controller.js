@@ -5,11 +5,12 @@ import WalletTransaction from "../model/WalletTransactions.js";
 import PricingSetting from "../model/PriceSetting.js";
 import calculateSellingPrice from "../utils/calculateSellingPrice.js";
 import AvailableService from "../model/ServicesAvailable.js";
-import { countries, services } from "../utils/neededCountries.js";
-import axios from "axios";
 import { env } from "../config/constant.js";
 import OtpOrder from "../model/OtpOrder.js";
 import recieptNumberGenerator from "../utils/recieptNo.generator.js";
+import { cancelNumberServices } from "../services/number/cancelNumber.js";
+import { buyNumberOption } from "../services/number/buyNumber.js";
+import { requestUserOtp } from "../services/number/checkNumber.js";
 
 const getUserWalletBalance = async (req, res, next) => {
   const user = req.user;
@@ -173,53 +174,10 @@ const checkUserOtpOrderStatus = async (req, res, next) => {
       );
     }
 
-    const otpStatus = await axios.get(
-      "https://smsbower.page/stubs/handler_api.php",
-      {
-        params: {
-          api_key: env.sms_bower_api_key,
-          action: "getStatus",
-          id: otpOrder.activationId,
-        },
-      },
-    );
-
-    const response = otpStatus.data;
-    let otpCode = otpOrder.otpCode;
-    let otpMessage = otpOrder.otpMessage;
-    let status = otpOrder.status;
-
-    if (typeof response === "string") {
-      otpMessage = response;
-
-      if (response.startsWith("STATUS_OK")) {
-        const parts = response.split(":");
-        otpCode = parts[parts.length - 1];
-        status = "OTP_RECEIVED";
-      }
-
-      if (response === "STATUS_CANCEL") {
-        status = "CANCELLED";
-      }
-
-      if (
-        response === "STATUS_WAIT_CODE" ||
-        response.startsWith("STATUS_WAIT_RETRY")
-      ) {
-        status = "WAITING_FOR_SMS";
-      }
-    } else if (response && typeof response === "object") {
-      otpMessage =
-        response.text ||
-        response.smsText ||
-        response.message ||
-        JSON.stringify(response);
-      otpCode = response.code || response.smsCode || otpCode;
-
-      if (otpCode) {
-        status = "OTP_RECEIVED";
-      }
-    }
+    const response = await requestUserOtp(otpOrder);
+    const otpCode = response.otpCode || otpOrder.otpCode;
+    const otpMessage = response.otpMessage || otpOrder.otpMessage;
+    const status = response.status || otpOrder.status;
 
     const hasChanges =
       otpOrder.otpCode !== otpCode ||
@@ -253,7 +211,11 @@ const checkUserOtpOrderStatus = async (req, res, next) => {
 };
 
 const getPlatformServices = async (req, res, next) => {
+  const { page = 1, limit = 12, service = "", search = "" } = req.query;
+
   try {
+    const pageNumber = Math.max(Number(page) || 1, 1);
+    const limitNumber = Math.min(Math.max(Number(limit) || 12, 1), 100);
     const priceSetting = await PricingSetting.findOne({});
 
     if (!priceSetting) {
@@ -262,21 +224,66 @@ const getPlatformServices = async (req, res, next) => {
       throw new Error("error fetching price");
     }
 
-    const availableServices = await AvailableService.find({
+    const query = {
       active: true,
-      stock: { $gt: 0 },
-    }).lean();
+    };
+    const normalizedService = String(service).trim();
+    const normalizedSearch = String(search).trim();
+
+    if (normalizedService) {
+      query.internalService = normalizedService;
+    }
+
+    if (normalizedSearch) {
+      const searchRegex = new RegExp(normalizedSearch, "i");
+      query.$or = [
+        { internalCountry: searchRegex },
+        { internalService: searchRegex },
+        { provider: searchRegex },
+      ];
+    }
+
+    const [availableServices, total, services] = await Promise.all([
+      AvailableService.find(query)
+        .sort({ internalService: 1, internalCountry: 1, providerPrice: 1 })
+        .skip((pageNumber - 1) * limitNumber)
+        .limit(limitNumber)
+        .lean(),
+      AvailableService.countDocuments(query),
+      AvailableService.aggregate([
+        { $match: { active: true } },
+        {
+          $group: {
+            _id: "$internalService",
+            totalCountries: { $addToSet: "$internalCountry" },
+            totalStock: { $sum: "$stock" },
+            liveRoutes: {
+              $sum: {
+                $cond: [
+                  { $and: ["$availability", { $gt: ["$stock", 0] }] },
+                  1,
+                  0,
+                ],
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            internalService: "$_id",
+            totalCountries: { $size: "$totalCountries" },
+            totalStock: 1,
+            liveRoutes: 1,
+          },
+        },
+        { $sort: { internalService: 1 } },
+      ]),
+    ]);
 
     const finalProduct = availableServices.map((item) => {
-      const matchedService = countries.find(
-        (i) => i.countryId === Number(item.country),
-      );
-
       return {
         ...item,
-
-        countryName: matchedService?.country || "Unknown",
-
         sellingPrice: calculateSellingPrice(item, priceSetting),
       };
     });
@@ -286,6 +293,13 @@ const getPlatformServices = async (req, res, next) => {
       success: true,
       message: "list of all available pricing",
       data: finalProduct,
+      services,
+      pagination: {
+        page: pageNumber,
+        limit: limitNumber,
+        total,
+        totalPages: Math.max(Math.ceil(total / limitNumber), 1),
+      },
     });
   } catch (error) {
     next(error);
@@ -298,7 +312,7 @@ const buyNumberService = async (req, res, next) => {
   const session = await mongoose.startSession();
   const receiptNo = recieptNumberGenerator();
   let finalResult = null;
-  let activationId = null;
+  let boughtService = null;
   let transactionSucceeded = false;
 
   try {
@@ -311,8 +325,9 @@ const buyNumberService = async (req, res, next) => {
 
     const selectedService = await AvailableService.findOne({
       _id: id,
+      internalService: service,
+      internalCountry: country,
       active: true,
-      stock: { $gt: 0 },
     });
 
     if (!selectedService) {
@@ -320,13 +335,15 @@ const buyNumberService = async (req, res, next) => {
       throw new Error("selected service unavailable");
     }
 
-    const maxAllowedProviderPrice = Number(selectedService.providerPrice) + 0.5;
+    const maxAllowedProviderPrice = Math.min(
+      Number(selectedService.providerPrice) * 1.5,
+      Number(selectedService.providerPrice) + 1,
+    );
 
     const activeServices = await AvailableService.find({
-      service,
-      country,
+      internalService: service,
+      internalCountry: country,
       active: true,
-      stock: { $gt: 0 },
       providerPrice: {
         $lte: maxAllowedProviderPrice,
       },
@@ -348,7 +365,7 @@ const buyNumberService = async (req, res, next) => {
     }
 
     let purchasedNumber = null;
-    const minimumPrice = calculateSellingPrice(activeServices[0], priceSetting);
+    const minimumPrice = calculateSellingPrice(selectedService, priceSetting);
 
     if (isUser.walletBalance < minimumPrice) {
       res.statusCode = 400;
@@ -357,25 +374,18 @@ const buyNumberService = async (req, res, next) => {
 
     for (const activeService of activeServices) {
       try {
-        const calculatedPrice = calculateSellingPrice(
-          activeService,
-          priceSetting,
-        );
+        const buyBowerNumber = await buyNumberOption(activeService);
 
-        const buyBowerNumber = await axios.get(
-          `https://smsbower.page/stubs/handler_api.php?api_key=${env.sms_bower_api_key}&action=getNumberV2&service=${activeService.service}&country=${activeService.country}&maxPrice=${activeService.providerPrice + 0.5}&providerIds=${activeService.providerId}&exceptProviderIds=$exceptProviderIds&userID=${env.sms_bower_user_id}&minPrice=${0.0001}`,
-        );
+        const response = buyBowerNumber;
 
-        const response = buyBowerNumber.data;
-
-        if (typeof response === "string") {
+        if (!response?.activationId || !response?.phoneNumber) {
+          console.log("purchase number failure: ", response);
           continue;
         }
 
         purchasedNumber = {
           response,
           activeService,
-          price: calculatedPrice,
         };
         break;
       } catch (error) {
@@ -388,14 +398,18 @@ const buyNumberService = async (req, res, next) => {
     }
 
     if (!purchasedNumber) {
+      console.error("error purchasing number: ", purchasedNumber);
       res.statusCode = 400;
-      throw new Error("No providers available currently");
+      throw new Error(
+        "We could not secure a number for this service right now. Try refreshing the list or choosing another available option.",
+      );
     }
 
     const response = purchasedNumber.response;
-    const price = purchasedNumber.price;
+    const price = calculateSellingPrice(selectedService, priceSetting);
+
     const activationTime = new Date(response.activationTime);
-    activationId = response.activationId;
+    boughtService = response;
 
     const expiresAt = new Date(activationTime.getTime() + 10 * 60 * 1000);
     await session.withTransaction(async () => {
@@ -428,6 +442,7 @@ const buyNumberService = async (req, res, next) => {
             providerPrice: response.activationCost,
             canGetAnotherSms: response.canGetAnotherSms,
             activationOperator: response.activationOperator,
+            provider: response.provider,
             expiresAt,
           },
         ],
@@ -440,18 +455,6 @@ const buyNumberService = async (req, res, next) => {
         res.statusCode = 400;
         throw new Error("something went wrong saving order");
       }
-
-      await AvailableService.findByIdAndUpdate(
-        purchasedNumber.activeService._id,
-        {
-          $inc: {
-            stock: -1,
-          },
-        },
-        {
-          session,
-        },
-      );
 
       const userBalance = isUser.walletBalance;
       const userAfteBalance = isUser.walletBalance - price;
@@ -491,10 +494,15 @@ const buyNumberService = async (req, res, next) => {
       data: finalResult,
     });
   } catch (error) {
-    if (activationId && !transactionSucceeded) {
-      await axios.get(
-        `https://smsbower.page/stubs/handler_api.php?api_key=${env.sms_bower_api_key}&action=setStatus&status=8&id=${activationId}`,
-      );
+    if (boughtService && !transactionSucceeded) {
+      try {
+        await cancelNumberServices(boughtService);
+      } catch (cancelError) {
+        console.error(
+          "failed to cancel purchased number:",
+          cancelError.message,
+        );
+      }
     }
     next(error);
   } finally {
@@ -538,14 +546,13 @@ const cancelOtpAndRefund = async (req, res, next) => {
     }
 
     // cancel from provider
-    const smsBowerCancel = await axios.get(
-      `https://smsbower.page/stubs/handler_api.php?api_key=${env.sms_bower_api_key}&action=setStatus&status=8&id=${userOrderExist.activationId}`,
-    );
-
-    const response = smsBowerCancel.data;
+    const smsCancel = await cancelNumberServices(userOrderExist);
+    const response = smsCancel;
+    const providerCancelSucceeded =
+      response === "ACCESS_CANCEL" || response?.success === 1;
 
     // if provider fails to cancel
-    if (response !== "ACCESS_CANCEL") {
+    if (!providerCancelSucceeded) {
       res.statusCode = 400;
       throw new Error("provider failed to cancel otp");
     }

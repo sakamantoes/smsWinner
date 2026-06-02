@@ -1,19 +1,27 @@
 import mongoose from "mongoose";
 import { env } from "./src/config/constant.js";
 import axios from "axios";
-import { services } from "./src/utils/neededCountries.js";
+import { countries, services } from "./src/utils/neededCountries.js";
 import AvailableService from "./src/model/ServicesAvailable.js";
+import { formatServiceName } from "./src/utils/serviceCode.js";
 
 const MAX_ALLOWED_PRICE = 10;
 
 const CronJob = async () => {
-  console.log("Starting up Node-Crun");
+  console.log("Starting up SMSBOWER-CRON-JOB");
   try {
     console.log("connecting to mongoDb.....");
     await mongoose.connect(env.mongodb_url);
     console.log("MongoDB connected successfully");
 
     let arr = [];
+
+    await AvailableService.updateMany(
+      { provider: "smsbower" },
+      { $set: { stock: 0 } },
+    );
+
+    console.log("fetching data...");
 
     await Promise.all(
       services.map(async (item) => {
@@ -35,26 +43,31 @@ const CronJob = async () => {
               if (Number(details.price) > MAX_ALLOWED_PRICE) {
                 continue;
               }
+              const matchedCountry = countries.find(
+                (i) => i.countryId === Number(countryId),
+              );
 
-              // console.log(
-              //   `low product saved :`,
-              //   serviceCode + " " + details.price + " " + countryId,
-              // );
+              const mappedService = formatServiceName(serviceCode);
+
+              if (!matchedCountry || !mappedService) {
+                continue;
+              }
 
               arr.push({
                 updateOne: {
                   filter: {
-                    service: serviceCode,
-                    country: countryId,
+                    providerService: serviceCode,
+                    providerCountry: countryId,
                     provider: "smsbower",
-                    providerId: Number(providerKey),
+                    providerId: String(providerKey),
                   },
 
                   update: {
                     $set: {
                       providerPrice: details.price,
                       stock: details.count,
-                      providerId: Number(providerKey),
+                      internalService: mappedService,
+                      internalCountry: matchedCountry?.country,
                       lastFetchedAt: new Date(),
                     },
                   },
@@ -67,14 +80,15 @@ const CronJob = async () => {
         }
       }),
     );
-
+    console.log("saving data....");
     await AvailableService.bulkWrite(arr);
+    console.log("data saved successfully");
 
     console.log(
-      `cron job ran successfully and Prepared ${arr.length} operations`,
+      `SMSBOWER cron job ran successfully and Prepared ${arr.length} operations`,
     );
   } catch (err) {
-    console.error("node cron: ", err);
+    console.error("SMSBOWER CRON JOB ERROR ", err);
   }
 };
 

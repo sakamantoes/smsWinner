@@ -10,8 +10,7 @@ const otpOrderSchema = new mongoose.Schema(
 
     provider: {
       type: String,
-      enum: ["nodeotp", "smsactivate", "smsbower"],
-      default: "smsbower",
+      enum: [ "smspool", "smsbower"],
       required: true,
     },
 
@@ -24,7 +23,6 @@ const otpOrderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-
     phoneNumber: {
       type: String,
       required: true,

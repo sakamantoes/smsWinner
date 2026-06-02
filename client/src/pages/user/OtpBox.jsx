@@ -381,7 +381,7 @@ const OtpBox = () => {
                           {String(
                             formatServiceName(order.service) || "N/A",
                           ).toUpperCase()}
-                          ({" " + order.service})
+
                         </p>
                         <p className="text-xs text-gray-500">
                           Country {order.country || "N/A"}

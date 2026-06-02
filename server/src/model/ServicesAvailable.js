@@ -2,18 +2,19 @@ import mongoose from "mongoose";
 
 const AvailableServiceSchema = new mongoose.Schema(
   {
-    service: {
+    providerService: {
       type: String,
       required: true,
       index: true,
     },
-    country: {
+    providerCountry: {
       type: String,
       required: true,
       index: true,
     },
     provider: {
       type: String,
+      enum: ["smspool", "smsbower"],
       required: true,
       index: true,
     },
@@ -22,7 +23,16 @@ const AvailableServiceSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-
+    internalService: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    internalCountry: {
+      type: String,
+      required: true,
+      index: true,
+    },
     customPrice: {
       type: Number,
       default: null,
@@ -30,7 +40,6 @@ const AvailableServiceSchema = new mongoose.Schema(
 
     stock: {
       type: Number,
-      default: 0,
     },
 
     active: {
@@ -38,7 +47,7 @@ const AvailableServiceSchema = new mongoose.Schema(
       default: false,
     },
     providerId: {
-      type: Number,
+      type: String,
       required: true,
       index: true,
     },
@@ -46,6 +55,7 @@ const AvailableServiceSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    availability: Boolean,
   },
   {
     timestamps: true,
@@ -54,8 +64,8 @@ const AvailableServiceSchema = new mongoose.Schema(
 
 AvailableServiceSchema.index(
   {
-    service: 1,
-    country: 1,
+    providerService: 1,
+    providerCountry: 1,
     provider: 1,
     providerId: 1,
   },
