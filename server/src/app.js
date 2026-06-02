@@ -52,7 +52,7 @@ app.get("/cron-jobs", (req, res) => {
   CronJob();
   res.status(200).send("SMSBOWER Cron Job Ran");
 });
-app.get("/", (req, res) => {
+app.get("/smspool-cron-jobs", (req, res) => {
   SMSPOOLCRON();
   res.status(200).send("SMSPOOL Cron Job Ran");
 });
