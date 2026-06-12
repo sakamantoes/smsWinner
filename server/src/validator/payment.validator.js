@@ -7,8 +7,8 @@ export const initialiseDepositValidator = [
     .notEmpty()
     .withMessage("Amount is required"),
   body("paymentMethod")
-    .isIn(["SQUAD", "ALAT", "MANUAL_TRANSFER"])
-    .withMessage("Payment method must be one of: SQUAD, ALAT, MANUAL_TRANSFER")
+    .isIn(["SQUAD", "QUEST", "MANUAL_TRANSFER"])
+    .withMessage("Payment method must be one of: SQUAD, QUEST, MANUAL_TRANSFER")
     .notEmpty(),
 ];
 
@@ -20,7 +20,7 @@ export const paymentStatusValidator = [
   body("referenceId").notEmpty().withMessage("Reference ID is required"),
 ];
 
-export const manuelPaymentValidator = [
+export const manualPaymentValidator = [
   body("amount")
     .isNumeric()
     .withMessage("Amount must be a number")
@@ -35,3 +35,4 @@ export const manuelPaymentValidator = [
     .notEmpty()
     .withMessage("deositorName is required"),
 ];
+

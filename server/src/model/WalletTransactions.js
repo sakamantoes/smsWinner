@@ -35,7 +35,7 @@ const walletTransactionSchema = new mongoose.Schema(
 
     paymentMethod: {
       type: String,
-      enum: ["ALAT", "SQUAD", "MANUAL_TRANSFER"],
+      enum: ["QUEST", "SQUAD", "MANUAL_TRANSFER"],
     },
 
     balanceBefore: Number,
@@ -52,25 +52,3 @@ const WalletTransaction = mongoose.model(
 );
 
 export default WalletTransaction;
-
-/**
-squad response:  {
-  status: 200,
-  success: true,
-  message: 'Success',
-  data: {
-    merchant_info: { merchant_name: 'Jab Engineering ', merchant_id: 'SBBHFY3B8W' },
-    currency: 'NGN',
-    recurring: { type: 0 },
-    is_recurring: false,
-    callback_url: 'https://untendered-atlantal-florance.ngrok-free.dev/',
-    transaction_ref: 'SQJABE6391403060598900002',
-    transaction_amount: 50000,
-    authorized_channels: [ 'card', 'bank' ],
-    checkout_url: 'https://sandbox-pay.squadco.com/SQJABE6391403060598900002',
-    allow_recurring: false,
-    bank_list: [ [Object], [Object] ]
-  }
-}
- * 
- */

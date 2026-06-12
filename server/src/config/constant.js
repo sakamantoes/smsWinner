@@ -17,5 +17,6 @@ export const env = {
   node_env: process.env.NODE_ENV,
   resend_api: process.env.RESEND_API_KEY,
   client_url: process.env.CLIENT_URL,
-  sms_pool_api_key: process.env.SMS_POOL_API_KEY
+  sms_pool_api_key: process.env.SMS_POOL_API_KEY,
+  quest_api_secret: process.env.QUEST_API_SECRET,
 };

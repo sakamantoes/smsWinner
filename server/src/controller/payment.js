@@ -49,7 +49,7 @@ const initialiseDeposit = async (req, res, next) => {
     );
 
     if (!squad || squad.data.success === false || !squad.data.data) {
-      res.statusCode = 500;
+      res.statusCode = 400;
       throw new Error(squad.data.message || "Failed to initiate deposit");
     }
 
@@ -136,18 +136,36 @@ const webhookHandler = async (req, res, next) => {
 
     if (hash !== req.headers["x-squad-encrypted-body"]) return;
 
-    res.send(200);
+    res.sendStatus(200);
 
     const referenceId = event.TransactionRef || event.Body?.transaction_ref;
-    const gatewayStatus = normalizeSquadStatus(event.Body?.transaction_status);
 
     if (!referenceId) {
-      res.statusCode = 400;
       throw new Error("Transaction reference is required");
     }
 
+    const verifyPayment = await axios.get(
+      `https://api-d.squadco.com/transaction/verify/${referenceId}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${env.squad_api_secret}`,
+        },
+      },
+    );
+
+    const response = verifyPayment.data;
+    if (response.status !== 200) {
+      throw new Error(
+        response.message || "something went wrong verifying payment",
+      );
+    }
+    const gatewayStatus = normalizeSquadStatus(
+      response.data.transaction_status,
+    );
+
     let webhookResult = {
-      referenceId,
+      referenceId: response.data.transaction_ref,
       status: gatewayStatus,
       credited: false,
     };
@@ -192,16 +210,16 @@ const webhookHandler = async (req, res, next) => {
       }
 
       const amountToCredit = transaction.amount;
-      const webhookAmount = Number(event.Body?.amount) / 100;
+      const webhookAmount = Number(response.data.transaction_amount / 100);
 
       if (Number.isFinite(webhookAmount) && webhookAmount !== amountToCredit) {
-         await sendDepositFailedNotification(
-           transaction.userId,
-           transaction.amount,
-           referenceId,
-           event.Body?.failure_reason ||
-             "Payment processing failed because amount does not match transaction amount. contact support.. if payment went through",
-         );
+        await sendDepositFailedNotification(
+          transaction.userId,
+          transaction.amount,
+          referenceId,
+          event.Body?.failure_reason ||
+            "Payment processing failed because amount does not match transaction amount. contact support.. if payment went through",
+        );
         throw new Error("Webhook amount does not match transaction amount");
       }
 
@@ -219,7 +237,7 @@ const webhookHandler = async (req, res, next) => {
       );
 
       transaction.status = "SUCCESS";
-      transaction.orderId = event.Body?.gateway_ref || transaction.orderId;
+      transaction.orderId = response.data.gateway_transaction_ref;
       transaction.balanceAfter = wallet.walletBalance;
       transaction.balanceBefore = wallet.walletBalance - amountToCredit;
 
@@ -242,6 +260,7 @@ const webhookHandler = async (req, res, next) => {
       };
     });
   } catch (error) {
+    console.log("quest webhook: ", error.message);
     next(error);
   } finally {
     await session.endSession();
@@ -294,10 +313,162 @@ const initializeManualPayment = async (req, res, next) => {
   }
 };
 
+// quest payment
+const initializeQuestPayment = async (req, res, next) => {
+  const { amount } = req.body;
+  const user = req.user;
+  const randomCode = crypto.randomBytes(6).toString("hex").toUpperCase();
+  const reference = `SMSWINNERS-${user._id}-${randomCode}`;
+  try {
+    const data = {
+      email: user.email,
+      description: "wallet topup",
+      reference,
+      amount: Number(amount),
+      metadata: { userId: user._id },
+      return_url: "https://www.smswinners.online/payment/status",
+    };
+
+    const response = await axios.post(
+      "https://payments-server.questlabs.cc/api/v1/checkout/initialize",
+      data,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${env.quest_api_secret}`,
+        },
+      },
+    );
+
+    const value = response.data;
+
+    if (!response.data) {
+      res.statusCode = 400;
+      throw new Error(response.data.message || "Failed to initiate deposit");
+    }
+
+    await WalletTransaction.create({
+      userId: user._id,
+      amount: value.data.amount,
+      type: "DEPOSIT",
+      referenceId: value.data.reference,
+      paymentMethod: "QUEST",
+      depositorName: user.username,
+    });
+
+    res.status(201).json({
+      status: 201,
+      success: true,
+      message:
+        "Payment initialized, redirect to the provided URL to complete payment",
+      data: value.data.checkout_url,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+// quest webhook
+const questWebhook = async (req, res, next) => {
+  const signature = req.headers["x-questpay-signature"];
+  const payload = JSON.stringify(req.body);
+  const session = await mongoose.startSession();
+
+  try {
+    const calculatedSignature = crypto
+      .createHmac("sha256", env.quest_api_secret)
+      .update(payload)
+      .digest("hex");
+
+    if (calculatedSignature !== signature) return;
+
+    res.sendStatus(200);
+
+    const event = req.body;
+
+    if (event.event !== "payment.received") return;
+
+    const referenceId = event.data?.reference;
+    if (!referenceId) {
+      throw new Error("Transaction reference is required");
+    }
+
+    const gatewayStatus = normalizeSquadStatus(event.data.status);
+
+    await session.withTransaction(async () => {
+      const transaction = await WalletTransaction.findOne({
+        referenceId,
+      }).session(session);
+
+      if (!transaction) {
+        throw new Error("Transaction not found");
+      }
+
+      if (transaction.status === "SUCCESS") {
+        return;
+      }
+
+      if (gatewayStatus !== "SUCCESS") {
+        transaction.status = gatewayStatus;
+        await transaction.save({ session });
+
+        await sendDepositFailedNotification(
+          transaction.userId,
+          transaction.amount,
+          referenceId,
+          "Payment processing failed",
+        );
+        return;
+      }
+
+      const amountToCredit = transaction.amount;
+      const webhookAmount = Number(event.data.payment?.amountPaid);
+
+      if (Number.isFinite(webhookAmount) && webhookAmount !== amountToCredit) {
+        await sendDepositFailedNotification(
+          transaction.userId,
+          transaction.amount,
+          referenceId,
+          "Payment processing failed because amount does not match transaction amount. Contact support if payment went through.",
+        );
+        throw new Error("Webhook amount does not match transaction amount");
+      }
+
+      const wallet = await User.findOneAndUpdate(
+        { _id: transaction.userId },
+        {
+          $setOnInsert: { _id: transaction.userId },
+          $inc: { walletBalance: amountToCredit },
+        },
+        { new: true, upsert: true, session },
+      );
+
+      transaction.status = "SUCCESS";
+      transaction.orderId = event.data.payment?.providerTransactionId;
+      transaction.balanceAfter = wallet.walletBalance;
+      transaction.balanceBefore = wallet.walletBalance - amountToCredit;
+      await transaction.save({ session });
+
+      await sendDepositSuccessNotification(
+        transaction.userId,
+        amountToCredit,
+        referenceId,
+        wallet.walletBalance,
+      );
+    });
+  } catch (error) {
+    console.log("quest webhook: ", error.message);
+    next(error);
+  } finally {
+    await session.endSession();
+  }
+};
+
 export {
   initialiseDeposit,
   webhookHandler,
   callbackUrlHandler,
   getPaymentStatus,
   initializeManualPayment,
+  initializeQuestPayment,
+  questWebhook,
 };

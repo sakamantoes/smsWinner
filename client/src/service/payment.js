@@ -6,6 +6,12 @@ export const initializeSquadPayment = async (data) => {
   return res.data;
 };
 
+export const initializeQuestPayment = async (data) => {
+  const res = await api.post("/api/payment/quest/initialize-deposit", data);
+
+  return res.data;
+};
+
 export const getSquadPaymentStatus = async (data) => {
   const res = await api.post(`/api/payment/status`, data);
   console.log("reference error", res.data);
