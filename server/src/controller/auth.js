@@ -178,7 +178,7 @@ const getAllUser = async (req, res, next) => {
   try {
     const users = await User.find({
       role: "user",
-    });
+    }).select("-password -walletBalance");
 
     res.status(200).json({
       message: "All users found",
