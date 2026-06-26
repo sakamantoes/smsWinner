@@ -1,4 +1,4 @@
-import { env } from "../config/constant";
+import { env } from "../config/constant.js";
 
 // middleware/verifyInternalSecret.js
 export const verifyInternalSecret = (req, res, next) => {
