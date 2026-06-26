@@ -1,5 +1,5 @@
 import { GoogleLogin } from "@react-oauth/google";
-import { googleAuth } from "../service/auth.js";
+import { googleAuthVercel } from "../service/auth.js";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useState } from "react";
@@ -15,7 +15,7 @@ export default function GoogleButton() {
     try {
       const token = credentialResponse.credential;
 
-      const response = await googleAuth(token);
+      const response = await googleAuthVercel(token);
 
       if (response.status === 200 || response.status === 201 || response.data) {
         const authToken = response.data?.data?.token || response.data.token;
