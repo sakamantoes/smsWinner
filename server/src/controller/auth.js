@@ -68,6 +68,51 @@ const googleSetup = async (req, res, next) => {
   }
 };
 
+const googleVerified = async (req, res, next) => {
+  const { googleId, email, name, picture, emailVerified } = req.body;
+
+  try {
+    if (!googleId || !email) {
+      res.statusCode = 400;
+      throw new Error("Missing required user fields from Vercel");
+    }
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      const hashedPassword = await hashPassword(googleId); // use googleId as placeholder password
+      user = await User.create({
+        email,
+        username: name,
+        password: hashedPassword,
+      });
+    }
+
+    const jwtToken = generateToken({
+      userId: user._id,
+      email: user.email,
+      role: user.role,
+    });
+
+    setAuthCookie(res, jwtToken);
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: "Google login successful",
+      data: {
+        token: jwtToken,
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getAuthUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id).select("-password");
@@ -420,6 +465,7 @@ const resetPassword = async (req, res, next) => {
 
 export {
   googleSetup,
+  googleVerified,
   getAuthUser,
   emailSignup,
   emailLogin,

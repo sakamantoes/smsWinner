@@ -7,6 +7,7 @@ import {
   getAllUser,
   getAuthUser,
   googleSetup,
+  googleVerified,
   updatePassword,
   updateUsername,
   forgotPassword,
@@ -25,12 +26,14 @@ import {
   registerSchema,
   resetPasswordSchema,
 } from "../validator/auth.validator.js";
+import { verifyInternalSecret } from "../middleware/verifyInternalSecret.js";
 
 const router = Router();
 
 router.post("/signup", loginLimiter, registerSchema, validateData, emailSignup);
 router.post("/login", loginLimiter, loginSchema, validateData, emailLogin);
 router.post("/google", loginLimiter, googleSchema, validateData, googleSetup);
+router.post("/google-verified", verifyInternalSecret, googleVerified);
 router.post("/logout", logout);
 router.get("/me", authMiddleware, getAuthUser);
 router.get("/allUsers", authMiddleware, validateAdminRole, getAllUser);
