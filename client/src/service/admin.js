@@ -29,8 +29,14 @@ export const getOtpOrder = async () => {
   return res.data;
 };
 
-export const getAllPlatformServices = async () => {
-  const res = await api.get("/api/admin/all/platform/services");
+export const getAllPlatformServices = async (params = {}) => {
+  const res = await api.get("/api/admin/all/platform/services", { params });
+
+  return res.data;
+};
+
+export const getSmsPoolBalance = async () => {
+  const res = await api.get("/api/admin/smspool/balance");
 
   return res.data;
 };

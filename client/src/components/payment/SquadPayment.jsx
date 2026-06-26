@@ -30,7 +30,6 @@ export default function SquadPayment({ amount = "", onBack }) {
 
     try {
       const response = await initializeSquadPayment(squadData);
-      console.log("Squad Payment Response: ", response);
       window.location.href = response.data;
     } catch (error) {
       console.error("Error initializing Squad payment: ", error);

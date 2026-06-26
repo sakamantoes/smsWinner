@@ -8,6 +8,7 @@ import {
   getServicesAvailableName,
   updateServiceActiveStatus,
   updateServiceCustomPrice,
+  getSmsPoolBalance,
 } from "../controller/admin.controller.js";
 import authMiddleware, {
   validateAdminRole,
@@ -15,6 +16,7 @@ import authMiddleware, {
 import {
   updateDepositValidator,
   priceSettingSchema,
+  customPriceSchema,
 } from "../validator/admin.validator.js";
 import { validateData } from "../validator/validator.js";
 
@@ -35,6 +37,7 @@ router.post(
   authMiddleware,
   validateAdminRole,
   priceSettingSchema,
+  validateData,
   priceSettingController,
 );
 
@@ -70,7 +73,17 @@ router.patch(
   "/platform/service/:id/custom-price",
   authMiddleware,
   validateAdminRole,
+  customPriceSchema,
+  validateData,
   updateServiceCustomPrice,
 );
+
+router.get(
+  "/smspool/balance",
+  authMiddleware,
+  validateAdminRole,
+  getSmsPoolBalance,
+);
+
 
 export default router;

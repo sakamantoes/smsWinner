@@ -6,12 +6,14 @@ import {
   getPaymentStatus,
   initializeManualPayment,
   webhookHandler,
+  initializeQuestPayment,
+  questWebhook,
 } from "../controller/payment.js";
 import {
   initialiseDepositValidator,
   callbackUrlValidator,
-  manuelPaymentValidator,
   paymentStatusValidator,
+  manualPaymentValidator,
 } from "../validator/payment.validator.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { validateUserRole } from "../middleware/authMiddleware.js";
@@ -28,21 +30,21 @@ router.post(
 );
 
 router.post(
-  "/manuel/initialize-deposit",
+  "/manual/initialize-deposit",
   authMiddleware,
   validateUserRole,
-  manuelPaymentValidator,
+  manualPaymentValidator,
   validateData,
   initializeManualPayment,
 );
 
 router.post(
-  "/manual/initialize-deposit",
+  "/quest/initialize-deposit",
   authMiddleware,
   validateUserRole,
-  manuelPaymentValidator,
+  initialiseDepositValidator,
   validateData,
-  initializeManualPayment,
+  initializeQuestPayment,
 );
 
 router.post(
@@ -55,5 +57,6 @@ router.post(
 router.post("/status", paymentStatusValidator, validateData, getPaymentStatus);
 
 router.post("/webhook", webhookHandler);
+router.post("/quest/webhook", questWebhook);
 
 export default router;

@@ -19,23 +19,42 @@ import { buyNumber, getAvailableServices } from "../../service/number.js";
 import { formatCurrency } from "../../utils/transaction.js";
 import { toast } from "react-toastify";
 import { formatServiceName } from "../../utils/serviceCode.js";
+import { getNumberAvailabilityInfo } from "../../utils/availability.js";
+
+const ROUTES_PER_PAGE = 12;
 
 const normalizeCatalog = (response) => {
   const services = Array.isArray(response?.data) ? response.data : [];
 
   return services
-    .filter((item) => item?.service && item?.country)
-    .map((item) => ({
-      id: item._id || `${item.provider}-${item.country}-${item.service}`,
-      service: item.service,
-      serviceName: formatServiceName(item.service),
-      country: item.country,
-      countryName: item.countryName || `Country ${item.country}`,
-      provider: "smswinner",
-      stock: Number(item.stock || 0),
-      price: Number(item.sellingPrice || 0),
-      updatedAt: item.lastFetchedAt || item.updatedAt,
-    }))
+    .filter(
+      (item) =>
+        (item?.internalService || item?.service) &&
+        (item?.internalCountry || item?.country),
+    )
+    .map((item) => {
+      const availability = getNumberAvailabilityInfo(item);
+      const serviceCode = item.internalService || item.service;
+      const countryCode = item.internalCountry || item.country;
+
+      return {
+        id: item._id || `${item.provider}-${countryCode}-${serviceCode}`,
+        service: serviceCode,
+        serviceName: formatServiceName(serviceCode),
+        country: countryCode,
+        countryName: countryCode,
+        provider: item.provider || "smswinner",
+        providerLabel: "smswinner",
+        stock: Number(item.stock || 0),
+        availability: Boolean(item.availability),
+        availabilityLabel: availability.label,
+        availabilityDetail: availability.detail,
+        availabilityScore: availability.score,
+        availabilityClassName: availability.className,
+        price: Number(item.sellingPrice || 0),
+        updatedAt: item.lastFetchedAt || item.updatedAt,
+      };
+    })
     .sort((a, b) => {
       const serviceSort = a.serviceName.localeCompare(b.serviceName);
       if (serviceSort !== 0) return serviceSort;
@@ -54,18 +73,41 @@ const PhoneNumber = () => {
   const [buying, setBuying] = useState(false);
   const [purchaseData, setPurchaseData] = useState(null);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [serviceSummaries, setServiceSummaries] = useState([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: ROUTES_PER_PAGE,
+    total: 0,
+    totalPages: 1,
+  });
 
   const fetchServices = async () => {
     try {
       setLoadingCatalog(true);
       setError("");
 
-      const response = await getAvailableServices();
+      const response = await getAvailableServices({
+        page: currentPage,
+        limit: ROUTES_PER_PAGE,
+        service: selectedService || undefined,
+        search: searchTerm.trim() || undefined,
+      });
       const nextCatalog = normalizeCatalog(response);
       setCatalog(nextCatalog);
+      setServiceSummaries(
+        Array.isArray(response?.services) ? response.services : [],
+      );
+      setPagination(
+        response?.pagination || {
+          page: currentPage,
+          limit: ROUTES_PER_PAGE,
+          total: nextCatalog.length,
+          totalPages: 1,
+        },
+      );
 
       if (!nextCatalog.length) {
-        setSelectedService("");
         setSelectedListingId("");
       }
     } catch (err) {
@@ -84,9 +126,20 @@ const PhoneNumber = () => {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, []);
+  }, [currentPage, searchTerm, selectedService]);
 
   const serviceOptions = useMemo(() => {
+    if (serviceSummaries.length > 0) {
+      return serviceSummaries
+        .map((item) => ({
+          code: item.internalService,
+          name: formatServiceName(item.internalService),
+          stock: Number(item.liveRoutes || item.totalStock || 0),
+          countries: Number(item.totalCountries || 0),
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
+
     const services = new Map();
     catalog.forEach((item) => {
       if (!services.has(item.service)) {
@@ -99,7 +152,7 @@ const PhoneNumber = () => {
       }
 
       const service = services.get(item.service);
-      service.stock += item.stock;
+      service.stock += item.availabilityScore;
       service.countries.add(item.country);
     });
 
@@ -107,22 +160,14 @@ const PhoneNumber = () => {
       ...item,
       countries: item.countries.size,
     }));
-  }, [catalog]);
+  }, [catalog, serviceSummaries]);
 
-  const filteredListings = useMemo(() => {
-    const search = searchTerm.trim().toLowerCase();
-
-    return catalog.filter((item) => {
-      const matchesService =
-        !selectedService || item.service === selectedService;
-      const matchesSearch =
-        !search ||
-        item.countryName.toLowerCase().includes(search) ||
-        item.provider.toLowerCase().includes(search);
-
-      return matchesService && matchesSearch;
-    });
-  }, [catalog, searchTerm, selectedService]);
+  const filteredListings = catalog;
+  const totalPages = Math.max(Number(pagination.totalPages || 1), 1);
+  const totalListings = Number(pagination.total || 0);
+  const visiblePage = Math.min(currentPage, totalPages);
+  const pageStart = totalListings === 0 ? 0 : (visiblePage - 1) * ROUTES_PER_PAGE;
+  const paginatedListings = filteredListings;
 
   const selectedListing = useMemo(
     () => catalog.find((item) => item.id === selectedListingId),
@@ -135,7 +180,7 @@ const PhoneNumber = () => {
     null,
   );
 
-  const totalStock = catalog.reduce((sum, item) => sum + item.stock, 0);
+  const liveListings = catalog.filter((item) => item.availabilityScore > 0).length;
   const activeCountries = new Set(catalog.map((item) => item.country)).size;
 
   const stats = [
@@ -150,7 +195,7 @@ const PhoneNumber = () => {
     {
       label: "Active Countries",
       value: activeCountries,
-      change: `${totalStock} numbers`,
+      change: `${liveListings} live listings`,
       icon: ShieldCheck,
       iconBg: "bg-emerald-500/15",
       iconColor: "text-emerald-400",
@@ -169,6 +214,7 @@ const PhoneNumber = () => {
   const handleServiceChange = (event) => {
     setSelectedService(event.target.value);
     setSelectedListingId("");
+    setCurrentPage(1);
   };
 
   const handleBuyNumber = async () => {
@@ -233,7 +279,7 @@ const PhoneNumber = () => {
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-gray-400">
               Pick a service, choose an available country from the current
-              stock, and purchase the number. After purchase, proceed to your
+              routes, and purchase the number. After purchase, proceed to your
               OTP Box to see the purchased number and request your OTP when you
               are ready.
             </p>
@@ -270,7 +316,7 @@ const PhoneNumber = () => {
                   Purchase Setup
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  Countries come from the service stock list.
+                  Countries come from the live service list.
                 </p>
               </div>
               <button
@@ -316,8 +362,11 @@ const PhoneNumber = () => {
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                   <input
                     value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder="Search available stock"
+                    onChange={(event) => {
+                      setSearchTerm(event.target.value);
+                      setCurrentPage(1);
+                    }}
+                    placeholder="Search available routes"
                     className="h-11 w-full rounded-lg border border-white/10 bg-black/40 py-2 pl-10 pr-4 text-sm text-white transition-all placeholder:text-gray-600 focus:border-red-light/50 focus:outline-none focus:ring-1 focus:ring-red-light/50"
                   />
                 </div>
@@ -327,7 +376,7 @@ const PhoneNumber = () => {
             {selectedListing && (
               <div className="mt-5 rounded-lg border border-red-light/10 bg-red-light/5 p-3">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                  Selected Number Stock
+                  Selected Number Route
                 </p>
                 <div className="mt-3 space-y-2 text-sm">
                   <div className="flex justify-between gap-4">
@@ -346,6 +395,14 @@ const PhoneNumber = () => {
                     <span className="text-gray-400">Price</span>
                     <span className="text-right font-semibold text-white">
                       {formatCurrency(selectedListing.price)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-gray-400">Availability</span>
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-right text-xs font-semibold ${selectedListing.availabilityClassName}`}
+                    >
+                      {selectedListing.availabilityLabel}
                     </span>
                   </div>
                 </div>
@@ -389,10 +446,10 @@ const PhoneNumber = () => {
           <section className="rounded-xl border border-white/10 bg-white/5 shadow-md">
             <div className="flex items-center justify-between border-b border-white/10 bg-black/20 px-5 py-4">
               <div>
-                <h2 className="font-semibold text-white">Available Stock</h2>
+                <h2 className="font-semibold text-white">Available Routes</h2>
                 <p className="mt-0.5 text-xs text-gray-500">
-                  {filteredListings.length} result
-                  {filteredListings.length === 1 ? "" : "s"}
+                  {totalListings} result
+                  {totalListings === 1 ? "" : "s"}
                 </p>
               </div>
               {loadingCatalog && (
@@ -404,11 +461,11 @@ const PhoneNumber = () => {
               <div className="flex items-center justify-center py-16 text-gray-400">
                 <Loader2 className="h-8 w-8 animate-spin text-red-light" />
               </div>
-            ) : filteredListings.length === 0 ? (
+            ) : totalListings === 0 ? (
               <div className="px-5 py-14 text-center">
                 <Server size={42} className="mx-auto text-gray-600" />
                 <h3 className="mt-4 text-lg font-semibold text-white">
-                  No matching stock
+                  No matching routes
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
                   Try another service or clear the search field.
@@ -417,7 +474,7 @@ const PhoneNumber = () => {
             ) : (
               <div className="max-h-[30rem] overflow-y-auto p-3">
                 <div className="grid gap-3 md:grid-cols-2">
-                  {filteredListings.map((item) => {
+                  {paginatedListings.map((item) => {
                     const isSelected = item.id === selectedListingId;
 
                     return (
@@ -447,9 +504,14 @@ const PhoneNumber = () => {
                             />
                           )}
                         </div>
-                        <div className="mt-4 flex items-center justify-between gap-3">
-                          <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-gray-300">
-                            {item.stock} in stock
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                          <span
+                            className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${item.availabilityClassName}`}
+                          >
+                            {item.availabilityLabel}
+                          </span>
+                          <span className="text-xs font-medium text-gray-500">
+                            {item.availabilityDetail}
                           </span>
                           <span className="text-sm font-bold text-white">
                             {formatCurrency(item.price)}
@@ -458,6 +520,36 @@ const PhoneNumber = () => {
                       </button>
                     );
                   })}
+                </div>
+                <div className="mt-4 flex flex-col gap-3 border-t border-white/10 pt-4 text-sm text-gray-400 sm:flex-row sm:items-center sm:justify-between">
+                  <span>
+                    Showing {pageStart + 1}-
+                    {Math.min(pageStart + ROUTES_PER_PAGE, totalListings)} of{" "}
+                    {totalListings}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                      disabled={visiblePage === 1}
+                      className="h-9 rounded-lg border border-white/10 px-3 text-xs font-semibold text-gray-300 transition-colors hover:border-red-light/30 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Previous
+                    </button>
+                    <span className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs font-semibold text-white">
+                      Page {visiblePage} of {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage((page) => Math.min(page + 1, totalPages))
+                      }
+                      disabled={visiblePage === totalPages}
+                      className="h-9 rounded-lg border border-white/10 px-3 text-xs font-semibold text-gray-300 transition-colors hover:border-red-light/30 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

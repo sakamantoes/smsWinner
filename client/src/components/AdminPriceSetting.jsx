@@ -89,7 +89,6 @@ const AdminPriceSetting = () => {
                   value="percentage"
                   onChange={handleChange}
                   checked={formData.markupType === "percentage"}
-                  value="percentage"
                   className={`text-red-500 focus:ring-red-500 ${formData.markupType === "percentage" && "border-green-600 border"}`}
                 />
                 <span className="text-white">Percentage (%)</span>

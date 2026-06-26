@@ -2,18 +2,19 @@ import {
   ArrowLeft,
   ArrowRight,
   Building2,
+  CreditCard,
   Landmark,
   X,
 } from "lucide-react";
 import { useState } from "react";
 
 const paymentOptions = [
-  // {
-  //   id: "alat",
-  //   title: "Pay with ALAT",
-  //   description: "Use ALATPay to fund your wallet instantly.",
-  //   icon: CreditCard,
-  // },
+  {
+    id: "quest",
+    title: "Pay with QUEST",
+    description: "Use QUESTPay to fund your wallet instantly.",
+    icon: CreditCard,
+  },
   {
     id: "squad",
     title: "Pay with Squad",

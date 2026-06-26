@@ -4,9 +4,9 @@ import User from "../model/User.js";
 import PriceSetting from "../model/PriceSetting.js";
 import otporder from "../model/OtpOrder.js";
 import AvailableService from "../model/ServicesAvailable.js";
-import { countries } from "../utils/neededCountries.js";
 import calculateSellingPrice from "../utils/calculateSellingPrice.js";
 import PricingSetting from "../model/PriceSetting.js";
+import smspool_api from "../utils/smspool.js";
 
 const getPlatformDeposits = async (req, res, next) => {
   try {
@@ -174,7 +174,11 @@ const getUserWaitingForOtp = async (req, res, next) => {
 };
 
 const getAdminServices = async (req, res, next) => {
+  const { page = 1, limit = 25, service = "", search = "" } = req.query;
+
   try {
+    const pageNumber = Math.max(Number(page) || 1, 1);
+    const limitNumber = Math.min(Math.max(Number(limit) || 25, 1), 100);
     const priceSetting = await PricingSetting.findOne({});
 
     if (!priceSetting) {
@@ -183,16 +187,35 @@ const getAdminServices = async (req, res, next) => {
       throw new Error("error fetching price");
     }
 
-    const availableServices = await AvailableService.find({}).lean();
+    const query = {};
+    const normalizedService = String(service).trim();
+    const normalizedSearch = String(search).trim();
+
+    if (normalizedService) {
+      query.internalService = normalizedService;
+    }
+
+    if (normalizedSearch) {
+      const searchRegex = new RegExp(normalizedSearch, "i");
+      query.$or = [
+        { internalCountry: searchRegex },
+        { internalService: searchRegex },
+        { provider: searchRegex },
+      ];
+    }
+
+    const [availableServices, total] = await Promise.all([
+      AvailableService.find(query)
+        .sort({ internalService: 1, internalCountry: 1, providerPrice: 1 })
+        .skip((pageNumber - 1) * limitNumber)
+        .limit(limitNumber)
+        .lean(),
+      AvailableService.countDocuments(query),
+    ]);
 
     const services = availableServices.map((item) => {
-      const matchedService = countries.find(
-        (i) => i.countryId === Number(item.country),
-      );
-
       return {
         ...item,
-        countryName: matchedService?.country || "Unknown",
         costPrice: Number(item.providerPrice * priceSetting.usdToNgnRate),
         sellingPrice: calculateSellingPrice(item, priceSetting),
       };
@@ -203,6 +226,12 @@ const getAdminServices = async (req, res, next) => {
       success: true,
       message: "services has been fetched",
       data: services,
+      pagination: {
+        page: pageNumber,
+        limit: limitNumber,
+        total,
+        totalPages: Math.max(Math.ceil(total / limitNumber), 1),
+      },
     });
   } catch (error) {
     next(error);
@@ -214,8 +243,8 @@ const getServicesAvailableName = async (req, res, next) => {
     const servicesName = await AvailableService.aggregate([
       {
         $group: {
-          _id: "$service",
-          totalCountries: { $addToSet: "$country" },
+          _id: "$internalService",
+          totalCountries: { $addToSet: "$internalCountry" },
           totalStock: { $sum: "$stock" },
           activeCount: {
             $sum: {
@@ -228,7 +257,7 @@ const getServicesAvailableName = async (req, res, next) => {
       {
         $project: {
           _id: 0,
-          service: "$_id",
+          internalService: "$_id",
           totalCountries: { $size: "$totalCountries" },
           totalStock: 1,
           activeCount: 1,
@@ -273,7 +302,7 @@ const updateServiceActiveStatus = async (req, res, next) => {
 
     const result = await AvailableService.updateMany(
       {
-        service,
+        internalService: service,
       },
       {
         $set: {
@@ -348,6 +377,35 @@ const updateServiceCustomPrice = async (req, res, next) => {
   }
 };
 
+const getSmsPoolBalance = async (req, res, next) => {
+  try {
+    const response = await smspool_api.get("/request/balance");
+
+    const balance = response.data;
+
+    if (!balance || balance.success === 0) {
+      res.statusCode = 400;
+      throw new Error(balance?.message || "error fetching SMSPool balance");
+    }
+
+    const balanceValue =
+      typeof balance === "object" ? balance.balance : balance;
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: "fetched SMSPool balance successfully",
+      data: {
+        balance: Number(balanceValue || 0),
+        currency: balance.currency || "USD",
+        raw: balance,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   getPlatformDeposits,
   updateDepositsStatus,
@@ -357,4 +415,5 @@ export {
   getServicesAvailableName,
   updateServiceActiveStatus,
   updateServiceCustomPrice,
+  getSmsPoolBalance,
 };

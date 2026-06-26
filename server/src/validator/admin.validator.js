@@ -20,3 +20,11 @@ export const priceSettingSchema = [
     .withMessage("markupValue is Required")
     .notEmpty(),
 ];
+
+
+export const customPriceSchema = [
+  body("customPrice")
+    .isNumeric()
+    .notEmpty()
+    .withMessage("customPrice should be a valid amount"),
+];

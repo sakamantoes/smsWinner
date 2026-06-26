@@ -42,13 +42,13 @@ const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       const error = new Error("Authentication required");
-      error.statusCode = 401;
+      res.statusCode = 401;
       return next(error);
     }
 
     if (!roles.includes(req.user.role)) {
       const error = new Error("You are not authorized to access this resource");
-      error.statusCode = 403;
+      res.statusCode = 403;
       return next(error);
     }
 

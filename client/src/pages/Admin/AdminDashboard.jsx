@@ -4,9 +4,7 @@ import {
   CheckCircle2,
   Clock3,
   Copy,
-  CreditCard,
   Mail,
-  MessageSquareText,
   Phone,
   RefreshCw,
   ShieldCheck,
@@ -15,22 +13,18 @@ import {
   Users,
   BarChart3,
   AlertTriangle,
-  DollarSign,
   Activity,
   Server,
   UserCheck,
-  UserX,
-  Coins,
   CoinsIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { getAllUsers } from "../../service/auth";
-import { getPlatformDeposits } from "../../service/admin";
+import { getPlatformDeposits, getSmsPoolBalance } from "../../service/admin";
 import { getSmsBowerBalance } from "../../service/number";
 import useActiveOtp from "../../hooks/useActiveOtp.js";
 import { getRecentSystemNotifications } from "../../service/notificationApi";
-import { a } from "framer-motion/client";
 
 const formatSessionTime = (value) => {
   if (!value) return "N/A";
@@ -66,16 +60,38 @@ const quickActions = [
   { label: "Logs", icon: Activity, path: "/a/logs" },
 ];
 
+const parseBalanceValue = (response) => {
+  if (response?.data?.balance !== undefined) {
+    return Number(response.data.balance) || 0;
+  }
+
+  if (response?.balance && typeof response.balance === "string") {
+    const match = response.balance.match(/[\d.]+/);
+    return match ? Number(match[0]) || 0 : 0;
+  }
+
+  if (response?.balance?.balance !== undefined) {
+    return Number(response.balance.balance) || 0;
+  }
+
+  if (response?.balance !== undefined && typeof response.balance !== "object") {
+    return Number(response.balance) || 0;
+  }
+
+  return 0;
+};
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [smsBowerBalance, setSmsBowerBalance] = useState(0);
-  const [loadingBalance, setLoadingBalance] = useState(true);
+  const [smsPoolBalance, setSmsPoolBalance] = useState(0);
+  const [loadingBalances, setLoadingBalances] = useState(true);
   const [recentNotifications, setRecentNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
-  const { isLoading, error, otpOrder, total, refetch } = useActiveOtp();
+  const { isLoading, otpOrder, total, refetch } = useActiveOtp();
 
   const activeOtpSessions = useMemo(() => {
     const orders = Array.isArray(otpOrder) ? otpOrder : [];
@@ -144,13 +160,6 @@ export default function AdminDashboard() {
     },
   ];
 
-  useEffect(() => {
-    fetchTotalUsers();
-    fetchRevenue();
-    fetchSmsBowerBalance();
-    fetchRecentNotifications();
-  }, []);
-
   const fetchTotalUsers = async () => {
     try {
       setLoading(true);
@@ -180,50 +189,22 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchSmsBowerBalance = async () => {
+  const fetchProviderBalances = async () => {
     try {
-      setLoadingBalance(true);
-      const response = await getSmsBowerBalance();
+      setLoadingBalances(true);
+      const [bowerResponse, poolResponse] = await Promise.all([
+        getSmsBowerBalance(),
+        getSmsPoolBalance(),
+      ]);
 
-      let balanceValue = 0;
-
-      // Case 1: Response from your backend that forwards SMSBower API
-      // Format: "ACCESS_BALANCE:2.341"
-      if (response?.balance && typeof response.balance === "string") {
-        const balanceString = response.balance;
-        // Extract number from "ACCESS_BALANCE:2.341" format
-        const match = balanceString.match(/[\d.]+/);
-        if (match) {
-          balanceValue = parseFloat(match[0]);
-        }
-      }
-      // Case 2: Nested object format { balance: { balance: "0.00", currency: "USD" } }
-      else if (response?.balance?.balance !== undefined) {
-        balanceValue = parseFloat(response.balance.balance);
-      }
-      // Case 3: Direct balance number/string
-      else if (
-        response?.balance !== undefined &&
-        typeof response.balance !== "object"
-      ) {
-        balanceValue = parseFloat(response.balance);
-      }
-      // Case 4: Response.data format
-      else if (response?.data?.balance !== undefined) {
-        balanceValue = parseFloat(response.data.balance);
-      }
-
-      // If balanceValue is NaN, default to 0
-      if (isNaN(balanceValue)) {
-        balanceValue = 0;
-      }
-
-      setSmsBowerBalance(balanceValue);
+      setSmsBowerBalance(parseBalanceValue(bowerResponse));
+      setSmsPoolBalance(parseBalanceValue(poolResponse));
     } catch (error) {
-      console.error("Error fetching SMS Bower balance:", error);
+      console.error("Error fetching provider balances:", error);
       setSmsBowerBalance(0);
+      setSmsPoolBalance(0);
     } finally {
-      setLoadingBalance(false);
+      setLoadingBalances(false);
     }
   };
 
@@ -250,6 +231,17 @@ export default function AdminDashboard() {
       setLoadingNotifications(false);
     }
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      fetchTotalUsers();
+      fetchRevenue();
+      fetchProviderBalances();
+      fetchRecentNotifications();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   // Update the stats array with dynamic total users
   const updatedStats = stats.map((stat) =>
@@ -302,51 +294,59 @@ export default function AdminDashboard() {
         </div>
       </section>
 
-      {/* ── SMS Bower Balance Card - Prominent Display ── */}
+      {/* ── Provider Balance Cards ── */}
       <section className="relative overflow-hidden rounded-xl sm:rounded-2xl border-2 border-red-light/30 shadow-lg bg-gradient-to-r from-red-950/60 via-red-900/40 to-black p-4 sm:p-6">
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-red-light/20 blur-3xl" />
-        <div className="relative flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <div className="flex items-center gap-3">
+        <div className="relative flex flex-col gap-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-red-light/20 border-2 border-red-light/40">
               <Wallet size={24} className="sm:w-8 sm:h-8 text-red-light" />
             </div>
-            <div>
+            <div className="flex-1">
               <p className="text-[7px] sm:text-sm font-semibold uppercase text-gray-400">
-                Track SMS Bower Funding Balance
+                Provider Funding Balances
               </p>
               <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-red-light">
-                SMS BOWER FUNDING BALANCE
+                SMS provider wallet health
               </p>
-              <h2 className="text-lg sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
-                {loadingBalance ? (
-                  <span className="inline-flex items-center gap-2">
-                    <RefreshCw size={24} className="animate-spin" />
-                    Loading...
-                  </span>
-                ) : (
-                  `$${smsBowerBalance.toFixed(2)}`
-                )}
-              </h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {[
+                  ["SMSBower", smsBowerBalance],
+                  ["SMSPool", smsPoolBalance],
+                ].map(([label, balance]) => (
+                  <div
+                    key={label}
+                    className="rounded-xl border border-white/10 bg-black/25 p-4"
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                      {label} balance
+                    </p>
+                    <h2 className="mt-1 text-2xl font-bold text-white tracking-tight sm:text-3xl">
+                      {loadingBalances ? (
+                        <span className="inline-flex items-center gap-2 text-base text-gray-300">
+                          <RefreshCw size={18} className="animate-spin" />
+                          Loading...
+                        </span>
+                      ) : (
+                        `$${Number(balance).toFixed(2)}`
+                      )}
+                    </h2>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="flex gap-3">
             <button
               type="button"
-              onClick={fetchSmsBowerBalance}
-              disabled={loadingBalance}
+              onClick={fetchProviderBalances}
+              disabled={loadingBalances}
               className="inline-flex items-center gap-2 rounded-lg border border-red-light/30 bg-red-light/10 px-4 py-2 text-sm font-semibold text-red-light transition-colors hover:bg-red-light/20 disabled:opacity-50"
             >
               <RefreshCw
                 size={14}
-                className={loadingBalance ? "animate-spin" : ""}
+                className={loadingBalances ? "animate-spin" : ""}
               />
               Refresh Balance
             </button>
-            <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400">
-                Available for Number Purchases
-              </p>
-            </div>
           </div>
         </div>
         <div className="mt-4 flex items-center justify-between text-xs text-gray-500 border-t border-red-light/20 pt-3">

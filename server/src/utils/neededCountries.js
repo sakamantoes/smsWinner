@@ -82,17 +82,16 @@ const extraServices = [
   { service: "tg", name: "Telegram" },
   { service: "fb", name: "Facebook" },
   { service: "wr", name: "Walmart" },
-  { service: "gp", name: "Ticketmaster" }, 
+  { service: "gp", name: "Ticketmaster" },
   { service: "hb", name: "Twitch" },
   { service: "mc", name: "MiChat" },
   { service: "wx", name: "Apple" },
   { service: "mt", name: "Steam" },
-  { service: "nu", name: "Stripe" }, 
-  { service: "ng", name: "FunPay" }, 
-  { service: "qg", name: "Money Pay / Monese" },
+  { service: "nu", name: "Stripe" },
+  { service: "ng", name: "FunPay" },
   { service: "vy", name: "Meta" },
-  { service: "it", name: "Cash App" }, 
-  { service: "yy", name: "Venmo" }, 
+  { service: "it", name: "Cash App" },
+  { service: "yy", name: "Venmo" },
   { service: "bw", name: "Signal" },
   { service: "alj", name: "Spotify" },
   { service: "gc", name: "TradingView" },
@@ -105,17 +104,18 @@ const extraServices = [
   { service: "ts", name: "PayPal" },
   { service: "oi", name: "Tinder" },
   { service: "dh", name: "Ebay" },
+  { service: "fu", name: "Snapchat" },
+  { service: "tn", name: "LinkedIn" },
 ];
 
-
-const sharedCountries = nowService 
+const sharedCountries = nowService
   .filter((item) => item.service === "ig")
   .map(({ country, countryId }) => ({
     country,
     countryId,
-  }))
+  }));
 
- const generatedServices = extraServices.flatMap((srv) =>
+const generatedServices = extraServices.flatMap((srv) =>
   sharedCountries.map((country) => ({
     country: country.country,
     countryId: country.countryId,
@@ -123,13 +123,7 @@ const sharedCountries = nowService
   })),
 );
 
-
-export const services=[
-  ...nowService,
-  ...generatedServices
-]
-
-
+export const services = [...nowService, ...generatedServices];
 
 export const countries = [
   { country: "Afghanistan", countryId: 74 },
@@ -163,6 +157,7 @@ export const countries = [
   { country: "Burkina Faso", countryId: 152 },
   { country: "Burundi", countryId: 119 },
   { country: "CAF", countryId: 125 },
+  { country: "Cambodia", countryId: 24 },
   { country: "Cambodia", countryId: 24 },
   { country: "Cameroon", countryId: 41 },
   { country: "Canada", countryId: 36 },
