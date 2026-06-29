@@ -19,6 +19,7 @@ import {
   customPriceSchema,
 } from "../validator/admin.validator.js";
 import { validateData } from "../validator/validator.js";
+import { editUserWallet } from "../controller/auth.js";
 
 const router = Router();
 
@@ -84,6 +85,8 @@ router.get(
   validateAdminRole,
   getSmsPoolBalance,
 );
+
+router.put('/:id/wallet', authMiddleware, validateAdminRole, editUserWallet)
 
 
 export default router;

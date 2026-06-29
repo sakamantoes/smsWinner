@@ -223,7 +223,7 @@ const getAllUser = async (req, res, next) => {
   try {
     const users = await User.find({
       role: "user",
-    }).select("-password -walletBalance");
+    }).select("-password");
 
     res.status(200).json({
       message: "All users found",
@@ -463,6 +463,58 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
+// EDIT USER WALLET BALANCE
+const editUserWallet = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { walletBalance } = req.body;
+
+    // Validate user ID
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      res.statusCode = 400;
+      throw new Error("Invalid user ID");
+    }
+
+    // Validate wallet balance
+    if (walletBalance === undefined || walletBalance === null) {
+      res.statusCode = 400;
+      throw new Error("Wallet balance is required");
+    }
+
+    if (typeof walletBalance !== 'number' || walletBalance < 0) {
+      res.statusCode = 400;
+      throw new Error("Wallet balance must be a positive number");
+    }
+
+    // Find and update user
+    const user = await User.findByIdAndUpdate(
+      id,
+      { walletBalance: walletBalance },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!user) {
+      res.statusCode = 404;
+      throw new Error("User not found");
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User wallet balance updated successfully",
+      data: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        walletBalance: user.walletBalance,
+        isActive: user.isActive,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   googleSetup,
   googleVerified,
@@ -476,5 +528,6 @@ export {
   updateUsername,
   logout,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  editUserWallet
 };
