@@ -65,3 +65,8 @@ export const updatePlatformServiceCustomPrice = async (id, customPrice) => {
 
   return res.data;
 };
+
+export const refundAndEditBalance = async (id, walletBalance) => {
+  const res = await api.put(`/api/admin/${id}/wallet`, { walletBalance });
+  return res.data;
+};

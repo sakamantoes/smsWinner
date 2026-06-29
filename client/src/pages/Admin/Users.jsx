@@ -25,8 +25,12 @@ import {
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
+  Edit,
+  Save,
+  X,
 } from "lucide-react";
 import { getAllUsers, activateUser, deactivateUser } from "../../service/auth";
+import { refundAndEditBalance } from "../../service/admin";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -38,6 +42,11 @@ export default function Users() {
   const [actionLoading, setActionLoading] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  
+  // Wallet edit states
+  const [editingWalletId, setEditingWalletId] = useState(null);
+  const [editWalletValue, setEditWalletValue] = useState("");
+  const [walletUpdateLoading, setWalletUpdateLoading] = useState(false);
 
   // ================= FETCH USERS =================
   const fetchUsers = async () => {
@@ -105,6 +114,45 @@ export default function Users() {
     }
   };
 
+  // ================= EDIT WALLET BALANCE =================
+  const handleEditWalletStart = (user) => {
+    setEditingWalletId(user._id);
+    setEditWalletValue(user.walletBalance?.toString() || "0");
+  };
+
+  const handleEditWalletCancel = () => {
+    setEditingWalletId(null);
+    setEditWalletValue("");
+  };
+
+  const handleEditWalletSave = async (userId) => {
+    const walletBalance = parseFloat(editWalletValue);
+    
+    if (isNaN(walletBalance) || walletBalance < 0) {
+      setError("Please enter a valid positive number");
+      setTimeout(() => setError(""), 3000);
+      return;
+    }
+
+    try {
+      setWalletUpdateLoading(true);
+      setError("");
+      setSuccess("");
+      
+      await refundAndEditBalance(userId, walletBalance);
+      setSuccess("Wallet balance updated successfully!");
+      await fetchUsers(); // Refresh the list
+      setEditingWalletId(null);
+      setEditWalletValue("");
+    } catch (error) {
+      console.log(error);
+      setError(error?.response?.data?.message || "Failed to update wallet balance");
+    } finally {
+      setWalletUpdateLoading(false);
+      setTimeout(() => setSuccess(""), 3000);
+    }
+  };
+
   // ================= FILTER USERS =================
   useEffect(() => {
     let filtered = [...users];
@@ -143,6 +191,10 @@ export default function Users() {
     const now = new Date();
     return createdDate.getMonth() === now.getMonth() && createdDate.getFullYear() === now.getFullYear();
   }).length;
+  
+  // Wallet stats
+  const totalWalletBalance = users.reduce((sum, u) => sum + (u.walletBalance || 0), 0);
+  const usersWithBalance = users.filter((u) => (u.walletBalance || 0) > 0).length;
 
   const stats = [
     {
@@ -182,6 +234,12 @@ export default function Users() {
   // Helper function to get user status consistently
   const getUserStatus = (user) => {
     return (user.status === "active" || user.isActive === true) ? "active" : "inactive";
+  };
+
+  // Helper function to format wallet balance in Naira
+  const formatWalletBalance = (balance) => {
+    if (balance === undefined || balance === null) return "₦0.00";
+    return `₦${Number(balance).toFixed(2)}`;
   };
 
   return (
@@ -240,6 +298,42 @@ export default function Users() {
         ))}
       </section>
 
+      {/* Additional Wallet Stats */}
+      <section className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-white/10 shadow-md bg-white/5 p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400">
+              <Wallet size={19} />
+            </div>
+            <span className="rounded-full border border-white/10 bg-white/8 px-2.5 py-0.5 text-xs font-medium text-gray-300">
+              Total Balance
+            </span>
+          </div>
+          <p className="mt-4 text-xs font-medium uppercase tracking-widest text-gray-500">
+            Total Wallet Balance
+          </p>
+          <p className="mt-1 text-2xl font-bold tracking-tight text-white">
+            {formatWalletBalance(totalWalletBalance)}
+          </p>
+        </div>
+        <div className="rounded-xl border border-white/10 shadow-md bg-white/5 p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/15 text-blue-400">
+              <UsersIcon size={19} />
+            </div>
+            <span className="rounded-full border border-white/10 bg-white/8 px-2.5 py-0.5 text-xs font-medium text-gray-300">
+              {totalUsers > 0 ? ((usersWithBalance / totalUsers) * 100).toFixed(1) : 0}% of users
+            </span>
+          </div>
+          <p className="mt-4 text-xs font-medium uppercase tracking-widest text-gray-500">
+            Users with Balance
+          </p>
+          <p className="mt-1 text-2xl font-bold tracking-tight text-white">
+            {usersWithBalance}
+          </p>
+        </div>
+      </section>
+
       {/* Search and Filter Bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md">
@@ -252,7 +346,7 @@ export default function Users() {
             className="w-full rounded-lg border border-white/10 bg-black/40 py-2 pl-9 pr-4 text-sm text-white placeholder:text-gray-500 focus:border-red-500/50 focus:outline-none focus:ring-1 focus:ring-red-500/50"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setStatusFilter("all")}
             className={`rounded-lg px-3 py-2 text-xs font-medium transition-all ${
@@ -313,6 +407,7 @@ export default function Users() {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">User</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Contact</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Wallet Balance</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Joined</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Role</th>
@@ -348,6 +443,67 @@ export default function Users() {
                           {user.phone || "No phone"}
                         </div>
                       </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {editingWalletId === user._id ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm text-gray-400">₦</span>
+                          <input
+                            type="number"
+                            value={editWalletValue}
+                            onChange={(e) => setEditWalletValue(e.target.value)}
+                            className="w-24 rounded border border-emerald-500/30 bg-black/60 px-2 py-1 text-sm text-white focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                            autoFocus
+                            onClick={(e) => e.stopPropagation()}
+                            step="0.01"
+                            min="0"
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditWalletSave(user._id);
+                            }}
+                            disabled={walletUpdateLoading}
+                            className="rounded p-1 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+                            title="Save"
+                          >
+                            {walletUpdateLoading ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <Save size={14} />
+                            )}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditWalletCancel();
+                            }}
+                            className="rounded p-1 text-red-400 hover:bg-red-500/20 transition-colors"
+                            title="Cancel"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <Wallet size={14} className="text-emerald-400/60" />
+                          <span className={`text-sm font-medium ${
+                            (user.walletBalance || 0) > 0 ? "text-emerald-400" : "text-gray-500"
+                          }`}>
+                            {formatWalletBalance(user.walletBalance)}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditWalletStart(user);
+                            }}
+                            className="rounded p-0.5 text-gray-500 hover:text-emerald-400 hover:bg-emerald-500/20 transition-colors ml-1"
+                            title="Edit balance"
+                          >
+                            <Edit size={12} />
+                          </button>
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <span
@@ -479,6 +635,17 @@ export default function Users() {
                   </div>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/30 p-3">
+                  <p className="text-xs text-gray-500">Wallet Balance</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <Wallet size={14} className="text-emerald-400" />
+                    <p className={`text-sm font-semibold ${
+                      (selectedUser.walletBalance || 0) > 0 ? "text-emerald-400" : "text-gray-400"
+                    }`}>
+                      {formatWalletBalance(selectedUser.walletBalance)}
+                    </p>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-black/30 p-3">
                   <p className="text-xs text-gray-500">Account Status</p>
                   <div className="mt-1">
                     <span
@@ -528,7 +695,7 @@ export default function Users() {
                 </div>
               </div>
 
-              {/* Action Buttons - FIXED: Properly reference selectedUser */}
+              {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
                 {(selectedUser.status === "active" || selectedUser.isActive === true) ? (
                   <button
