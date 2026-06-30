@@ -11,6 +11,7 @@ import recieptNumberGenerator from "../utils/recieptNo.generator.js";
 import { cancelNumberServices } from "../services/number/cancelNumber.js";
 import { buyNumberOption } from "../services/number/buyNumber.js";
 import { requestUserOtp } from "../services/number/checkNumber.js";
+import { isPast, differenceInSeconds } from "date-fns";
 
 const getUserWalletBalance = async (req, res, next) => {
   const user = req.user;
@@ -167,11 +168,24 @@ const checkUserOtpOrderStatus = async (req, res, next) => {
       });
     }
 
-    if (otpOrder.expiresAt && now > otpOrder.expiresAt) {
-      res.statusCode = 400;
-      throw new Error(
-        "otp session expired, click the cancel button to get a refund",
-      );
+    if (otpOrder.expiresAt) {
+      const expiresAt = new Date(otpOrder.expiresAt);
+
+      if (isPast(expiresAt)) {
+        res.statusCode = 400;
+        throw new Error(
+          "otp session expired, click the cancel button to get a refund",
+        );
+      }
+
+      const secondsLeft = differenceInSeconds(expiresAt, now);
+
+      if (secondsLeft <= 30) {
+        res.statusCode = 400;
+        throw new Error(
+          "otp session expiring soon, click the cancel button to get a refund",
+        );
+      }
     }
 
     const response = await requestUserOtp(otpOrder);
