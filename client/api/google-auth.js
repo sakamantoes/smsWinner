@@ -57,6 +57,7 @@ export default async function handler(req, res) {
 
     if (!backendResponse.ok) {
       const errorData = await backendResponse.json().catch(() => ({}));
+      console.log("error message", errorData)
       return res.status(backendResponse.status).json({
         success: false,
         message: errorData.message || "Backend authentication failed",
