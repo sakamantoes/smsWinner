@@ -1,8 +1,9 @@
 import app from "./app.js";
 import { env } from "./config/constant.js";
 import { disconnectDb } from "./config/db.js";
+const PORT = process.env.PORT || env.port
 
-app.listen(env.port, () => {
+app.listen(PORT, () => {
   console.log(`server running on port:http://localhost:${env.port}`);
 });
 
