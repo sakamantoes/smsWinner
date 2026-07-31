@@ -12,12 +12,13 @@ import adminRoutes from "./routes/admin.routes.js";
 import supportRoute from "./routes/supportRoutes.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import CronJob from "../cron-job.js";
+import CronJob from "../cron-job.js"
 import compression from "compression";
 import SMSPOOLCRON from "../smspool-cron.js";
 
 const app = express();
 
+app.set("trust proxy", 1);
 app.use(compression());
 app.use(morgan("dev"));
 app.use(express.json());
