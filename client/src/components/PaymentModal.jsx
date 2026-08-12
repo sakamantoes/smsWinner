@@ -14,13 +14,7 @@ const paymentOptions = [
     title: "Pay with QUEST",
     description: "Use QUESTPay to fund your wallet instantly.",
     icon: CreditCard,
-  },
-  {
-    id: "squad",
-    title: "Pay with Squad",
-    description: "Checkout securely with card, transfer, or USSD.",
-    icon: Landmark,
-  },
+   },
   {
     id: "manual-transfer",
     title: "Manual Transfer",
