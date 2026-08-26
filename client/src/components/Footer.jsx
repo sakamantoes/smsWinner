@@ -2,6 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Mail, ChevronUp } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   const scrollToTop = () => {
@@ -36,6 +37,7 @@ const Footer = () => {
             <ul className="space-y-2 text-gray-400">
               <li><a href="#" className="hover:text-red-light transition">Privacy Policy</a></li>
               <li><a href="#" className="hover:text-red-light transition">Terms of Service</a></li>
+              <li><Link to="/terms" className="hover:text-red-light transition">Terms & Conditions</Link></li>
               <li><a href="#" className="hover:text-red-light transition">Refund Policy</a></li>
             </ul>
           </div>

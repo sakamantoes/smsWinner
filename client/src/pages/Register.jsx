@@ -1,6 +1,6 @@
 // src/pages/Register.jsx
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
   Mail,
@@ -10,6 +10,8 @@ import {
   ArrowRight,
   CheckCircle,
   XCircle,
+  X,
+  Shield,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import imageObject from "../utils/image";
@@ -22,6 +24,8 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -112,6 +116,10 @@ const Register = () => {
       newErrors.confirmPassword = "Passwords do not match";
     }
 
+    if (!agreedToTerms) {
+      newErrors.terms = "You must agree to the Terms & Conditions";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -122,9 +130,7 @@ const Register = () => {
 
     setLoading(true);
 
-    // Simulate API call
     try {
-      // Replace with your actual API endpoint
       localStorage.removeItem("smswinner_token");
       const response = await signup(formData);
 
@@ -413,6 +419,37 @@ const Register = () => {
               )}
             </div>
 
+            {/* Terms and Conditions Checkbox */}
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={agreedToTerms}
+                onChange={(e) => {
+                  setAgreedToTerms(e.target.checked);
+                  if (errors.terms) {
+                    setErrors({ ...errors, terms: "" });
+                  }
+                }}
+                className="mt-1 w-4 h-4 bg-white/5 border border-red-light/20 rounded focus:ring-red-light text-red-light cursor-pointer"
+              />
+              <label htmlFor="terms" className="text-sm text-gray-400">
+                I agree to the{" "}
+                <button
+                  type="button"
+                  onClick={() => setShowTermsModal(true)}
+                  className="text-red-light hover:underline font-medium"
+                >
+                  Terms & Conditions
+                </button>
+              </label>
+            </div>
+            {errors.terms && (
+              <p className="text-xs text-red-light flex items-center gap-1">
+                <XCircle size={12} /> {errors.terms}
+              </p>
+            )}
+
             {errors.submit && (
               <div className="p-3 bg-red-light/10 border border-red-light/20 rounded-lg">
                 <p className="text-red-light text-sm text-center">
@@ -468,6 +505,112 @@ const Register = () => {
           </p>
         </motion.div>
       </motion.div>
+
+      {/* Terms and Conditions Modal */}
+      <AnimatePresence>
+        {showTermsModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setShowTermsModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-gray-900 rounded-2xl max-w-3xl w-full max-h-[80vh] overflow-hidden border border-red-light/20"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-red-light/20">
+                <div className="flex items-center gap-3">
+                  <Shield className="text-red-light w-6 h-6" />
+                  <h2 className="text-xl font-bold text-white">Terms & Conditions</h2>
+                </div>
+                <button
+                  onClick={() => setShowTermsModal(false)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 overflow-y-auto max-h-[60vh] space-y-6 text-gray-300 text-sm">
+                <section>
+                  <h3 className="font-bold text-white text-base mb-2">Payment for Services and Purchase Procedure</h3>
+                  <ol className="list-decimal list-inside space-y-1 pl-2">
+                    <li>Before using the Smswinners platform, you must top up your balance;</li>
+                    <li>All available top-up methods can be found by clicking the "Top up" button;</li>
+                    <li>The commission and minimum top-up amount depend on the selected payment method;</li>
+                    <li>Please note: funds may take up to 3 hours to be credited to your balance;</li>
+                    <li>Funds are deducted from the balance upon completion of the purchase;</li>
+                    <li>A purchase is considered completed if an OTP code has been received and displayed to the user;</li>
+                    <li>If an OTP code does not arrive for any reason, the funds are returned to the balance;</li>
+                    <li>If a code does not arrive after multiple numbers purchase, Smswinners may apply sanctions to the account;</li>
+                    <li>To withdraw funds from your balance, send a request to smswinner19@gmail.com from the email address that was used to register your account. Requests are reviewed within 3 business days. The standard withdrawal period is 7 days. In some cases, the review period for a withdrawal request may take up to 4 weeks.</li>
+                    <li>Refunds are made to the same wallet which the deposit was made with.</li>
+                    <li>A 5% fee is charged for withdrawals. If one year or more has passed since the last top-up, the fee is 15%; after 2 years – 25%; after 3 years – 35%.</li>
+                  </ol>
+                </section>
+
+                <section>
+                  <h4 className="font-semibold text-white">Cancellation and Refunds</h4>
+                  <p className="mt-1">Cancelling a 20-minute number purchase:</p>
+                  <ul className="list-disc list-inside space-y-1 pl-4">
+                    <li>Number cancellation becomes available after purchase. The corresponding button in the activation card will become active;</li>
+                    <li>Cancellation with a refund to your balance is available if no code has been received on the number;</li>
+                    <li>Once a code has been received, the activation is considered successful and the money cannot be refunded;</li>
+                    <li>If no code arrives within 20 minutes for any reason, the money is automatically returned to your balance or report to customer care.</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h4 className="font-semibold text-white">User Agreement</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4">
+                    <li>Users can purchase virtual numbers directly from suppliers through the P2P deal system.</li>
+                    <li>By registering on the site, you agree to receive promotional messages from Smswinners. You can unsubscribe at any time.</li>
+                    <li>Using Smswinners for any unlawful purpose is strictly forbidden.</li>
+                    <li>We are not responsible for created accounts. All actions and potential blocks are the buyer's own risk.</li>
+                  </ul>
+                </section>
+
+                <p className="text-gray-400 text-xs border-t border-red-light/20 pt-4">
+                  For the full Terms & Conditions, please visit our{" "}
+                  <Link to="/terms" className="text-red-light hover:underline" onClick={() => setShowTermsModal(false)}>
+                    Terms & Conditions page
+                  </Link>
+                  .
+                </p>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-6 border-t border-red-light/20 flex justify-end gap-3">
+                <button
+                  onClick={() => setShowTermsModal(false)}
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    setAgreedToTerms(true);
+                    if (errors.terms) {
+                      setErrors({ ...errors, terms: "" });
+                    }
+                    setShowTermsModal(false);
+                  }}
+                  className="px-4 py-2 bg-gradient-to-r from-red-light to-red-dark rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-red-light/30 transition-all"
+                >
+                  I Agree
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
