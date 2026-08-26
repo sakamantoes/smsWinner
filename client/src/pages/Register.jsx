@@ -116,8 +116,9 @@ const Register = () => {
       newErrors.confirmPassword = "Passwords do not match";
     }
 
+    // MANDATORY: User must agree to Terms & Conditions
     if (!agreedToTerms) {
-      newErrors.terms = "You must agree to the Terms & Conditions";
+      newErrors.terms = "You must agree to the Terms & Conditions to create an account";
     }
 
     setErrors(newErrors);
@@ -419,36 +420,55 @@ const Register = () => {
               )}
             </div>
 
-            {/* Terms and Conditions Checkbox */}
-            <div className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                id="terms"
-                checked={agreedToTerms}
-                onChange={(e) => {
-                  setAgreedToTerms(e.target.checked);
-                  if (errors.terms) {
-                    setErrors({ ...errors, terms: "" });
-                  }
-                }}
-                className="mt-1 w-4 h-4 bg-white/5 border border-red-light/20 rounded focus:ring-red-light text-red-light cursor-pointer"
-              />
-              <label htmlFor="terms" className="text-sm text-gray-400">
-                I agree to the{" "}
-                <button
-                  type="button"
-                  onClick={() => setShowTermsModal(true)}
-                  className="text-red-light hover:underline font-medium"
+            {/* Terms and Conditions Checkbox - MANDATORY */}
+            <div className={`p-3 rounded-lg transition-colors ${
+              errors.terms ? "bg-red-light/10 border border-red-light/30" : "bg-white/5"
+            }`}>
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  checked={agreedToTerms}
+                  onChange={(e) => {
+                    setAgreedToTerms(e.target.checked);
+                    if (errors.terms) {
+                      setErrors({ ...errors, terms: "" });
+                    }
+                  }}
+                  className="mt-0.5 w-5 h-5 bg-white/10 border-2 border-red-light/30 rounded focus:ring-red-light text-red-light cursor-pointer shrink-0"
+                />
+                <label htmlFor="terms" className="text-sm text-gray-300 cursor-pointer">
+                  I have read and agree to the{" "}
+                  <button
+                    type="button"
+                    onClick={() => setShowTermsModal(true)}
+                    className="text-red-light hover:underline font-semibold"
+                  >
+                    Terms & Conditions
+                  </button>
+                  {" "}and{" "}
+                  <button
+                    type="button"
+                    className="text-red-light hover:underline font-semibold"
+                  >
+                    Privacy Policy
+                  </button>
+                  . <span className="text-red-light">*</span>
+                </label>
+              </div>
+              {errors.terms && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 text-xs text-red-light flex items-center gap-1"
                 >
-                  Terms & Conditions
-                </button>
-              </label>
-            </div>
-            {errors.terms && (
-              <p className="text-xs text-red-light flex items-center gap-1">
-                <XCircle size={12} /> {errors.terms}
+                  <XCircle size={14} /> {errors.terms}
+                </motion.p>
+              )}
+              <p className="text-xs text-gray-500 mt-1 ml-8">
+                You must agree to the Terms & Conditions to create an account
               </p>
-            )}
+            </div>
 
             {errors.submit && (
               <div className="p-3 bg-red-light/10 border border-red-light/20 rounded-lg">
