@@ -26,6 +26,7 @@ import Setting from "./pages/user/Setting.jsx";
 import UserSupport from "./pages/user/UserSupport.jsx";
 import AdminSupport from "./pages/Admin/AdminSupport.jsx";
 import TermsAndConditions from "./pages/termsAndConditions.jsx";
+import PrivacyPolicy from "./pages/privacy.jsx";
 // import SiteNotWorking from  "./components/SiteNotWorking.jsx"
 
 const App = () => {
@@ -41,6 +42,7 @@ const App = () => {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/payment/status" element={<PaymentStatus />} />
         <Route path="/terms" element={<TermsAndConditions />} />
+        <Route path="/Privacy" element={<PrivacyPolicy />} />
 
         <Route
           path="/f"

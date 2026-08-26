@@ -35,10 +35,8 @@ const Footer = () => {
           <div>
             <h3 className="font-bold mb-4">Legal</h3>
             <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-red-light transition">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-red-light transition">Terms of Service</a></li>
               <li><Link to="/terms" className="hover:text-red-light transition">Terms & Conditions</Link></li>
-              <li><a href="#" className="hover:text-red-light transition">Refund Policy</a></li>
+              <li><Link to="/privacy" className="hover:text-red-light transition">Privacy Policy</Link></li>
             </ul>
           </div>
           
