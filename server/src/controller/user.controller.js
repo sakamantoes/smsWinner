@@ -5,7 +5,6 @@ import WalletTransaction from "../model/WalletTransactions.js";
 import PricingSetting from "../model/PriceSetting.js";
 import calculateSellingPrice from "../utils/calculateSellingPrice.js";
 import AvailableService from "../model/ServicesAvailable.js";
-import { env } from "../config/constant.js";
 import OtpOrder from "../model/OtpOrder.js";
 import recieptNumberGenerator from "../utils/recieptNo.generator.js";
 import { cancelNumberServices } from "../services/number/cancelNumber.js";
@@ -341,7 +340,6 @@ const buyNumberService = async (req, res, next) => {
       _id: id,
       internalService: service,
       internalCountry: country,
-      active: true,
     });
 
     if (!selectedService) {
