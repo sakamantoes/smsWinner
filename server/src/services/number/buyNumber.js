@@ -6,7 +6,7 @@ export const buyNumberOption = async (payload) => {
   switch (payload.provider) {
     case "smsbower":
       const resBower = await axios.get(
-        `https://smsbower.page/stubs/handler_api.php?api_key=${env.sms_bower_api_key}&action=getNumberV2&service=${payload.providerService}&country=${payload.providerCountry}&maxPrice=${payload.providerPrice + 0.5}&providerIds=${payload.providerId}&exceptProviderIds=$exceptProviderIds&userID=${env.sms_bower_user_id}&minPrice=${0.0001}`,
+        `https://smsbower.page/stubs/handler_api.php?api_key=${env.sms_bower_api_key}&action=getNumberV2&service=${payload.providerService}&country=${payload.providerCountry}&maxPrice=${payload.providerPrice}&providerIds=&exceptProviderIds=$exceptProviderIds&userID=${env.sms_bower_user_id}&minPrice=${0.0001}`,
       );
 
       const data = resBower.data;
@@ -35,8 +35,7 @@ export const buyNumberOption = async (payload) => {
       const res = await smspool_api.post("/purchase/sms", {
         country: payload.providerCountry,
         service: payload.providerService,
-        pool: Number(payload.providerId),
-        max_price: payload.providerPrice + 0.5,
+        max_price: payload.providerPrice,
         pricing_option: 1,
       });
 

@@ -349,8 +349,8 @@ const buyNumberService = async (req, res, next) => {
 
     const maxAllowedProviderPrice = Math.min(
       Number(selectedService.providerPrice) * 1.5,
-      Number(selectedService.providerPrice) + 1,
-    );
+      Number(selectedService.providerPrice) + 0.3,
+    )
 
     const activeServices = await AvailableService.find({
       internalService: service,
