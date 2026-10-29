@@ -4,16 +4,31 @@ import smspool_api from "../../utils/smspool.js";
 
 export const buyNumberOption = async (payload) => {
   switch (payload.provider) {
-    case "smsbower":
+    case "smsbower": {
+      const params = new URLSearchParams({
+        api_key: env.sms_bower_api_key,
+        action: "getNumberV2",
+        service: payload.providerService,
+        country: payload.providerCountry,
+        maxPrice: String(payload.providerPrice ?? ""),
+        minPrice: "0.0001",
+        userID: String(env.sms_bower_user_id || ""),
+      });
+
+      if (payload.providerId) params.append("providerIds", String(payload.providerId));
+
       const resBower = await axios.get(
-        `https://smsbower.page/stubs/handler_api.php?api_key=${env.sms_bower_api_key}&action=getNumberV2&service=${payload.providerService}&country=${payload.providerCountry}&maxPrice=${payload.providerPrice}$providerIds=${payload.providerId}&exceptProviderIds=$exceptProviderIds&userID=${env.sms_bower_user_id}&minPrice=${0.0001}`,
+        `https://smsbower.page/stubs/handler_api.php?${params.toString()}`,
       );
 
       const data = resBower.data;
       console.log("smsbower data:", data);
 
       if (typeof data === "string") {
-        console.error("smsbower error: ", data);
+        console.error("smsbower error: ", {
+          ...payload,
+          response: data,
+        });
         throw new Error(`SMSBower purchase failed: ${data}`);
       }
 
@@ -31,6 +46,7 @@ export const buyNumberOption = async (payload) => {
         activationCost: data.activationCost,
         raw: data,
       };
+    }
     case "smspool":
       const res = await smspool_api.post("/purchase/sms", {
         country: payload.providerCountry,
