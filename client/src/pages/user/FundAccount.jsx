@@ -1,9 +1,9 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PaymentModal from "../../components/PaymentModal.jsx";
-import AlatPayment from "../../components/payment/AlatPayment.jsx"
+// import AlatPayment from "../../components/payment/AlatPayment.jsx"
 import ManualTransferPayment from "../../components/payment/ManualTransferPayment.jsx";
 import SquadPayment from "../../components/payment/SquadPayment.jsx";
-import CtexPayment from "../../components/payment/CtexPayment.jsx";
+// import CtexPayment from "../../components/payment/CtexPayment.jsx";
 
 export default function FundAccount() {
   const navigate = useNavigate();
@@ -35,14 +35,14 @@ export default function FundAccount() {
   //   );
   // }
 
-  if (paymentMethod === "ctex") {
-    return (
-      <CtexPayment
-        amount={amount}
-        onBack={handleBackToMethods}
-      />
-    );
-  }
+  // if (paymentMethod === "ctex") {
+  //   return (
+  //     <CtexPayment
+  //       amount={amount}
+  //       onBack={handleBackToMethods}
+  //     />
+  //   );
+  // }
 
   if (paymentMethod === "squad") {
     return (
