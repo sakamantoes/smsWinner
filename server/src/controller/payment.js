@@ -328,7 +328,7 @@ const initializeQuestPayment = async (req, res, next) => {
   const { amount } = req.body;
   const user = req.user;
   const randomCode = crypto.randomBytes(6).toString("hex").toUpperCase();
-  const reference = `TivaTechHub-${user._id}-${randomCode}`;
+  const reference = `smswinners-${user._id}-${randomCode}`;
   try {
     const data = {
       email: user.email,
@@ -336,7 +336,7 @@ const initializeQuestPayment = async (req, res, next) => {
       reference,
       amount: Number(amount),
       metadata: { userId: user._id },
-      return_url: "https://tivatechhub.com/payment/status",
+      return_url: "https://www.smswinners.online/payment/status",
     };
 
     const response = await axios.post(
@@ -435,7 +435,7 @@ const initializeCtexPayment = async (req, res, next) => {
     }
 
     const customerId = await ensureCtexCustomer(user);
-    const reference = `TivaTechHub-${user._id}-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
+    const reference = `smswinners-${user._id}-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
 
     const { data } = await ctex.post(
       "/payments",
