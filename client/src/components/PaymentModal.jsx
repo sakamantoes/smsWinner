@@ -16,11 +16,11 @@ const paymentOptions = [
   //   icon: CreditCard,
   // },
   {
-  id: "ctex",
-  title: "Pay with CTEX PAY",
-  description: "Pay by bank transfer on a secure checkout page.",
-  icon: Landmark,
-},
+    id: "ctex",
+    title: "Pay with CTEX PAY",
+    description: "Pay by bank transfer on a secure checkout page.",
+    icon: Landmark,
+  },
   {
     id: "manual-transfer",
     title: "Manual Transfer",
@@ -53,23 +53,25 @@ export default function PaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg px-4 py-6 overflow-y-auto">
-      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-card">
-        <div className="flex items-start justify-between border-b border-border px-5 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black px-4 py-6">
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xl shadow-red-950/30">
+        <div aria-hidden="true" className="h-1 w-full bg-red-600" />
+
+        <div className="flex items-start justify-between border-b border-zinc-800 px-5 py-4">
           <div className="flex items-start gap-3">
             {showBackButton && (
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Go back"
-                className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-muted transition-colors hover:border-brand hover:text-heading"
+                className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-800 text-zinc-400 transition-colors hover:border-red-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
               >
                 <ArrowLeft size={18} />
               </button>
             )}
             <div>
-              <h2 className="text-lg font-bold text-heading">Fund Account</h2>
-              <p className="mt-1 text-sm text-muted">
+              <h2 className="text-lg font-bold text-white">Fund Account</h2>
+              <p className="mt-1 text-sm text-zinc-400">
                 Choose how you want to add money to your wallet.
               </p>
             </div>
@@ -79,7 +81,7 @@ export default function PaymentModal({
               type="button"
               onClick={onClose}
               aria-label="Close payment modal"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-muted transition-colors hover:border-brand hover:text-heading"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-800 text-zinc-400 transition-colors hover:border-red-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
             >
               <X size={18} />
             </button>
@@ -88,14 +90,14 @@ export default function PaymentModal({
 
         <div className="space-y-5 p-5">
           <label className="block">
-            <span className="text-sm font-semibold text-muted">Amount</span>
+            <span className="text-sm font-semibold text-zinc-400">Amount</span>
             <input
               type="number"
               min="100"
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
               placeholder="Enter amount"
-              className="mt-2 h-12 w-full rounded-xl border border-border bg-bg px-4 text-heading outline-none transition-colors placeholder:text-muted focus:border-brand"
+              className="mt-2 h-12 w-full rounded-xl border border-zinc-800 bg-black px-4 text-white outline-none transition-colors placeholder:text-zinc-600 focus:border-red-600 focus:ring-1 focus:ring-red-600"
             />
           </label>
 
@@ -109,32 +111,32 @@ export default function PaymentModal({
                   key={option.id}
                   type="button"
                   onClick={() => setSelectedMethod(option.id)}
-                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${
+                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 ${
                     isSelected
-                      ? "border-brand bg-brand"
-                      : "border-border bg-bg hover:border-brand hover:bg-surface"
+                      ? "border-red-600 bg-red-600/10"
+                      : "border-zinc-800 bg-black hover:border-red-600/60 hover:bg-zinc-900"
                   }`}
                 >
                   <span
                     className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${
                       isSelected
-                        ? "bg-brand text-on-brand"
-                        : "bg-surface text-muted"
+                        ? "bg-red-600 text-white"
+                        : "bg-zinc-900 text-zinc-400"
                     }`}
                   >
                     <Icon size={20} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold text-heading">
+                    <span className="block text-sm font-bold text-white">
                       {option.title}
                     </span>
-                    <span className="mt-1 block text-xs leading-5 text-muted">
+                    <span className="mt-1 block text-xs leading-5 text-zinc-400">
                       {option.description}
                     </span>
                   </span>
                   <ArrowRight
                     size={18}
-                    className={isSelected ? "text-brand-text" : "text-muted"}
+                    className={isSelected ? "text-red-500" : "text-zinc-600"}
                   />
                 </button>
               );
@@ -145,7 +147,7 @@ export default function PaymentModal({
             type="button"
             onClick={handleProceed}
             disabled={!amount || Number(amount) <= 0}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-bold text-on-brand transition-colors hover:bg-brand disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-bold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Continue with {selectedOption?.title.replace("Pay with ", "")}
             <ArrowRight size={17} />
