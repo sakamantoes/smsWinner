@@ -8,6 +8,8 @@ import {
   webhookHandler,
   initializeQuestPayment,
   questWebhook,
+  ctexWebhook,
+  initializeCtexPayment,
 } from "../controller/payment.js";
 import {
   initialiseDepositValidator,
@@ -55,6 +57,15 @@ router.post(
 );
 
 router.post("/status", paymentStatusValidator, validateData, getPaymentStatus);
+router.post(
+  "/ctex/initialize-deposit",
+  authMiddleware,
+  validateUserRole,
+  initialiseDepositValidator,
+  validateData,
+  initializeCtexPayment,
+);
+router.post("/ctex/webhook", ctexWebhook);
 
 router.post("/webhook", webhookHandler);
 router.post("/quest/webhook", questWebhook);

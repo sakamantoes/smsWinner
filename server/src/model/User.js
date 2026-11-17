@@ -16,6 +16,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    phone: { type: String, unique: true, sparse: true }, // no default, so sparse works
+    ctexCustomerId: String,
     role: {
       type: String,
       required: true,

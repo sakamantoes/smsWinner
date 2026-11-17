@@ -61,5 +61,6 @@ router.post(
   validateData,
   resetPassword,
 );
+router.put("/update-phone", authMiddleware, updatePhone);
 
 export default router;

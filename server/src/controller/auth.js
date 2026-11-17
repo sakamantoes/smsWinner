@@ -1,75 +1,24 @@
 import User from "../model/User.js";
-import client from "../utils/google.js";
 import { generateToken } from "../utils/jwttoken.js";
 import { comparePassword, hashPassword } from "../utils/bycrpt.js";
 import { authCookieOptions, setAuthCookie } from "../utils/setCookie.js";
-import { env } from "../config/constant.js";
 import mongoose from "mongoose";
 import crypto from "crypto";
 import { sendMail } from "../services/resend.js";
+import { env } from "../config/constant.js";
 
-const googleSetup = async (req, res, next) => {
-  const { token } = req.body;
-  try {
-    if (!token) {
-      res.statusCode = 400;
-      throw new Error("missing token");
-    }
-
-    // Verify Google token
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: env.google_client_id,
-    });
-
-    const payload = ticket.getPayload();
-
-    if (!payload) {
-      res.statusCode = 400;
-      throw new Error("invaild token");
-    }
-
-    const { email, name, sub } = payload;
-
-    const hashedpassword = await hashPassword(sub);
-
-    let user = await User.findOne({
-      email,
-    });
-
-    // Create user if doesn't exist
-    if (!user) {
-      user = await User.create({
-        email,
-        username: name,
-        password: hashedpassword,
-      });
-    }
-
-    const jwtToken = generateToken({
-      userId: user._id,
-      email: user.email,
-      role: user.role,
-    });
-
-    // Set token to cookie header
-    setAuthCookie(res, jwtToken);
-
-    res.status(201).json({
-      status: 201,
-      success: true,
-      message: "You're Google registration was successful",
-      data: {
-        token: jwtToken,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
+// Accepts 08012345678, 8012345678-style spacing, or +2348012345678 -> returns 08012345678
+const normalizePhone = (value) => {
+  const digits = String(value || "").replace(/\D/g, "");
+  const local =
+    digits.startsWith("234") && digits.length === 13
+      ? `0${digits.slice(3)}`
+      : digits;
+  return /^0[789]\d{9}$/.test(local) ? local : null;
 };
 
 const googleVerified = async (req, res, next) => {
-  const { googleId, email, name, picture, emailVerified } = req.body;
+  const { googleId, email, name } = req.body;
 
   try {
     if (!googleId || !email) {
@@ -86,6 +35,11 @@ const googleVerified = async (req, res, next) => {
         username: name,
         password: hashedPassword,
       });
+    }
+
+    if (user.role === "admin") {
+      res.statusCode = 400;
+      throw new Error("can't login with this portal");
     }
 
     const jwtToken = generateToken({
@@ -106,6 +60,7 @@ const googleVerified = async (req, res, next) => {
         email: user.email,
         username: user.username,
         role: user.role,
+        phone: user.phone || null,
       },
     });
   } catch (error) {
@@ -130,6 +85,7 @@ const getAuthUser = async (req, res, next) => {
         email: user.email,
         username: user.username,
         role: user.role,
+        phone: user.phone || null,
       },
     });
   } catch (error) {
@@ -140,20 +96,29 @@ const getAuthUser = async (req, res, next) => {
 const emailSignup = async (req, res, next) => {
   const { email, password, username } = req.body;
   try {
+    const phone = normalizePhone(req.body.phone);
+    if (!phone) {
+      res.statusCode = 400;
+      throw new Error("Enter a valid Nigerian phone number, e.g. 08012345678");
+    }
+
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+
     const isUser = await User.findOne({
-      $or: [{ email }, { username }],
+      $or: [{ email: normalizedEmail }, { username }, { phone }],
     });
 
     if (isUser) {
       res.statusCode = 400;
-      throw new Error("User with this email or username already exists");
+      throw new Error("An account with these details could not be created");
     }
 
     const hashedPassword = await hashPassword(password);
     const user = await User.create({
-      email: email,
+      email: normalizedEmail,
       username,
       password: hashedPassword,
+      phone,
     });
 
     const jwtToken = generateToken({
@@ -173,6 +138,13 @@ const emailSignup = async (req, res, next) => {
       },
     });
   } catch (error) {
+    // Two simultaneous signups with the same email/username/phone
+    if (error?.code === 11000) {
+      res.statusCode = 400;
+      return next(
+        new Error("An account with these details could not be created"),
+      );
+    }
     next(error);
   }
 };
@@ -185,6 +157,11 @@ const emailLogin = async (req, res, next) => {
     if (!user) {
       res.statusCode = 401;
       throw new Error("Invalid Credentials");
+    }
+
+    if (user.role === "admin") {
+      res.statusCode = 400;
+      throw new Error("can't login with this portal");
     }
 
     const isPasswordValid = await comparePassword(password, user.password);
@@ -211,6 +188,7 @@ const emailLogin = async (req, res, next) => {
         email: user.email,
         username: user.username,
         role: user.role,
+        phone: user.phone || null,
         token: jwtToken,
       },
     });
@@ -313,6 +291,34 @@ const updateUsername = async (req, res, next) => {
       data: user,
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+const updatePhone = async (req, res, next) => {
+  try {
+    const phone = normalizePhone(req.body.phone);
+    if (!phone) {
+      res.statusCode = 400;
+      throw new Error("Enter a valid Nigerian phone number, e.g. 08012345678");
+    }
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { phone },
+      { new: true },
+    );
+    res.status(200).json({
+      success: true,
+      message: "Phone number saved",
+      data: { phone: user.phone },
+    });
+  } catch (error) {
+    if (error?.code === 11000) {
+      res.statusCode = 400;
+      return next(
+        new Error("This phone number is already linked to another account"),
+      );
+    }
     next(error);
   }
 };
@@ -465,10 +471,9 @@ const resetPassword = async (req, res, next) => {
 
 // EDIT USER WALLET BALANCE
 const editUserWallet = async (req, res, next) => {
+  const { id } = req.params;
+  const { walletBalance } = req.body;
   try {
-    const { id } = req.params;
-    const { walletBalance } = req.body;
-
     // Validate user ID
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
@@ -481,7 +486,7 @@ const editUserWallet = async (req, res, next) => {
       throw new Error("Wallet balance is required");
     }
 
-    if (typeof walletBalance !== 'number' || walletBalance < 0) {
+    if (typeof walletBalance !== "number" || walletBalance < 0) {
       res.statusCode = 400;
       throw new Error("Wallet balance must be a positive number");
     }
@@ -490,7 +495,7 @@ const editUserWallet = async (req, res, next) => {
     const user = await User.findByIdAndUpdate(
       id,
       { walletBalance: walletBalance },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).select("-password");
 
     if (!user) {
@@ -507,7 +512,6 @@ const editUserWallet = async (req, res, next) => {
         email: user.email,
         walletBalance: user.walletBalance,
         isActive: user.isActive,
-        role: user.role,
       },
     });
   } catch (error) {
@@ -516,7 +520,6 @@ const editUserWallet = async (req, res, next) => {
 };
 
 export {
-  googleSetup,
   googleVerified,
   getAuthUser,
   emailSignup,
@@ -526,8 +529,9 @@ export {
   activateUser,
   updatePassword,
   updateUsername,
+  updatePhone,
   logout,
   forgotPassword,
   resetPassword,
-  editUserWallet
+  editUserWallet,
 };

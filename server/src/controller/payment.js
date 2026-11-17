@@ -9,6 +9,13 @@ import {
   sendDepositFailedNotification,
   sendPaymentReceivedNotification,
 } from "./notificationController.js";
+import { env } from "../config/constant.js";
+
+const ctex = axios.create({
+  baseURL: env.ctex_api_base,
+  headers: { Authorization: `Bearer ${env.ctex_api_key}` },
+  timeout: 30000,
+});
 
 const normalizeSquadStatus = (status) => {
   const normalizedStatus = String(status || "").toLowerCase();
@@ -318,7 +325,7 @@ const initializeQuestPayment = async (req, res, next) => {
   const { amount } = req.body;
   const user = req.user;
   const randomCode = crypto.randomBytes(6).toString("hex").toUpperCase();
-  const reference = `SMSWINNERS-${user._id}-${randomCode}`;
+  const reference = `TivaTechHub-${user._id}-${randomCode}`;
   try {
     const data = {
       email: user.email,
@@ -326,7 +333,7 @@ const initializeQuestPayment = async (req, res, next) => {
       reference,
       amount: Number(amount),
       metadata: { userId: user._id },
-      return_url: "https://www.smswinners.online/payment/status",
+      return_url: "https://tivatechhub.com/payment/status",
     };
 
     const response = await axios.post(
@@ -367,6 +374,179 @@ const initializeQuestPayment = async (req, res, next) => {
     next(error);
   }
 };
+
+//ctext 
+const ensureCtexCustomer = async (user) => {
+  if (user.ctexCustomerId) return user.ctexCustomerId;
+
+  const [first, ...rest] = user.username.trim().split(/\s+/);
+  let customerId;
+
+  try {
+    const { data } = await ctex.post("/customers", {
+      firstName: first.slice(0, 100).padEnd(2, "_"),
+      lastName: (rest.join(" ") || "User").slice(0, 100).padEnd(2, "_"),
+      email: user.email,
+      phone: user.phone,
+      metadata: { userId: String(user._id) },
+    });
+    customerId = data.data.customer.id;
+  } catch (err) {
+    if (err.response?.status !== 409) throw err;
+    // Already exists (created earlier but never saved here): look it up by email
+    const { data } = await ctex.get("/customers", { params: { search: user.email, limit: 100 } });
+    const found = data.data.customers.find(
+      (c) => c.email?.toLowerCase() === user.email.toLowerCase(),
+    );
+    if (!found) {
+      res409: {
+        const e = new Error("This phone number is already linked to another customer");
+        e.statusCode = 400;
+        throw e;
+      }
+    }
+    customerId = found.id;
+  }
+
+  await User.updateOne({ _id: user._id }, { ctexCustomerId: customerId });
+  return customerId;
+};
+
+const initializeCtexPayment = async (req, res, next) => {
+  const { amount } = req.body;
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user.phone) {
+      return res.status(400).json({
+        success: false,
+        code: "PHONE_REQUIRED",
+        message: "Add your phone number to continue",
+      });
+    }
+
+    const customerId = await ensureCtexCustomer(user);
+    const reference = `TivaTechHub-${user._id}-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
+
+    const { data } = await ctex.post(
+      "/payments",
+      {
+        amount: Math.round(Number(amount) * 100), // kobo
+        currency: "NGN",
+        customerId,
+        reference,
+        description: "wallet topup",
+        paymentMethod: "ACCOUNT_TRANSFER",
+        metadata: { userId: String(user._id) },
+        ...(env.ctex_return_url && { returnUrl: env.ctex_return_url }),
+      },
+      { headers: { "Idempotency-Key": reference } },
+    );
+
+    const payment = data.data;
+
+    await WalletTransaction.create({
+      userId: user._id,
+      amount: Number(amount),
+      type: "DEPOSIT",
+      referenceId: reference,
+      paymentMethod: "CTEX",
+      depositorName: user.username,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Payment initialized, redirect to complete payment",
+      data: payment.checkoutUrl,
+    });
+  } catch (error) {
+    console.log("ctex init:", error.response?.data || error.message);
+    next(error);
+  }
+};
+
+const validCtexSignature = (rawBody, header, secret) => {
+  if (!rawBody || !secret || typeof header !== "string" || !header.startsWith("sha256=")) return false;
+  const supplied = header.slice(7);
+  if (!/^[0-9a-f]{64}$/.test(supplied)) return false;
+  const expected = crypto.createHmac("sha256", secret).update(rawBody).digest();
+  const received = Buffer.from(supplied, "hex");
+  return received.length === expected.length && crypto.timingSafeEqual(received, expected);
+};
+
+const ctexWebhook = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  try {
+    if (!validCtexSignature(req.rawBody, req.headers["x-c-tex-signature"], env.ctex_webhook_secret)) {
+      return res.sendStatus(401);
+    }
+
+    const event = req.body;
+    if (event.type !== "payment.success") return res.sendStatus(200);
+
+    const paymentReference =
+      event.data?.paymentReference || event.data?.payment?.paymentReference;
+    if (!paymentReference) {
+      console.log("ctex webhook: unexpected payload", JSON.stringify(event));
+      return res.sendStatus(200);
+    }
+
+    // Never trust the body: confirm with CTEX using our API key
+    const verify = await ctex.post(`/payments/${paymentReference}/verify`);
+    const payment = verify.data?.data;
+    if (payment?.status !== "SUCCESS") return res.sendStatus(200);
+
+    const referenceId = payment.merchantReference;
+
+    await session.withTransaction(async () => {
+      const transaction = await WalletTransaction.findOne({ referenceId }).session(session);
+      if (!transaction) throw new Error("Transaction not found");
+      if (transaction.status === "SUCCESS") return; // already credited
+
+      const amountToCredit = transaction.amount;
+
+      if (
+        Number(payment.amount) !== Math.round(amountToCredit * 100) ||
+        (payment.currency || "NGN") !== "NGN"
+      ) {
+        await sendDepositFailedNotification(
+          transaction.userId,
+          amountToCredit,
+          referenceId,
+          "Payment amount does not match the transaction amount. Contact support if payment went through.",
+        );
+        return;
+      }
+
+      const wallet = await User.findOneAndUpdate(
+        { _id: transaction.userId },
+        { $inc: { walletBalance: amountToCredit } },
+        { new: true, session },
+      );
+
+      transaction.status = "SUCCESS";
+      transaction.orderId = payment.paymentReference;
+      transaction.balanceAfter = wallet.walletBalance;
+      transaction.balanceBefore = wallet.walletBalance - amountToCredit;
+      await transaction.save({ session });
+
+      await sendDepositSuccessNotification(
+        transaction.userId,
+        amountToCredit,
+        referenceId,
+        wallet.walletBalance,
+      );
+    });
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.log("ctex webhook:", error.response?.data || error.message);
+    next(error);
+  } finally {
+    await session.endSession();
+  }
+};
+
 // quest webhook
 const questWebhook = async (req, res, next) => {
   const signature = req.headers["x-questpay-signature"];
@@ -470,5 +650,7 @@ export {
   getPaymentStatus,
   initializeManualPayment,
   initializeQuestPayment,
+  ctexWebhook,
+  initializeCtexPayment,
   questWebhook,
 };
