@@ -56,11 +56,6 @@ const googleSetup = async (req, res, next) => {
       });
     }
 
-    if (user.role === "admin") {
-      res.statusCode = 400;
-      throw new Error("can't login with this portal");
-    }
-
     const jwtToken = generateToken({
       userId: user._id,
       email: user.email,
@@ -101,11 +96,6 @@ const googleVerified = async (req, res, next) => {
         username: name,
         password: hashedPassword,
       });
-    }
-
-    if (user.role === "admin") {
-      res.statusCode = 400;
-      throw new Error("can't login with this portal");
     }
 
     const jwtToken = generateToken({
@@ -228,11 +218,6 @@ const emailLogin = async (req, res, next) => {
     if (!user) {
       res.statusCode = 401;
       throw new Error("Invalid Credentials");
-    }
-
-    if (user.role === "admin") {
-      res.statusCode = 400;
-      throw new Error("can't login with this portal");
     }
 
     const isPasswordValid = await comparePassword(password, user.password);
