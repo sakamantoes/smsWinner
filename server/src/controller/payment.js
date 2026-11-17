@@ -86,8 +86,9 @@ const callbackUrlHandler = async (req, res, next) => {
   const { referenceId } = req.body;
 
   try {
+    // Match our reference, or the provider's own reference (CTEX stores it in orderId)
     const transaction = await WalletTransaction.findOne({
-      referenceId,
+      $or: [{ referenceId }, { orderId: referenceId }],
     });
 
     if (!transaction) {
@@ -109,7 +110,10 @@ const getPaymentStatus = async (req, res, next) => {
   const { referenceId } = req.body;
 
   try {
-    const transaction = await WalletTransaction.findOne({ referenceId });
+    // Match our reference, or the provider's own reference (CTEX stores it in orderId)
+    const transaction = await WalletTransaction.findOne({
+      $or: [{ referenceId }, { orderId: referenceId }],
+    });
 
     if (!transaction) {
       res.statusCode = 404;
@@ -374,7 +378,9 @@ const initializeQuestPayment = async (req, res, next) => {
   }
 };
 
-//ctext 
+// ---------------------------------------------------------------------------
+// CTEX PAY
+// ---------------------------------------------------------------------------
 const ensureCtexCustomer = async (user) => {
   if (user.ctexCustomerId) return user.ctexCustomerId;
 
@@ -392,17 +398,21 @@ const ensureCtexCustomer = async (user) => {
     customerId = data.data.customer.id;
   } catch (err) {
     if (err.response?.status !== 409) throw err;
+
     // Already exists (created earlier but never saved here): look it up by email
-    const { data } = await ctex.get("/customers", { params: { search: user.email, limit: 100 } });
+    const { data } = await ctex.get("/customers", {
+      params: { search: user.email, limit: 100 },
+    });
     const found = data.data.customers.find(
       (c) => c.email?.toLowerCase() === user.email.toLowerCase(),
     );
+
     if (!found) {
-      res409: {
-        const e = new Error("This phone number is already linked to another customer");
-        e.statusCode = 400;
-        throw e;
-      }
+      const e = new Error(
+        "This phone number is already linked to another customer",
+      );
+      e.statusCode = 400;
+      throw e;
     }
     customerId = found.id;
   }
@@ -457,6 +467,7 @@ const initializeCtexPayment = async (req, res, next) => {
       success: true,
       message: "Payment initialized, redirect to complete payment",
       data: payment.checkoutUrl,
+      reference,
     });
   } catch (error) {
     console.log("ctex init:", error.response?.data || error.message);
@@ -465,18 +476,33 @@ const initializeCtexPayment = async (req, res, next) => {
 };
 
 const validCtexSignature = (rawBody, header, secret) => {
-  if (!rawBody || !secret || typeof header !== "string" || !header.startsWith("sha256=")) return false;
+  if (
+    !rawBody ||
+    !secret ||
+    typeof header !== "string" ||
+    !header.startsWith("sha256=")
+  )
+    return false;
   const supplied = header.slice(7);
   if (!/^[0-9a-f]{64}$/.test(supplied)) return false;
   const expected = crypto.createHmac("sha256", secret).update(rawBody).digest();
   const received = Buffer.from(supplied, "hex");
-  return received.length === expected.length && crypto.timingSafeEqual(received, expected);
+  return (
+    received.length === expected.length &&
+    crypto.timingSafeEqual(received, expected)
+  );
 };
 
 const ctexWebhook = async (req, res, next) => {
   const session = await mongoose.startSession();
   try {
-    if (!validCtexSignature(req.rawBody, req.headers["x-c-tex-signature"], env.ctex_webhook_secret)) {
+    if (
+      !validCtexSignature(
+        req.rawBody,
+        req.headers["x-c-tex-signature"],
+        env.ctex_webhook_secret,
+      )
+    ) {
       return res.sendStatus(401);
     }
 
@@ -497,8 +523,16 @@ const ctexWebhook = async (req, res, next) => {
 
     const referenceId = payment.merchantReference;
 
+    // An undefined filter value can match the first document, so never query without it
+    if (!referenceId) {
+      console.log("ctex webhook: payment has no merchantReference", paymentReference);
+      return res.sendStatus(200);
+    }
+
     await session.withTransaction(async () => {
-      const transaction = await WalletTransaction.findOne({ referenceId }).session(session);
+      const transaction = await WalletTransaction.findOne({
+        referenceId,
+      }).session(session);
       if (!transaction) throw new Error("Transaction not found");
       if (transaction.status === "SUCCESS") return; // already credited
 

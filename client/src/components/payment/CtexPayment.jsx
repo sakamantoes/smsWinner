@@ -19,8 +19,18 @@ export default function CtexPayment({ amount, onBack }) {
         amount: Number(amount),
         paymentMethod: "CTEX",
       });
-      sessionStorage.setItem("ctexReference", res.data.reference);
-      window.location.href = res.data.data; // CTEX hosted checkout
+
+      const checkoutUrl = res.data?.data;
+      if (!checkoutUrl) {
+        throw new Error("No checkout URL returned");
+      }
+
+      // Remember our reference so the status page can look the payment up
+      if (res.data?.reference) {
+        sessionStorage.setItem("ctexReference", res.data.reference);
+      }
+
+      window.location.href = checkoutUrl; // CTEX hosted checkout
     } catch (error) {
       if (error.response?.data?.code === "PHONE_REQUIRED") {
         setShowPhone(true);
