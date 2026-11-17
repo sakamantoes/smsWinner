@@ -1,13 +1,14 @@
 import User from "../model/User.js";
+import client from "../utils/google.js";
 import { generateToken } from "../utils/jwttoken.js";
 import { comparePassword, hashPassword } from "../utils/bycrpt.js";
 import { authCookieOptions, setAuthCookie } from "../utils/setCookie.js";
+import { env } from "../config/constant.js";
 import mongoose from "mongoose";
 import crypto from "crypto";
 import { sendMail } from "../services/resend.js";
-import { env } from "../config/constant.js";
 
-// Accepts 08012345678, 8012345678-style spacing, or +2348012345678 -> returns 08012345678
+// Accepts 08012345678, +2348012345678, 2348012345678 -> returns 08012345678
 const normalizePhone = (value) => {
   const digits = String(value || "").replace(/\D/g, "");
   const local =
@@ -15,6 +16,71 @@ const normalizePhone = (value) => {
       ? `0${digits.slice(3)}`
       : digits;
   return /^0[789]\d{9}$/.test(local) ? local : null;
+};
+
+const googleSetup = async (req, res, next) => {
+  const { token } = req.body;
+  try {
+    if (!token) {
+      res.statusCode = 400;
+      throw new Error("missing token");
+    }
+
+    // Verify Google token
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: env.google_client_id,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload) {
+      res.statusCode = 400;
+      throw new Error("invaild token");
+    }
+
+    const { email, name, sub } = payload;
+
+    const hashedpassword = await hashPassword(sub);
+
+    let user = await User.findOne({
+      email,
+    });
+
+    // Create user if doesn't exist
+    if (!user) {
+      user = await User.create({
+        email,
+        username: name,
+        password: hashedpassword,
+      });
+    }
+
+    if (user.role === "admin") {
+      res.statusCode = 400;
+      throw new Error("can't login with this portal");
+    }
+
+    const jwtToken = generateToken({
+      userId: user._id,
+      email: user.email,
+      role: user.role,
+    });
+
+    // Set token to cookie header
+    setAuthCookie(res, jwtToken);
+
+    res.status(201).json({
+      status: 201,
+      success: true,
+      message: "You're Google registration was successful",
+      data: {
+        token: jwtToken,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 const googleVerified = async (req, res, next) => {
@@ -96,8 +162,9 @@ const getAuthUser = async (req, res, next) => {
 const emailSignup = async (req, res, next) => {
   const { email, password, username } = req.body;
   try {
-    const phone = normalizePhone(req.body.phone);
-    if (!phone) {
+    // Phone is optional at signup; if sent, it must be valid
+    const phone = req.body.phone ? normalizePhone(req.body.phone) : null;
+    if (req.body.phone && !phone) {
       res.statusCode = 400;
       throw new Error("Enter a valid Nigerian phone number, e.g. 08012345678");
     }
@@ -105,7 +172,11 @@ const emailSignup = async (req, res, next) => {
     const normalizedEmail = String(email || "").trim().toLowerCase();
 
     const isUser = await User.findOne({
-      $or: [{ email: normalizedEmail }, { username }, { phone }],
+      $or: [
+        { email: normalizedEmail },
+        { username },
+        ...(phone ? [{ phone }] : []),
+      ],
     });
 
     if (isUser) {
@@ -118,7 +189,7 @@ const emailSignup = async (req, res, next) => {
       email: normalizedEmail,
       username,
       password: hashedPassword,
-      phone,
+      ...(phone && { phone }), // never store phone: null (unique sparse index)
     });
 
     const jwtToken = generateToken({
@@ -471,9 +542,10 @@ const resetPassword = async (req, res, next) => {
 
 // EDIT USER WALLET BALANCE
 const editUserWallet = async (req, res, next) => {
-  const { id } = req.params;
-  const { walletBalance } = req.body;
   try {
+    const { id } = req.params;
+    const { walletBalance } = req.body;
+
     // Validate user ID
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.statusCode = 400;
@@ -512,6 +584,7 @@ const editUserWallet = async (req, res, next) => {
         email: user.email,
         walletBalance: user.walletBalance,
         isActive: user.isActive,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -520,6 +593,7 @@ const editUserWallet = async (req, res, next) => {
 };
 
 export {
+  googleSetup,
   googleVerified,
   getAuthUser,
   emailSignup,
