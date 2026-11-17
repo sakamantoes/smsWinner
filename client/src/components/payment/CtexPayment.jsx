@@ -17,6 +17,7 @@ export default function CtexPayment({ amount, onBack }) {
     try {
       const res = await api.post("/api/payment/ctex/initialize-deposit", {
         amount: Number(amount),
+        paymentMethod: "CTEX",
       });
       sessionStorage.setItem("ctexReference", res.data.reference);
       window.location.href = res.data.data; // CTEX hosted checkout
