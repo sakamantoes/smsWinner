@@ -9,7 +9,6 @@ import {
   sendDepositFailedNotification,
   sendPaymentReceivedNotification,
 } from "./notificationController.js";
-import { env } from "../config/constant.js";
 
 const ctex = axios.create({
   baseURL: env.ctex_api_base,
