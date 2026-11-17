@@ -10,6 +10,7 @@ import {
   googleVerified,
   updatePassword,
   updateUsername,
+  updatePhone,
   forgotPassword,
   resetPassword,
   logout,
@@ -45,6 +46,7 @@ router.put(
   deactivateUser,
 );
 router.put("/update-username", authMiddleware, updateUsername);
+router.put("/update-phone", authMiddleware, updatePhone);
 router.put("/update-password", authMiddleware, updatePassword);
 
 router.post(
@@ -61,6 +63,5 @@ router.post(
   validateData,
   resetPassword,
 );
-router.put("/update-phone", authMiddleware, updatePhone);
 
 export default router;
