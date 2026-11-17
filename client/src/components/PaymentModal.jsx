@@ -15,12 +15,12 @@ const paymentOptions = [
   //   description: "Use QUESTPay to fund your wallet instantly.",
   //   icon: CreditCard,
   //  },
-    {
-  id: "ctex",
-  title: "Pay with CTEX PAY",
-  description: "Pay by bank transfer on a secure checkout page.",
-  icon: Landmark,
-},
+    //{
+ // id: "ctex",
+//  title: "Pay with CTEX PAY",
+//description: "Pay by bank transfer on a secure checkout page.",
+  //icon: Landmark,
+//},
   {
     id: "manual-transfer",
     title: "Manual Transfer",
